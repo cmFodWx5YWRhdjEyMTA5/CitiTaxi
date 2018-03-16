@@ -117,10 +117,16 @@
                         subbrand: {
                             required:true
                         },
+                        vehicle_NoPlate:{
+                            required:true
+                        },
                         insuranceCompany: {
                             required:true
                         },
                         insuranceNumber: {
+                            required:true
+                        },
+                        insuranceExpiredate:{
                             required:true
                         },
                         fleet_company: {
@@ -131,9 +137,10 @@
                         },
                         fleet_address: {
                             required:true
-                        },
+                        },                        
                         bookingLimit: {
-                            required:true
+                            required:true,
+                            number:true
                         },
                         gender:{
                             required:true
@@ -193,13 +200,13 @@
                     required: "Please enter address"
                     },
                 licenseimage: {
-                    required: "Please enter driving license image"
+                    required: "Please Select driving license image"
                     },
                 expiredate: {
                     required: "Please enter license expire date"
                     },
                 driverimage: {
-                    required: "Please enter driver image"
+                    required: "Please Select driver image"
                     },
                 brand: {
                     required: "Please enter brand"
@@ -207,12 +214,18 @@
                 subbrand: {
                     required: "Please enter sub brand"
                     },
+                vehicle_NoPlate:{
+                    required: "Please enter vehicle plate number"
+                },
                 insuranceCompany: {
                     required: "Please enter insurance Company"
                     },
                 insuranceNumber: {
                     required: "Please enter insurance Number"
                     },
+                insuranceExpiredate:{
+                    required:"Please select insurance expire date"
+                },
                 companyName: {
                     required: "Please enter insurance company Name"
                     },
@@ -225,7 +238,19 @@
                 bookingLimit: {
                     required: "Please enter booking Limit"
                     },
-                }
+                },
+                errorPlacement: function(error, element) 
+                    {
+                      var placement = $(element).data('error');
+                      if (placement) 
+                      {
+                        $(placement).append(error)
+                      }
+                      else 
+                      {
+                        error.insertAfter(element);
+                      }
+                    }
 
                 });                                    
 

@@ -97,6 +97,11 @@ class AuthModel extends CI_Model {
         }
     }
 
+    public function batchInsert($table_name,$data)
+    {
+        $this->db->insert_batch($table_name, $data);
+    }
+
     public function checkRows($table_name,$where)
     {
         return $this->db->get_where($table_name,$where)->num_rows();
@@ -144,15 +149,15 @@ class AuthModel extends CI_Model {
             if ($key=='image' && $user_detail->image_type==0)
             //if ($key=='image')
             {
-                $user_detail->image = base_url().'userimage/'.$user_detail->image;
+                $user_detail->image = base_url().'userimage/'.preg_replace('/\s*/m', '',$user_detail->image);
             }
             if($key=='vichleimage')
             {
                 $user_detail->vichleimage = base_url().'vechileImage/'.$user_detail->vichleimage;
             }
-            if($key=='licence_image')
+            if($key=='licenseImage')
             {
-               $user_detail->licence_image = base_url().'licenceImage/'.$user_detail->licence_image;
+               $user_detail->licenseImage= base_url().'licenceImage/'.$user_detail->licenseImage;
             }
             if(isset($user_detail->password))
             {unset($user_detail->password); }

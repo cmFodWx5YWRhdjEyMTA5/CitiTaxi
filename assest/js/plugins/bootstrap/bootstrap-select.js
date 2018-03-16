@@ -97,7 +97,7 @@
           '</div>' : '';
       var drop =
           '<div class="btn-group bootstrap-select' + multiple + inputGroup + '">' +
-              '<button type="button" class="btn dropdown-toggle selectpicker" data-toggle="dropdown"' + autofocus + '>' +
+              '<button type="button" style="height:30px !important;" class="btn dropdown-toggle selectpicker" data-toggle="dropdown"' + autofocus + '>' +
               '<span class="filter-option pull-left"></span>&nbsp;' +
               '<span class="caret"></span>' +
               '</button>' +
@@ -991,7 +991,7 @@
     size: 'auto',
     title: null,
     selectedTextFormat: 'values',
-    noneSelectedText: 'Nothing selected',
+    noneSelectedText: 'Select',
     noneResultsText: 'No results match',
     countSelectedText: '{0} of {1} selected',
     maxOptionsText: ['Limit reached ({n} {var} max)', 'Group limit reached ({n} {var} max)', ['items', 'item']],

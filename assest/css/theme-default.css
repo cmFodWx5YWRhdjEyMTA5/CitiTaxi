@@ -1956,9 +1956,9 @@ ul.panel-controls > li > .dropdown-menu:before {
 /* END USER */
 /* BUTTONS */
 .btn {
-  font-size: 12px;
-  padding: 4px 15px;
-  line-height: 20px;
+  font-size: 13px;
+  padding: 10px 15px;
+  line-height: 15px;
   font-weight: 400;
   -moz-border-radius: 0px;
   -webkit-border-radius: 0px;
@@ -1986,6 +1986,7 @@ ul.panel-controls > li > .dropdown-menu:before {
 }
 .btn-default {
   border-color: #DDD;
+  border-radius: 5px;
 }
 .btn-default:hover,
 .btn-default:focus,
@@ -1994,6 +1995,7 @@ ul.panel-controls > li > .dropdown-menu:before {
 .open > .dropdown-toggle.btn-default {
   background-color: #F5F5F5;
   border-color: #DDD;
+
 }
 .btn-danger {
   background-color: #E04B4A;
@@ -2029,9 +2031,75 @@ ul.panel-controls > li > .dropdown-menu:before {
   background: #feb756;
   border-color: #feb34c;
 }
+
+/*=====================================my Css for button======================================*/
+.btn-back{
+  color:#fff;
+  background-color:rgb(38, 171, 77);
+  border-color: rgb(38, 171, 77);
+  border-radius: 14px !important;
+}
+.btn-back:hover,
+.btn-back:focus,
+.btn-back:active,
+.btn-back.active,
+.open > .dropdown-toggle.btn-back {
+  color:#fff;
+  background-color: rgb(30, 138, 62);
+  border-color: rgb(30, 138, 62);
+}
+
+.btn-reset{
+  color:#fff;
+  background-color:rgb(127,127,127);
+  border-color: rgb(127,127,127);
+  border-radius: 14px !important;
+}
+.btn-reset:hover,
+.btn-reset:focus,
+.btn-reset:active,
+.btn-reset.active,
+.open > .dropdown-toggle.btn-reset {
+  color:#fff;
+  background-color: rgb(105,105,105);
+  border-color: rgb(105, 105,105);
+}
+
+.btn-submit{
+  color:#fff;
+  background-color:#0095e8;
+  border-color: #0095e8;
+  border-radius: 14px !important;
+}
+.btn-submit:hover,
+.btn-submit:focus,
+.btn-submit:active,
+.btn-submit.active,
+.open > .dropdown-toggle.btn-submit {
+  color:#fff;
+  background-color: rgb(0,145,205);
+  border-color: rgb(0,145,205);
+}
+
+.btn-fileinput{
+  color:#fff;
+  background-color:#0095e8;
+  border-color: #0095e8;
+}
+.btn-fileinput:hover,
+.btn-fileinput:focus,
+.btn-fileinput:active,
+.btn-fileinput.active,
+.open > .dropdown-toggle.btn-fileinput {
+  color:#fff;
+  background-color: rgb(0,145,205);
+  border-color: rgb(0,145,205);
+}
+
+/*=====================================my Css for button======================================*/
 .btn-success {
-  background-color: #95b75d;
-  border-color: #95b75d;
+  background-color: #00b140;
+  border-color: #00b140;
 }
 .btn-success:hover,
 .btn-success:focus,
@@ -2271,11 +2339,11 @@ input[type=checkbox] {
   border-top: 1px dashed #D5D5D5;
 }
 .form-group-separated .form-group {
-  border-bottom: 1px dashed #D5D5D5;
+  /*border-bottom: 1px dashed #D5D5D5;*/
   margin-bottom: 0px;
 }
 .form-group-separated .form-group [class^="col-md-"] {
-  border-left: 1px dashed #D5D5D5;
+  /*border-left: 1px dashed #D5D5D5;*/
   padding: 12px 10px;
 }
 .form-group-separated .form-group [class^="col-md-"]:first-child {

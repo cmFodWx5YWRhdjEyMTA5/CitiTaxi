@@ -53,14 +53,15 @@
         <script type='text/javascript' src='<?php echo base_url();?>assest/js/plugins/icheck/icheck.min.js'></script>
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/mcustomscrollbar/jquery.mCustomScrollbar.min.js"></script>
 
-		<script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/bootstrap/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/bootstrap/bootstrap-datepicker.js"></script>
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/bootstrap/bootstrap-file-input.js"></script>
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/bootstrap/bootstrap-select.js"></script>
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/tagsinput/jquery.tagsinput.min.js"></script>
         <!-- END THIS PAGE PLUGINS-->  
+        <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/smartwizard/jquery.smartWizard-2.0.min.js"></script>
         <script type='text/javascript' src='<?php echo base_url('assest/js/plugins/jquery-validation/jquery.validate.js');?>'></script> 
         <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
-        <script type='text/javascript' src='<?php echo base_url('assest/js/plugins/jquery-validation/formvalidationScript.js');?>'></script>
+        <script type='text/javascript' src='<?php echo base_url('assest/js/formValidationScript.js');?>'></script>
         <!-- START TEMPLATE -->
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/settings.js"></script>
         <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins.js"></script> 

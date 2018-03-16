@@ -7,7 +7,7 @@
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                   <h3 class="panel-title"><strong>Add</strong>&nbsp;driver</h3>                           
+                                   <h3 class="panel-title"><strong>Add driver</strong></h3>                           
                                 </div>
                             <div class="container">                                      
                             <?php if(isset($error)&& $error==1) { ?>
@@ -68,7 +68,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">DOB   </label>
                                         <div class="col-md-6 col-xs-12">
-                                            <input type="date" name="dob" class="form-control" />
+                                            <input type="text" name="dob" class="form-control datepicker" placeholder="DD-MM-YYYY" />
                                         </div>
                                     </div>
 
@@ -122,14 +122,15 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driver License Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="date" name="expiredate" class="form-control"/>
+                                            <input type="text" name="expiredate" class="form-control datepicker" placeholder="DD-MM-YYYY"/>
                                         </div>
                                     </div>
                                     
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driving License Photo</label>
                                         <div class="col-md-6 col-xs-12">                      
-                                            <input type="file" class="fileinput btn-primary" name="licenseimage" id="filename" />
+                                            <input type="file" class="fileinput btn-fileinput" name="licenseimage" id="filename" data-error="#drivingErr" />
+                                            <span id="drivingErr"></span>
                                         </div>
                                     </div>
 
@@ -138,15 +139,16 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driver Photo</label>
                                         <div class="col-md-6 col-xs-12">                      
-                                            <input type="file" class="fileinput btn-primary" name="driverimage" id="driverimage" />
+                                            <input type="file" class="fileinput btn-fileinput" name="driverimage" id="driverimage" data-error="#err" />
+                                            <span id="err"></span>
                                         </div>
                                     </div>
 
                                     
 
-                                    <div class="form-group">
+                                    <div class="form-group" style="border-top:1px dashed gray;">
                                         <label class="col-md-3 col-xs-12 control-label" ></label>
-                                        <div class="col-md-6 col-xs-12" style="font-size: 14px;color:blue; border-left:none !important;">                      
+                                        <div class="col-md-6 col-xs-12" style="font-size: 14px;color:blue; border-left:none !important;">
                                             <strong><u>Vechile Information</u></strong>
                                         </div>
                                     </div>
@@ -166,6 +168,13 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Vehicle Number Plate </label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="vehicle_NoPlate" class="form-control" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Insurance Company </label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="insuranceCompany" class="form-control" />
@@ -180,6 +189,13 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Insurance Expiry Date </label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="insuranceExpiredate" class="form-control datepicker" placeholder="DD-MM-YYYY"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="border-top:1px dashed gray;">
                                         <label class="col-md-3 col-xs-12 control-label" ></label>
                                         <div class="col-md-6 col-xs-12" style="font-size: 14px;color:blue; border-left:none !important;">                      
                                             <strong><u>Fleet Company Information</u></strong>
@@ -207,22 +223,42 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Service Type Vehicle</label>
+                                        <div class="col-md-6">              
+                                            <select name='service_type[]' id="myDropdown" multiple class="form-control select" required>
+                                                <option value="Eco">Eco</option>
+                                                <option value="Biz">Biz</option>
+                                                <option value="Star">Star</option>                                               
+                                            </select>   
+                                            <span id='typeError' style="color:red;"></span>
+                                        </div>
+                                    </div> 
+
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Booking Limit Per Day </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="bookingLimit" class="form-control"/>
+                                            <input type="text" id='bookingLimit' name="bookingLimit" class="form-control"/>
                                         </div>
                                     </div>
 
                                     
                                     <div class="panel-footer" style="margin-top:20px;">
+                                    <div class="col-md-1"></div>
                                     <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="reset" class="btn btn-success" value="Form Reset" style="margin:5px 0; max-width:300px; width:100%;">
+
+                                    <div class="col-md-3">
+                                        <a href="<?php echo site_url('Driver'); ?>">
+                                        <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                        </a>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <input type="reset" class="btn btn-reset" value="Reset" style="margin:5px 0; width:100%;">
                                     </div>
                                    
-                                    <div class="col-md-6">
-                                        <input type="submit" name="submit" value="Submit" class="btn btn-success pull-right" style="max-width:300px; margin:2px 0; width:100%;">
+                                    <div class="col-md-3">
+                                        <input type="submit" name="submit" value="Submit" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
                                     </div>
                                     
                                 </div>
@@ -250,6 +286,28 @@
       randomstring += chars.substring(rnum,rnum+1);
     }
     document.getElementById("password").value = randomstring;
+
+    $('#bookingLimit').on('keyup', function() {
+        var responseId = $('#myDropdown').val();
+        if(responseId==null){
+            $('#bookingLimit').val('');
+            $('.typeErr').css('height','20px !important');
+            $('#typeError').text("Please select atlest 1 service type");
+        }           
+        
+    });
+
+    $('#myDropdown').on('change', function() {
+        var responseId = $('#myDropdown').val();
+        if(responseId==null){
+            $('#bookingLimit').val('');
+            $('.typeErr').css('height','20px !important');
+            $('#typeError').text("Please select service type");
+        }
+        else{
+            $('#typeError').text(" ");
+        } 
+    });
 
     /*$("#email").keyup(function(){
         var email = $('#email').val();

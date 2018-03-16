@@ -30,7 +30,7 @@
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Vechile</strong>Details</h3>        
+                                    <h3 class="panel-title"><strong>Vechile Details</strong></h3>        
                                     <div class="btn-group pull-right">
                                         <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown"><i class="fa fa-bars"></i> Export Data</button>
                                         <ul class="dropdown-menu">
@@ -61,10 +61,11 @@
                                      <table id="customers2" class="table">
                                         <thead>
                                             <tr>
-                                            <th>Vechile id</th>
+                                            <th style="min-width:80px;">Vechile id</th>
                                             <th>Driver id</th>
                                             <th>Brand</th>
                                             <th>Sub Brand</th>
+                                            <th>Number Plate</th>
                                             <th>Insurance No</th>
                                             <th>Insurance Company</th>
                                             <th>Booking Limit</th>
@@ -80,11 +81,12 @@
                                                 <td><?php echo $vechile_details->driver_id; ?></td>           
                                                 <td><?php echo $vechile_details->brand;?></td>
                                                 <td><?php echo $vechile_details->sub_brand; ?></td>
+                                                <td><strong><?php echo $vechile_details->number_plate; ?></strong></td>
                                                 <td><?php echo $vechile_details->insurance_no;?></td>
                                                 <td><?php echo $vechile_details->insurance_company;?></td>
                                                 <td><?php echo $vechile_details->booking_limit;?></td>
                                                  <td>
-                                                    <a href="<?php echo site_url('Driver/vechileImage/'.$vechile_details->driver_id.'/'.$vechile_details->vechileId);?>"><button class="btn btn-success">Vechile Image</button></a>
+                                                    <a href="<?php echo site_url('Driver/vechileImage/'.$vechile_details->driver_id.'/'.$vechile_details->vechileId);?>"><button class="btn btn-submit">Vechile Image</button></a>
                                                 </td>
                                                 <td>
                                                     <a href="<?php echo site_url('Driver/updateVechile/'.$vechile_details->vechileId);?>">

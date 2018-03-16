@@ -106,7 +106,7 @@
                                                 </td>
                                                 <td><!-- wallet A/c--></td>
                                                 <td style="text-align:center; color:red;"><?php echo $list->online_status; ?></td>
-                                                <td><a href="<?php echo site_url('Driver/other_details/'.$list->id);?>"><button class="btn btn-success">Other Details</button></a>
+                                                <td><a href="<?php echo site_url('Driver/other_details/'.$list->id);?>"><button class="btn btn-submit">Other Details</button></a>
                                                 </td>
                                                 <td>
                                                     <div class="form-group">                                         
@@ -133,7 +133,7 @@
                                                     </i></a>
                                                 </td>
                                                 <td>
-                                                 <a href="<?php echo site_url('Driver/delete'.$list->id);?>">
+                                                 <a href="<?php echo site_url('Driver/delete/'.$list->id);?>">
                                                   <i class="fa fa-trash-o fa-fw">
                                                   <strong>Delete</strong></i>
                                                  </a>

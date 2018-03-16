@@ -44,6 +44,15 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Vehicle Number Plate </label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="vehicle_NoPlate" class="form-control" value="<?php echo $vechile->number_plate; ?>" />
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Insurance Company </label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="insuranceCompany" value="<?php echo $vechile->insurance_company; ?>" class="form-control" />
@@ -56,6 +65,15 @@
                                             <input type="text" name="insuranceNumber" value="<?php echo $vechile->insurance_no; ?>" class="form-control"/>
                                         </div>
                                     </div>
+
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Insurance Expiry Date </label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="insuranceExpiredate" class="form-control datepicker" value="<?php echo $vechile->insurance_expire; ?>" placeholder="DD-MM-YYYY"/>
+                                        </div>
+                                    </div>
+
+
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label" ></label>
@@ -83,7 +101,7 @@
                                         <div class="col-md-6 col-xs-12">  
                                             <input type="text" name="fleet_address" value="<?php echo $vechile->fleet_address; ?>" class="form-control" />
                                         </div>
-                                    </div>
+                                    </div>                                    
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Booking Limit Per Day </label>
@@ -91,15 +109,25 @@
                                             <input type="text" name="bookingLimit" value="<?php echo $vechile->booking_limit; ?>" class="form-control"/>
                                         </div>
                                     </div>
-
                                     <div class="panel-footer" style="margin-top:20px;">
-                                    <div class="col-md-12">
-                                        <input type="submit" name="submit" value="Update" class="btn btn-success pull-right" style="max-width:300px; margin:2px 0; width:100%;">
+                                    <div class="col-md-2"></div>
+                                    <div class="row">
+
+                                    <div class="col-md-3">
+                                        <a href="<?php echo site_url('Driver/other_details/'.$userId);?>">
+                                        <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                        </a>
                                     </div>
+
+                                    <div class="col-md-3">
+                                        <input type="submit" name="submit" value="Update" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
+                                    </div>                                   
                                     
-                                
+                                </div>
+                                <div class="col-md-2"></div>
                                    
                                 </div>
+                                    
                             </div>
                             </form>                         
                         </div>

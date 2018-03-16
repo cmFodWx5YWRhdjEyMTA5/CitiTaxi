@@ -64,7 +64,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">DOB</label>
                                         <div class="col-md-6 col-xs-12">
-                                            <input type="date" name="dob" class="form-control" value="<?php echo $driver->dob;?>" />
+                                            <input type="text" name="dob" class="form-control datepicker" value="<?php echo $driver->dob;?>" />
                                         </div>
                                     </div>
 
@@ -97,12 +97,20 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="panel-footer" style="margin-top:20px;">                                   
-                                   
-                                    <div class="col-md-12">
-                                        <input type="submit" name="submit" value="Submit" class="btn btn-success pull-right" style="max-width:300px; margin:2px 0; width:100%;">
+                                    <div class="panel-footer" style="margin-top:20px;">
+                                        <div class="col-md-2"></div>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <a href="<?php echo site_url('Driver'); ?>">
+                                                <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                                </a>
+                                            </div>                                            
+                                           
+                                            <div class="col-md-3">
+                                                <input type="submit" name="submit" value="Submit" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
+                                            </div>                                        
+                                        </div>                                   
                                     </div>
-                                    
                                 </div>
                                    
                                 </div>
