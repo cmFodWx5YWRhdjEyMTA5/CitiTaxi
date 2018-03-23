@@ -15,6 +15,26 @@ if ( ! function_exists('tz_list')){
    }
 }
 
+if ( ! function_exists('servicetypes')){
+   function servicetypes(){
+       //get main CodeIgniter object
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get('servicetype')->result();
+      return $query;
+   }
+}
+
+if ( ! function_exists('countryies')){
+   function countryies(){
+       //get main CodeIgniter object
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get('countries')->result();
+      return $query;
+   }
+}
+
 
 /*if ( ! function_exists('get_userPharmacy')){
    function get_userPharmacy($pharmacy_id){

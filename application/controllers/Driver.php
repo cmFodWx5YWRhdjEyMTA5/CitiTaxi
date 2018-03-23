@@ -82,9 +82,7 @@ class Driver extends CI_Controller {
         {
             echo json_encode(true);
         }
-    }
-
-    
+    }  
 
 
     public function addDriver()
@@ -598,7 +596,78 @@ class Driver extends CI_Controller {
                 echo "Oops something went wrong! Please try again";
             }
         }
-    }   
+    } 
+
+    public function weeklyRewards()
+    {
+        $rewards = $this->AuthModel->getMultipleRecord('driverweeklyreward',array(),array());
+        $data['rewards'] = $rewards;
+        $this->load->view('weeklyRewards',$data);
+    } 
+
+    public function addDriver_reward()
+    {
+        if(isset($_POST['submit']))
+        {
+            extract($_POST);
+            $data = array(
+                'weeklyTargetTrip'=>$weeklyTargetTrip,
+                'reward_unit'=>$reward_unit,
+                'reward_rate'=>$rewardRate,
+                'reward_status'=>'on'
+                );
+            if($this->AuthModel->singleInsert('driverweeklyreward',$data))
+            {
+                $res['success'] = 1;
+                $res['message'] = "Driver weekly target trip reward has been successfully saved";
+                $this->load->view('add_driverReward',$res);
+            }
+            else
+            {
+                $res['error'] = 1;
+                $res['message'] = "Oops! something went wrong, please try again";
+                $this->load->view('add_driverReward',$res);
+            }
+
+        }
+        else
+        {            
+            $this->load->view('add_driverReward');
+        }
+    }
+
+    public function updateDriver_reward($rewardid)
+    {
+        $where = array('reward_id'=>$rewardid);       
+        if(isset($_POST['update']))
+        {
+            extract($_POST);
+            $UpdateData = array(
+                'weeklyTargetTrip'  =>$weeklyTargetTrip,
+                'reward_unit'       =>$reward_unit,
+                'reward_rate'       =>$rewardRate,                
+                );            
+            if($this->AuthModel->updateRecord($where,'driverweeklyreward',$UpdateData))
+            {
+                $res['success']    = 1;
+                $res['message']    = 'Weekly reward has been successfully udpated';
+                $res['rewardData'] = $this->AuthModel->getSingleRecord('driverweeklyreward',$where); 
+                $this->load->view('add_driverReward',$res);   
+            }
+            else
+            {
+                $res['error']    = 1;
+                $res['message']    = 'Oops! something went wrong, try again';
+                $res['rewardData'] = $this->AuthModel->getSingleRecord('driverweeklyreward',$where); 
+                $this->load->view('add_driverReward',$res);   
+            }
+        }
+        else
+        {            
+            $res['rewardData'] = $this->AuthModel->getSingleRecord('driverweeklyreward',$where);
+            $this->load->view('add_driverReward',$res);
+        }        
+    }
 
 
 

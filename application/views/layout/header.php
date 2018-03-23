@@ -107,10 +107,11 @@
                     </li> 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='vehicle'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-table"></span> <span class="xn-text"> Vehicle & Fares</span></a>
+                        <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-taxi"></span> <span class="xn-text"> Vehicle & Fares</span></a>
                         <ul>
+                            <li><a href="<?php echo site_url('Home/servie_type');?>"><span class="fa fa-taxi"></span><span class="xn-text">Service Type</span></a></li>  
                             <li><a href="<?php echo site_url('Vehicle/add_fair');?>"><span class="fa fa-car"></span><span class="xn-text">Add Vehicle Fares</span></a></li>
-                            <li><a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-car"></span><span class="xn-text">Vehicle Types</span></a></li>                          
+                            <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
 
                     </li> 
@@ -139,7 +140,8 @@
 
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
-                        <ul>                         	
+                        <ul>
+                                                     	
                             <li><a href="<?php echo site_url('Home/apptemplate');?>"><span class="fa fa-image"></span><span class="xn-text">App Template Setting</span></a></li>
                            <li><a href="<?php echo site_url('Home/profile');?>"><span class="fa fa-user"></span><span class="xn-text">Admin Profile</span></a></li>
 

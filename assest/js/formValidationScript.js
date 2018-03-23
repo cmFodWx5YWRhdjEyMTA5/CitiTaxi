@@ -1,3 +1,187 @@
+        var apptimeline = $("#fairvalidate").validate({
+                rules: {
+                        service_type:{
+                            required:true
+                        },
+                        maxload:{
+                            required:true,
+                            number:true
+                        },
+                        currency:{
+                            required:true,
+                        },
+                        commsiontype:{
+                            required:true
+                        },
+                        commissionRate:{
+                            required:true,
+                            number:true
+                        },
+                        distanceUnit:{
+                            required:true
+                        },
+                        perEverymin_charge:{
+                            required:true,
+                        },
+                        afterEverymin_charge:{
+                            required:true,
+                            number:true
+                        },
+                        minbase_fair:{
+                            required:true,
+                            number:true
+                        },
+                        minDistance:{
+                            required:true,
+                            number:true
+                        },
+                        mini_distancefair:{
+                            required:true,
+                            number:true
+                        },
+                        regularChargeUponKm:{
+                            required:true,
+                            number:true
+                        },
+                        uponMinuteCharge:{
+                            required:true,
+                            number:true
+                        },
+                        unitPerMinuteforCharge:{
+                            required:true,
+                            number:true
+                        },
+                        unitPerMinutecharge:{
+                            required:true,
+                            number:true
+                        },
+                        regWaitingStartAfterMinute:{
+                            required:true,
+                            number:true
+                        },
+                        regUnitTime:{
+                            required:true,
+                            number:true
+                        },
+                        regWaitingUnitTimePrice:{
+                            required:true,
+                            number:true
+                        },
+                        morningSurchargeUnit:{
+                             required:true,
+                        },
+                        morningSurchargePrice:{
+                            required:true,
+                            number:true
+                        },
+                        morningSurchargeTimeStart:{
+                            required:true,
+                        },
+                        morningSurchargeTimeEnd:{
+                            required:true,
+                        },
+                        eveningSurchargeUnit:{
+                             required:true,
+                        },
+                        eveningSurchargePrice:{
+                            required:true,
+                            number:true
+                        },
+                        eveningSurchargeTimeStart:{
+                            required:true,
+                        },
+                        eveningSurchargeTimeEnd:{
+                            required:true,
+                        },
+                        minNightSurchargeUnit:{
+                             required:true,
+                        },
+                        minNightSurchargePrice:{
+                            required:true,
+                            number:true
+                        },
+                        minNightSurchargeTimeStart:{
+                            required:true,
+                        },
+                        minNightSurchargeTimeEnd:{
+                            required:true,
+                        },
+                        peakChargeAfterStart:{
+                            required:true,
+                        },
+                        peakUnitTimePriceMin:{
+                            required:true,
+                            number:true
+                        },
+                        peakUnitTimePrice:{
+                            required:true,
+                            number:true
+                        },
+                        cancelChargeUnit:{
+                            required:true,                          
+                        },
+                        stndCancelChargeDriver:{
+                            required:true,
+                            number:true
+                        },
+                        stndCancelChargePassenger:{
+                            required:true,
+                            number:true
+                        },
+                        peakHrCancelChargeDriver:{
+                            required:true,
+                            number:true
+                        },
+                        peakHrCancelChargePassenger:{
+                            required:true,
+                        },
+                        peakHourBookingCancelbyPassenger:{
+                            required:true,
+                            digit:true
+                        },
+                        multiStopCharge:{
+                            required:true,
+                            number:true
+                        }
+                    },
+                    messages: {                
+                        service_type:{
+                            required:"Please select service type",
+                        },
+                        maxload:{
+                            required:'Please enter maximum passenger flexibility',
+                            number:'Only digit allow',
+                        },
+                        regWaitingStartAfterMinute:{
+                            required:'Please select free waiting charge minute',
+                            number:'Please select free waiting charge minute'
+                        }
+                    },
+                    errorPlacement: function(error, element) 
+                    {
+                      var placement = $(element).data('error');
+                      if (placement) 
+                      {
+                        $(placement).append(error)
+                      }
+                      else 
+                      {
+                        error.insertAfter(element);
+                      }
+                    }
+                });
+
+            
+
+
+
+
+
+
+
+
+
+
 
             var apptimeline = $("#apptimeline").validate({
                 rules: {   
@@ -5,7 +189,13 @@
                             accept: "image/*"
                         },
                         copyright:{
-                            required:true
+                            required:true,
+                        },
+                        weeklyTargetTrip:{
+                            required:true,
+                        },
+                        rewardRate:{
+                            required:true,
                         }
                     },
                     messages: {                
@@ -93,7 +283,7 @@
                         nationality: {
                             required:true
                         },
-                        city: {
+                        minDistance: {
                             required:true
                         },
                         address: {

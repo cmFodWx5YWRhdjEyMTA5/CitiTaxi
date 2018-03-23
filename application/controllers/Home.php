@@ -381,15 +381,53 @@ class Home extends CI_Controller {
         //print_r($_POST);
     }
 
-    public function tz_list() {
-      $zones_array = array();
-      $timestamp = time();
-      foreach(timezone_identifiers_list() as $key => $zone) {
-        date_default_timezone_set($zone);
-        $zones_array[$key]['zone'] = $zone;
-        $zones_array[$key]['diff_from_GMT'] = 'UTC/GMT ' . date('P', $timestamp);
-      }
-      return $zones_array;
+    public function servie_type()
+    { 
+        $types = $this->AuthModel->getMultipleRecord('servicetype',array(),array());
+        $data['types'] = $types;
+        $this->load->view('serviceType',$data);
+    }
+
+    public function addServiceType()
+    {
+        $serviceType = $_POST['servicetype'];
+        if($this->AuthModel->singleInsert('servicetype',array("servicename"=>$serviceType)))
+        {
+            echo 'Service Type has been successfully saved';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong, Please try again';
+        }
+    }
+
+    public function updateServiceType()
+    {
+        $serviceType = $_POST['servicetype'];
+        $typeid      = $_POST['typeid'];
+        if($this->AuthModel->updateRecord(array('typeid'=>$typeid),'servicetype',array('servicename'=>$serviceType)))
+        {
+            echo 'Service Type has been successfully update';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong, Please try again';
+        }
+    }
+
+    public function changeTypeStatus()
+    {
+        $typeid = $_POST['typeid'];
+        $status = $_POST['status'];
+        if($this->AuthModel->updateRecord(array('typeid'=>$typeid),'servicetype',array('status'=>$status)))
+        {
+            echo 'Status has been successfully updated';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong, Please try again';
+        }
+
     }
 
 
