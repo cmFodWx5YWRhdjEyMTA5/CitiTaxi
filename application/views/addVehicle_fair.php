@@ -260,7 +260,7 @@
                                         <label class="col-md-3 col-xs-12 control-label">Free Waiting minutes</label>
                                         <div class="col-md-6 col-xs-12">
                                             <select name="regFreeWaitingMinute" class="form-control" data-toggle="tooltip" data-placement="top" title="Waiting charge will be charged after Select minute: 2min,3min,.." required >
-                                                <option>Select</option>
+                                                <option value="">Select</option>
                                                 <option value="1">1 min</option>
                                                 <option value="2">2 min</option>
                                                 <option value="5">5 min</option>
@@ -277,7 +277,7 @@
                                         <label class="col-md-3 col-xs-12 control-label">Waiting charge every (x) Minutes </label>
                                         <div class="col-md-6 col-xs-12">  
                                             <select name="regWaitingUnitTime" class="form-control" data-toggle="tooltip" data-placement="top" title="Waiting charge will be charged according to Select minute: 2min,3min,.." required  >
-                                                <option>Select</option>
+                                                <option value="">Select</option>
                                                 <option value="1">1 min</option>
                                                 <option value="2">2 min</option>
                                                 <option value="5">5 min</option>
@@ -625,15 +625,17 @@
         {
             var cityid   = city.value;
             var cityname = city.options[city.selectedIndex].text; 
-            var serviceid = $('#myDropdown').val();
+            var serviceid = $('#service_type').val();
             $.ajax({
                 type:'post',
                 data:{'city_id':cityid,'serviceid':serviceid},
                 url:'<?php echo site_url('Vehicle/fairCityexist');?>',
                 success:function(data){
-                    alert(data);
-                    location.reload(true);
-                    //console.log(data);
+                    if(data!='')
+                    {
+                        alert(data);
+                        location.reload(true);    
+                    }
                 }
             });
             //alert(serviceid);

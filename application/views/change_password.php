@@ -81,9 +81,9 @@
                                 </div>
                              <div class="panel-footer">
                                     <div class="row">
-                                    <input type="reset" class="btn btn-success" value="Form Reset" style="width:100%; max-width:300px;">
+                                    <input type="reset" class="btn btn-reset" value="Form Reset" style="width:100%; max-width:300px;">
                                     
-                                    <input type="submit" name="submit" value="Update" class="btn btn-success pull-right" style="width:100%; max-width:300px; margin-top:5px">
+                                    <input type="submit" name="submit" value="Update" class="btn btn-submit pull-right" style="width:100%; max-width:300px; margin-top:5px">
                                     </div>
                                 </div>
                             </div>

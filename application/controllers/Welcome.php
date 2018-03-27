@@ -155,15 +155,31 @@ class Welcome extends CI_Controller {
 	{
 		$data['email'] = 'shubhamj@gmail.com';
 		$this->load->view('forget_passwordTemp',$data);
-	}
-
-
-	
+	}	
 
 	public function logout()
 	{		
 		$this->session->sess_destroy();
 		$this->load->view('login');		
+	}
+
+	public function websiteContent()
+	{
+		if(isset($_POST['submit']))
+		{			
+			extract($_POST);
+			$data= array(
+				'page_name'=>'About us',
+				'content'  =>$content
+				);
+			$this->AuthModel->singleInsert('website_pages',$data);
+			$this->load->view('websiteContent');
+		}
+		else
+		{
+			$d['pagecontent']=$this->AuthModel->getSingleRecord('website_pages',array('page_name'=>'About us')); 
+			$this->load->view('websiteContent',$d);
+		}
 	}
 	
 }

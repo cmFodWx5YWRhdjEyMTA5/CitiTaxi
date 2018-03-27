@@ -1,4 +1,4 @@
-<?php $data['page']='driver'; $data['title']='taxi services'; $this->load->view('layout/header',$data);?> 
+<?php $data['page']='vehicle'; $data['title']='Weekly Reward'; $this->load->view('layout/header',$data);?> 
 
 <div class="page-content-wrap">
     <div class="row">

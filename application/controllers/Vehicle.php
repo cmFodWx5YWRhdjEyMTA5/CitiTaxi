@@ -56,7 +56,7 @@ class Vehicle extends CI_Controller {
                 'eveningSurchargeTimeEnd'=>$eveningSurchargeTimeEnd, 'midNightChargeStatus'=>$midNightChargeStatus,
                 'minNightSurchargeUnit'=>$minNightSurchargeUnit, 'minNightSurchargePrice'=>$minNightSurchargePrice,
                 'minNightSurchargeTimeStart'=>$minNightSurchargeTimeStart, 'minNightSurchargeTimeEnd'=>$minNightSurchargeTimeEnd, 
-                'peaHourkWaitingCharge'=>$peaHourkWaitingChargeStatus, 'peakChargeAfterStart'=>$peakChargeAfterStart,
+                'peaHourkWaitingChargeStatus'=>$peaHourkWaitingChargeStatus, 'peakChargeAfterStart'=>$peakChargeAfterStart,
                 'peakUnitTimePriceMin'=>$peakUnitTimePriceMin, 'peakUnitTimePrice'=>$peakUnitTimePrice,
                 'cancelChargeUnitDriver'=>$cancelChargeUnitDriver, 'stndCancelChargeDriver'=>$stndCancelChargeDriver,
                 'peakHrCancelChargeDriver'=>$peakHrCancelChargeDriver, 'cancelChargeUnitPassenger'=>$cancelChargeUnitPassenger, 
@@ -129,8 +129,8 @@ class Vehicle extends CI_Controller {
 
     public function fairCityexist()  //ajax use
     {
-        $cityid =$_POST['city_id'];
-        $serviceid=$_POST['serviceid'];
+        $cityid     =   $_POST['city_id'];
+        $serviceid  =   $_POST['serviceid'];
         $checkexist = $this->AuthModel->checkRows('fair',array('city_id'=>$cityid,'serviceType_id'=>$serviceid));
         if($checkexist>0)
         {
@@ -181,6 +181,85 @@ class Vehicle extends CI_Controller {
         }
     }
 
+    public function fair_full_details($fairid)
+    {
+        $data['list'] = $this->AuthModel->getSingleRecord('fair',array('fair_id'=>$fairid));
+        $this->load->view('Vehiclefair_fulldetails',$data);
+    }
+
+    public function fix_location()
+    {
+        $orderby  = "`location_id` DESC";
+        $where    = array();
+        $fixlocation = $this->AuthModel->getMultipleRecord('fixlocations',$where,$orderby);
+        if(!empty($fixlocation))
+        {
+            $data['fixlocation']=$fixlocation;            
+            $this->load->view('fixed_locations',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'No fix location found';
+            $data["fixlocation"]='';
+            $this->load->view('fixed_locations',$data);
+        }
+    }
+
+    public function add_fixLocation()
+    {
+        if(isset($_POST['submit']))
+        {
+            //echo "<pre>";
+            extract($_POST);
+            //print_r($_POST);die();
+            $data = array(
+                'pickup'=>$pickup,
+                'pickupLat'=>$pickupLat,
+                'pickupLong'=>$pickupLong,
+                'dropoff'=>$dropoff,
+                'dropoffLat'=>$dropofLat,
+                'dropoffLong'=>$dropofLong,
+                'fixcharge'=>$fixCharge,
+                'startTime'=>$startTime,
+                'endTime'=>$endTime,
+                'service_id'=>$service_type,
+                'service_name'=>$servicename,
+                'free_waitingMin'=>$freeWaitingMinute,
+                'waitingMinUnit'=>$waitingUnitTime,
+                'waitingMinUnitCharge'=>$waitingMinUnitCharge
+                );
+            if($uid = $this->AuthModel->singleInsert('fixlocations',$data))
+            {
+                $respose["success"] = 1;
+                $respose["message"] = "Fix loaction has been successfully saved";
+                $this->load->view('add_fixedLocation',$respose);
+            }
+            else
+            {
+                $respose["error"] = 1;
+                $respose["message"] = "Error occur! Please try again";
+                $this->load->view('add_fixedLocation',$respose);
+            } 
+        }
+        else
+        {
+            $this->load->view('add_fixedLocation');
+        }        
+    }
 
 
+    public function changeStatus()
+    {
+        $obj   = $_POST['myData'];
+        $array = json_decode($obj, true);
+        if($this->AuthModel->updateRecord($array['where'],$array['table_name'],$array['data']))
+        {
+            echo 'Status has been successfully updated';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong, Please try again';
+        }
+    }
 }

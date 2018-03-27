@@ -18,6 +18,7 @@
                                 <div class="panel-heading">
 
                                     <h3 class="panel-title"><strong>Vehicle Fair Details</strong></h3>
+                                    <center><span style="color:red; font-weight:600">**Per= Percentage</span></center>
                                     <?php if(isset($sucess)==1){ ?>
 
                                     <div class="alert alert-success">
@@ -47,11 +48,11 @@
                                     <div class="table-responsive">
                                      <div style="overflow:scroll; ,max-height:600px;">
                                      <table id="example" class="table display">
+                                        
                                         <thead>
                                             <tr>
                                             <th>Sr.No</th>                                           
-                                            <th style="min-width:100px;">Service Name</th>                                            
-                                            <th style="min-width:80px;">Max load</th>
+                                            <th style="min-width:100px;">Service Name</th>                                         
                                             <th>Country</th>
                                             <th>City</th>
                                             <th style="min-width:60px;">Currency</th>
@@ -74,9 +75,8 @@
                                           $i=1;  
                                         foreach($fairlist as $list) {  ?>
                                             <tr>
-                                                <td style="text-align:center"><?php echo $i++;?></td>                                                
-                                                <td><?php echo $list->service_name; ?></td>                                                
-                                                <td><?php echo $list->maximum_load; ?></td>                                                
+                                                <td style="text-align:center"><?php echo $i++;?></td>
+                                                <td><?php echo $list->service_name; ?></td>     
                                                 <td><?php echo $list->country; ?></td>
                                                 <td><?php echo $list->city;?></td>
                                                 <td><?php echo $list->currency;?></td>
@@ -90,7 +90,7 @@
                                                 <td><?php echo $list->peakHrCancelChargeDriver.' '.$list->cancelChargeUnitDriver;?></td>
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger;?></td>
                                                 <td><?php echo $list->peakHourBookingCancelbyPassenger.' Rides';?></td>
-                                                <td><a href="">Full Details</a></td>
+                                                <td><a href="<?php echo site_url('Vehicle/fair_full_details/'.$list->fair_id);?>">Full Details</a></td>
                                                 <td><a href="">Edit</a></td>
                                         <?php } ?>
                                         </tbody>

@@ -1086,10 +1086,11 @@ body.page-container-boxed .page-container {
 }
 .profile .profile-image img {
   width: 100px;
+  height: 85px;
   border: 3px solid #FFF;
-  -moz-border-radius: 20%;
-  -webkit-border-radius: 20%;
-  border-radius: 20%;
+  -moz-border-radius: 60%;
+  -webkit-border-radius: 60%;
+  border-radius: 60%;
 }
 .profile .profile-data {
   width: 100%;
@@ -2582,11 +2583,10 @@ label.valid {
 .modal-header {
   padding: 10px 10px 10px 15px;
   line-height: 30px;
-  -moz-border-radius: 5px 5px 0px 0px;
-  -webkit-border-radius: 5px 5px 0px 0px;
-  border-radius: 5px 5px 0px 0px;
-  background: #fe7b0a;
-  border-color: #d5d5d5;
+  -moz-border-radius: 0px 0px 0px 0px;
+  -webkit-border-radius: 0px 0px 0px 0px;
+  background: #009ae7;
+  border-color: #009ae7;
 }
 .modal-header .close {
   margin-top: 5px;

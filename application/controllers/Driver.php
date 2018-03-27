@@ -158,9 +158,9 @@ class Driver extends CI_Controller {
                     {
                         foreach($service_type as $k =>$v)
                         {
-                            $c["driver_id"]    = $uid;
-                            $c["vehicle_id"]   = $vid;
-                            $c["service_type"] =  $v;                
+                            $c["driver_id"]         = $uid;
+                            $c["vehicle_id"]        = $vid;
+                            $c["service_type_id"]   = $v;                
                             $service_types[]=$c;
                         }
                         if(!empty($service_types)){                            
@@ -563,7 +563,7 @@ class Driver extends CI_Controller {
         $user_id = $_POST['id'];
         $to = date('d-m-Y', strtotime("+".$suspend_type));
         $todate = $to.' 23:59:59';
-        $fromstring = strtotime(date('Y-m-d H:i:s'));
+        $fromstring = strtotime(date('d-m-Y H:i:s'));
         //print_r($todate);
         $where = array("user_id"=>$user_id);
         $upwhere = array('id'=>$user_id);
@@ -571,7 +571,7 @@ class Driver extends CI_Controller {
         $checkExist = $this->AuthModel->checkRows($table_name,$where);
         if($checkExist>0)
         {
-            $updata = array('suspand_type'=>$suspend_type,'from'=>date('Y-m-d H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            $updata = array('suspand_type'=>$suspend_type,'from'=>date('d-m-Y H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
             if($this->AuthModel->updateRecord($where,$table_name,$updata))
             {
                 $this->AuthModel->updateRecord($upwhere,'users',$userUpdateData);   

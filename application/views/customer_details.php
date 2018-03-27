@@ -11,13 +11,7 @@
                             <div class="panel panel-default">
 
                                 <div class="panel-heading">
-
                                     <h3 class="panel-title"><strong>Registred</strong> Customer</h3>
-                                                                         
-                                    
-
-
-
                                     <?php if(isset($success)==1){ ?>
                                     <div class="alert alert-success">
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -29,11 +23,8 @@
                                     <?php echo $message;?>
                                     </div>
                                     <?php }?>     
-
-                                </div>                                
-
+                                </div>            
                                 <div class="panel-body">
-
                                     <div class="table-responsive">
                                      <div style="overflow:scroll; height:600px;">
                                      <table id="example" class="table display">
@@ -66,10 +57,10 @@
                                                 <td><?php echo $list->name; ?></td>                                                
                                                 <td>
                                                 <?php if($list->image_type==0){
-                                                 echo "<img src=".base_url()."userimage/".$list->image." width='60px' height='60px'>";
+                                                 echo "<img src=".base_url()."userimage/".$list->image." width='60px' height='60px' style='border-radius:33px'>";
                                                 }
                                                 else{
-                                                echo "<img src=".$list->image." width='60px' height='60px'>"; } ?>  
+                                                echo "<img src=".$list->image." width='60px' height='60px' style='border-radius:33px'>"; } ?>  
                                                 </td>
                                                 <td><!--Rating--></td>
                                                 <td><?php echo $list->email; ?></td>

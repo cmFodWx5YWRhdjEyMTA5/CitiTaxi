@@ -142,6 +142,45 @@
                         multiStopCharge:{
                             required:true,
                             number:true
+                        },
+                        pickup:{
+                            required:true
+                        },
+                        pickupLat:{
+                            required:true
+                        },
+                        pickupLong:{
+                            required:true
+                        },
+                        dropoff:{
+                            required:true
+                        },
+                        dropofLong:{
+                            required:true
+                        },
+                        fixCharge:{
+                            required:true
+                        },
+                        dropofLat:{
+                            required:true
+                        },
+                        dropofLat:{
+                            required:true
+                        },
+                        startTime:{
+                            required:true
+                        },
+                        endTime:{
+                            required:true
+                        },
+                        freeWaitingMinute:{
+                            required:true
+                        },
+                        waitingUnitTime:{
+                            required:true
+                        },
+                        waitingMinUnitCharge:{
+                            required:true
                         }
                     },
                     messages: {                
