@@ -155,7 +155,8 @@ class Welcome extends CI_Controller {
 	{
 		$data['email'] = 'shubhamj@gmail.com';
 		$this->load->view('forget_passwordTemp',$data);
-	}	
+	}
+
 
 	public function logout()
 	{		
@@ -163,23 +164,34 @@ class Welcome extends CI_Controller {
 		$this->load->view('login');		
 	}
 
-	public function websiteContent()
-	{
-		if(isset($_POST['submit']))
-		{			
-			extract($_POST);
-			$data= array(
-				'page_name'=>'About us',
-				'content'  =>$content
-				);
-			$this->AuthModel->singleInsert('website_pages',$data);
-			$this->load->view('websiteContent');
+	public function websitepage($pageid)
+	{		
+		if($pageid!='')
+		{
+			$pagecontent  = $this->AuthModel->getSingleRecord('website_pages',array('page_id'=>$pageid));
+			if(!empty($pagecontent))
+			{
+				$data['pagedata'] =$pagecontent;
+				$this->load->view('about-us',$data);		
+			}
+			else
+			{
+				redirect('Welcome/unauthrised');				
+			}			
 		}
 		else
 		{
-			$d['pagecontent']=$this->AuthModel->getSingleRecord('website_pages',array('page_name'=>'About us')); 
-			$this->load->view('websiteContent',$d);
+			redirect('Welcome/unauthrised');
 		}
 	}
+
+	public function unauthrised()
+	{
+		$data['heading']='404 Page Not Found';
+		$data['message']='The page you requested was not found.';
+		$this->load->view('errors/html/error_404',$data);
+	}
+
+	
 	
 }

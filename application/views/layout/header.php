@@ -115,29 +115,7 @@
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
-
                     </li> 
-
-                    
-
-                    <!--li class="xn-envlop <?php if(isset($page) && $page=='five'){ echo 'active';}?>">
-
-                        <a href="<?php echo site_url('PrescriptionControler');?>"><span class="fa fa-pencil"></span><span class="xn-text">Prescription Verification</span><label class="badge" id="rowcount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
-
-                    </li> 
-
-
-
-                    <li class="xn-envlop <?php if(isset($page) && $page=='nine'){ echo 'active';}?>">
-
-                        <a href="<?php echo site_url('PrescriptionControler/renew_prescription');?>"><span class="fa fa-table"></span><span class="xn-text">Refill Request</span><label class="badge" id="rowcount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
-                    </li> 
-
-                    <li class="xn-envlop <?php if(isset($page) && $page=='seven'){ echo 'active';}?>">
-
-                        <a href="<?php echo site_url('User/chat');?>"><span class="fa fa-comments-o" aria-hidden="true"></span><span class="xn-text">Chat</span></a>
-
-                    </li--> 
 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
@@ -150,51 +128,18 @@
                            <li><a href="<?php echo site_url('Home/changePassword');?>"><span class="fa fa-unlock-alt"></span><span class="xn-text">Change Password</span></a></li>
                         </ul>
                     </li> 
-                    <li>
-                        <a href="<?php echo site_url('Welcome/websiteContent');?>"><span class="fa fa-pencil"></span><span class="xn-text">Website Content setting</span></a>
+                    <li class="<?php if(isset($page) && $page=='website'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/websitepages');?>"><span class="fa fa-pencil"></span><span class="xn-text">Website Content setting</span></a>
                     </li>
-
-
-
-                    <!--li class="xn-envlop <!?php if(isset($page) && $page=='six'){ echo 'active';}?>">
-
-                        <a href="<!?php echo site_url('admin/change_password');?>"><span class="fa fa-unlock-alt"></span><span class="xn-text">Change Password</span></a>
-
-                    </li> 
-
-                    <li class="xn-envlop <!?php if(isset($page) && $page=='eight'){ echo 'active';}?>">
-
-                        <a href="<!?php echo site_url('admin/admin_profile');?>"><span class="fa fa-user"></span><span class="xn-text">Admin Profile</span></a>
-
-                    </li-->  
-
-
-
-                    <!--li class="xn-envlop <!?php if(isset($page) && $page=='analytics'){ echo 'active';}?>">
-
-                        <a href="<!?php echo site_url('Example');?>"><span class="fa fa-user"></span><span class="xn-text">Analytics</span></a>
-
-                    </li-->                                                                               
-
                 </ul>
-
                 <!-- END X-NAVIGATION -->
-
             </div>
-
-            <!-- END PAGE SIDEBAR -->
-
-             <!--?php }  ?-->
-
+            <!-- END PAGE SIDEBAR -->      
             
 
             <!-- PAGE CONTENT -->
-
-
             <div class="page-content">                
-
                 <!-- START X-NAVIGATION VERTICAL -->
-
                 <ul class="x-navigation x-navigation-horizontal x-navigation-panel">
                     <!-- TOGGLE NAVIGATION -->
                     <li class="xn-icon-button">

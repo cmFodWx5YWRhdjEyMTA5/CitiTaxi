@@ -107,6 +107,30 @@ class AuthModel extends CI_Model {
         return $this->db->get_where($table_name,$where)->num_rows();
     }
 
+    public function passwordAttempt($table_name,$where)
+    {
+        unset($where['password']);
+        //print_r($where);die();
+        $checkLogin = $this->db->get_where($table_name,$where);
+        if($checkLogin->num_rows()>0)
+        {
+            $preWrongAttempt = $checkLogin->row()->wronglyPassword;
+            $newAttempt =$preWrongAttempt+1;
+            $upWhere = array('wronglyPassword'=>$newAttempt);
+            $message = 'Wrong password! After '.(5-$newAttempt). '  attempt, Account will be Banned.';
+            if($preWrongAttempt>=4)
+            {
+                $upWhere = array('wronglyPassword'=>$preWrongAttempt+1,'activeStatus'=>'Banned');
+                $message = 'Your account is banned. You have type wrong password 5 time. Please contact with help support';
+            }
+            if($this->updateRecord($where,$table_name,$upWhere))
+            {
+                $response = array('success'=>0,'error'=>2,'message'=>$message);
+                echo json_encode($response);die();
+            }
+        }
+    }
+
     public function checkActiveStatus($table_name,$where)
     {
         $status = $this->db->get_where($table_name,$where)->num_rows();

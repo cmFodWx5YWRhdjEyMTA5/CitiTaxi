@@ -430,7 +430,116 @@ class Home extends CI_Controller {
 
     }
 
+    public function websitepages()
+    {
+        $table_name = 'website_pages'; $orderby  = "`page_id` DESC";
+        $where = array();
+        $pages = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);
+        if(!empty($pages))
+        {
+            $res['pages']= $pages; 
+            $this->load->view('websitePages',$res); 
+        }
+        else
+        {
+            $res['error'] =1;
+            $res['message'] = 'No page found!';
+            $res['pages']=array(); 
+            $this->load->view('websitePages',$res);     
+        }
+        
+    }
 
-   
+    public function add_websitePage()
+    {
+        if(isset($_POST['submit']))
+        {           
+            extract($_POST);
+            $imagename ='default.jpg';
+            if(isset($_FILES['bannerImage']) && $_FILES['bannerImage']!='')
+            {
+                $folder_name = 'pageImages';
+                $imagename   = $this->AuthModel->imageUpload($_FILES['bannerImage'],$folder_name);
+            }
+            $data = array(                
+                'page_name' =>$page_name,
+                'banner'    =>$imagename,
+                'content'   =>$content
+                );
+            if($id = $this->AuthModel->singleInsert('website_pages',$data))
+            {   
+                $res['success'] = 1;
+                $res['message'] = 'Page has been successfully added';                
+                $this->load->view('add_websitePage',$res);
+            }
+            else
+            {
+                $res['error']   = 1;
+                $res['message'] = 'Oops something went wrong! Please try again';            
+                $this->load->view('add_websitePage',$res);   
+            }
+        }
+        else
+        {            
+            $this->load->view('add_websitePage');
+        }
+    }
 
+    public function pageImageUpload()
+    {
+        $folder_name    = $_POST['folder'];        
+        if($imagename   = $this->AuthModel->ajaximageUpload($_FILES['file'], $folder_name))
+        {
+            echo base_url('pageImages/'.$imagename);
+        }
+        else
+        {
+            echo 'not upload';
+        }
+    }
+
+    public function update_websitePage($id)
+    {
+        if(isset($id))
+        {
+            $page_id = $id;
+            if(isset($_POST['submit']))
+            {           
+                extract($_POST);
+                if(isset($_FILES['bannerImage']) && $_FILES['bannerImage']['name']!='')
+                {
+                    $folder_name = 'pageImages';
+                    $imagename   = $this->AuthModel->imageUpload($_FILES['bannerImage'],$folder_name);
+                }
+                $data= array(
+                    'page_name'=>$page_name,
+                    'banner'    =>$imagename,
+                    'content'  =>$content
+                    );
+                if($this->AuthModel->updateRecord(array('page_id'=>$page_id),'website_pages',$data))                
+                {   
+                    $res['success'] = 1;
+                    $res['message'] = 'Page content has been successfully update'; 
+                    $res['pagecontent']  = $this->AuthModel->getSingleRecord('website_pages',array('page_id'=>$page_id));
+                    $this->load->view('UpdateWebsitePage',$res);
+                }
+                else
+                {
+                    $res['error']   = 1;
+                    $res['message'] = 'Oops something went wrong! Please try again'; 
+                    $res['pagecontent']  = $this->AuthModel->getSingleRecord('website_pages',array('page_id'=>$page_id));           
+                    $this->load->view('UpdateWebsitePage',$res);   
+                }
+            }
+            else
+            {  
+                $res['pagecontent']  = $this->AuthModel->getSingleRecord('website_pages',array('page_id'=>$page_id));
+                $this->load->view('UpdateWebsitePage',$res);
+            }
+        }
+        else
+        {
+            redirect('Welcome');
+        }
+    }
 }
