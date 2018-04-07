@@ -85,7 +85,7 @@
                                                 <td><?php echo $vechile_details->insurance_no;?></td>
                                                 <td><?php echo $vechile_details->insurance_company;?></td>
                                                 <td><?php echo $vechile_details->booking_limit;?></td>
-                                                 <td>
+                                                <td>
                                                     <a href="<?php echo site_url('Driver/vechileImage/'.$vechile_details->driver_id.'/'.$vechile_details->vechileId);?>"><button class="btn btn-submit">Vechile Image</button></a>
                                                 </td>
                                                 <td>

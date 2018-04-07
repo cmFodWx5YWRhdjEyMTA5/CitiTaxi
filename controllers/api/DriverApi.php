@@ -75,13 +75,15 @@ class DriverApi extends CI_Controller {
             else
             {
                 $data = array(
+                        "google_id"=>$google_id,
                         "ref_code"=>$this->AuthModel->radomno(6),
                         'name'=>$name,
                         'mobile'=>$mobile,
                         'email'=>$email,   
                         'address'=>$address,                 
                         "activeStatus" =>'Inactive',        //Active, Inactive
-                        "signup_status"=>'incomplete'
+                        "signup_status"=>'incomplete',
+                        "user_type"=>1
                     );
                 if($uid = $this->AuthModel->singleInsert('users',$data))
                 {                    
@@ -97,11 +99,11 @@ class DriverApi extends CI_Controller {
                     }
                     if(isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']!='')
                     {                        
-                       $vehicleimages =  $this->AuthModel->MultipleUpload($image,$folder_name);
+                       $vehicleimages =  $this->AuthModel->MultipleUpload($_FILES['vehicle_image'],'vechicleImage');
                        for($i=0; $i<count($vehicleimages); $i++) 
                         {
-                            $vdata =array('driver_id'=> $uid,'vehicle_image'=> $vehicleimages[$i]);
-                            $this->AuthModel->singleInsert('vehicle_images',$vdata);
+                            $vdata =array('driver_id'=> $uid,'vechile_image'=> $vehicleimages[$i]);
+                            $this->AuthModel->singleInsert('vechile_images',$vdata);
                             $data ='';              
                         } 
                     }

@@ -8,6 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />        
         <link rel="SHORTCUT ICON" href="<?php echo base_url('assest/favicon.png');?>" type="image/png" />
         <script>var site_url = '<?php echo site_url(); ?>';</script>
+        <script>var base_url = '<?php echo base_url(); ?>';</script>
         <!-- END META SECTION -->
         <!-- CSS INCLUDE -->     
         <link rel="stylesheet" type="text/css" id="theme" href="<?php echo base_url();?>assest/css/theme-default.css">
@@ -94,7 +95,7 @@
                         <a href="<?php echo site_url('Home/userlist');?>"><span class="fa fa-user"></span> <span class="xn-text">Manage Customers</span><label class="badge" id="rowcount1" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
                         <ul>
                             <li><a href="<?php echo site_url('Home/add_customer');?>"><span class="fa fa-pencil"></span>Add Customer</a></li>
-							<li><a href="<?php echo site_url('HOme/customers');?>"><span class="fa fa-sort-alpha-desc"></span>Customer List</a></li>
+							<li><a href="<?php echo site_url('Home/customers');?>"><span class="fa fa-sort-alpha-desc"></span>Customer List</a></li>
                         </ul>
                     </li>
 
@@ -103,6 +104,7 @@
                         <ul>
                            <li><a href="<?php echo site_url('Driver/addDriver');?>"><span class="fa fa-pencil"></span>Add Driver</a></li>
 						   <li><a href="<?php echo site_url('Driver');?>"><span class="fa fa-sort-alpha-desc"></span>Driver List</a></li>
+                           <li><a href="<?php echo site_url('Driver/requests');?>"><span class="fa fa-sort-alpha-desc"></span>Driver Request</a></li>
                         </ul>
                     </li> 
 

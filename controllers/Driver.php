@@ -465,6 +465,27 @@ class Driver extends CI_Controller {
         }
     }
 
+    public function vehicleimage()
+    {
+        $userid = $_POST['user_id'];
+        $table_name = 'vechile_images'; $orderby  = "";
+        $where = array('driver_id'=>$userid);
+        $images = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);        
+        if(!empty($images))
+        {          
+            $data['error']=0;
+            $data['images']=$images;      
+            echo json_encode($data);
+        }
+        else
+        {
+            $data['error'] =1;
+            $data['message'] = "No vechicle image";
+            echo json_encode($data);
+        }
+
+    }
+
 
 
     public function ajaxMulitpleImageupload()
@@ -582,7 +603,6 @@ class Driver extends CI_Controller {
             {
                 echo "Oops something went wrong! Please try again";
             }
-
         }
         else
         {
@@ -670,26 +690,135 @@ class Driver extends CI_Controller {
         }        
     }
 
-    public function fleets()
+    public function requests()
     {
-        /*$this->load->library('googlemaps');
-        $this->googlemaps->initialize();
-        $marker = array();
-        
-        $marker['position'] = '22.723777, 75.886659';        
-        $marker['infowindow_content'] = 'Garipipliya Road';  
-        $marker['icon']='http://localhost/projects/cititaxi/mapmarker/bike.png';         
-        $this->googlemaps->add_marker($marker);
-        $marker['position'] = 'Vijay nagar square,indore';        
-        $marker['infowindow_content'] = 'Vijay nagar square,indore';
-        $marker['icon']='http://localhost/projects/cititaxi/mapmarker/car2.png';
-        $this->googlemaps->add_marker($marker);
-        $marker['position'] = 'Bombay hospital,indore';
-        $marker['infowindow_content'] = 'Bombay hospital,indore'; 
-        $this->googlemaps->add_marker($marker);
-        $data['map']= $this->googlemaps->create_map();*/
-        $this->load->view('fleetTracking');
+        $requests = $this->AuthModel->getMultipleRecord('users',array('user_type'=>1,'signup_status'=>'incomplete'),'');
+        if(!empty($requests))
+        {
+            $data['requests']=$requests;
+            $this->load->view('driver_requests',$data);
+        }
+        else
+        {
+            $data['error']=1;
+            $data['message']='No new requests found';
+            $data['requests']='';
+            $this->load->view('driver_requests',$data);
+        }
     }
+
+    public function complete_registration($id)
+    {
+        if($id=='')
+        {
+            redirect(base_url());
+        }
+        else
+        {
+            $userdata = $this->AuthModel->getSingleRecord('users',array('id'=>$id));
+            $uid      = $userdata->id;
+            if(isset($_POST['submit'])){
+                extract($_POST);
+                $table_name  = "users";            
+                $checkmail   = array("email"=>$email);
+                $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);                 
+                if($checkEmail>0 && $email!=$userdata->email)
+                {
+                    $respose["error"]=1;
+                    $respose["message"]="Email already Exist";
+                    $this->load->view('complete_driverRegistration',$respose);
+                }                       
+                else
+                {
+                    $imagename ='default.jpg';
+                    if(isset($_FILES['driverimage']))
+                    {
+                        $folder_name = 'userimage';
+                        $imagename   = $this->AuthModel->imageUpload($_FILES['driverimage'],$folder_name);
+                    }
+                    $data= array(                    
+                        "dob"           =>$dob,
+                        "gender"        =>$gender,                    
+                        "email"         =>$email,
+                        "password"      =>$password,
+                        "image"         =>$imagename,
+                        "image_type"    =>0,          //0=normal, 1=media
+                        "nationality"   =>$nationality,
+                        "city"          =>$city,
+                        "address"       =>$address,
+                        "activeStatus"  =>'Active',        //Active, Inactive
+                        "device_type"   =>2,         //0=android, 1=ios, 2=web
+                        "fleet_id"      =>$fleet_id
+                        );                    
+                    if($this->AuthModel->updateRecord(array('id'=>$id),$table_name,$data))
+                    {
+                        $bankDetails = array(
+                            "user_id"=>$uid,
+                            "bankName"=>$bankname,
+                            "branchCode_Name"=>$branchCode_Name,
+                            "accountNo"=>$accountNo,
+                            );
+                        $table_name = "bankdetails";
+                        $this->AuthModel->singleInsert($table_name,$bankDetails);
+                        $vechileDetails = array(
+                            "driver_id"=>$uid,
+                            "brand"=>$brand,
+                            "sub_brand"=>$subbrand,
+                            "number_plate"=>$vehicle_NoPlate,
+                            "insurance_company"=>$insuranceCompany,
+                            "insurance_no"=>$insuranceNumber,
+                            "insurance_expire"=>$insuranceExpiredate,                        
+                            /*"fleet_company"=>$fleet_company,
+                            "fleet_country"=>$fleet_country,
+                            "fleet_address"=>$fleet_address,*/
+                            "booking_limit"=>$bookingLimit
+                            );
+                        $table_name = "vechile_details";
+                        if($vid= $this->AuthModel->singleInsert($table_name,$vechileDetails))
+                        {
+                            foreach($service_type as $k =>$v)
+                            {
+                                $c["driver_id"]         = $uid;
+                                $c["vehicle_id"]        = $vid;
+                                $c["service_type_id"]   = $v;                
+                                $service_types[]=$c;
+                            }
+                            if(!empty($service_types)){                            
+                                $this->AuthModel->batchInsert('vehicle_servicetype',$service_types);
+                            }
+                        }
+                        $licenseData = array("user_id"=>$uid,"licenseNumber"=>$licenseno,"expireDate"=>$expiredate,
+                            "expireDateString"=>strtotime($expiredate));
+                        $licenseimage ='defaultLicense.jpg';
+                        if(isset($_FILES['licenseimage']))
+                        {
+                            $folder_name = 'licenseImage';
+                            $licenseimage   = $this->AuthModel->imageUpload($_FILES['licenseimage'],$folder_name);
+                            $licenseData = array("user_id"=>$uid,"licenseNumber"=>$licenseno,"expireDate"=>$expiredate,
+                            "expireDateString"=>strtotime($expiredate),"licenseImage"=>$licenseimage);
+                        }                    
+                        $table_name = "driver_license";
+                        $this->AuthModel->singleInsert($table_name,$licenseData);
+
+                        $respose["success"] = 1;
+                        $respose["message"] = "Driver recored has been successfully saved";
+                        $this->load->view('complete_driverRegistration',$respose);
+                    }
+                    else
+                    {
+                        $respose["error"] = 1;
+                        $respose["message"] = "Error occur! Please try again";
+                        $this->load->view('complete_driverRegistration',$respose);
+                    }
+                }
+            }
+            else{                        
+                $res['userdata'] = $userdata;
+                $this->load->view('complete_driverRegistration',$res);                
+            }
+        }
+    }
+
 
     public function getfleetlocation()  // for ajax use
     {
@@ -700,4 +829,10 @@ class Driver extends CI_Controller {
         print_r($data);
         //echo json_encode($data);
     }
+
+
+
+
+
+
 }

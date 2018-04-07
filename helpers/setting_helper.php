@@ -76,6 +76,27 @@ if ( ! function_exists('getfleetDetail')){
    }
 }
 
+if ( ! function_exists('getSingleDetail')){
+   function getSingleDetail($tablename,$where){
+       //get main CodeIgniter object
+      //return $fleetid;die();
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where($tablename,$where)->row();
+      return $query;
+   }
+}
+if ( ! function_exists('getSingleDetail')){
+   function getMultipleDetail($tablename,$where){
+       //get main CodeIgniter object
+      //return $fleetid;die();
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where($tablename,$where)->result();
+      return $query;
+   }
+}
+
 
 
 /*if ( ! function_exists('get_userPharmacy')){
