@@ -75,7 +75,7 @@
 
 
 
-                                    <div class="form-group">
+                                    <!--div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label" ></label>
                                         <div class="col-md-6 col-xs-12" style="font-size: 14px;color:blue; border-left:none !important;">                      
                                             <strong><u>Fleet Company Information</u></strong>
@@ -101,7 +101,7 @@
                                         <div class="col-md-6 col-xs-12">  
                                             <input type="text" name="fleet_address" value="<?php echo $vechile->fleet_address; ?>" class="form-control" />
                                         </div>
-                                    </div>                                    
+                                    </div-->                                    
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Booking Limit Per Day </label>

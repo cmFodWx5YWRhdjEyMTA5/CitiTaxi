@@ -128,7 +128,8 @@ class Driver extends CI_Controller {
                     "city"          =>$city,
                     "address"       =>$address,
                     "activeStatus"  =>'Active',        //Active, Inactive
-                    "device_type"   =>2         //0=android, 1=ios, 2=web
+                    "device_type"   =>2,         //0=android, 1=ios, 2=web
+                    "fleet_id"      =>$fleet_id
                     );
                 if($uid = $this->AuthModel->singleInsert($table_name,$data))
                 {
@@ -148,9 +149,9 @@ class Driver extends CI_Controller {
                         "insurance_company"=>$insuranceCompany,
                         "insurance_no"=>$insuranceNumber,
                         "insurance_expire"=>$insuranceExpiredate,                        
-                        "fleet_company"=>$fleet_company,
+                        /*"fleet_company"=>$fleet_company,
                         "fleet_country"=>$fleet_country,
-                        "fleet_address"=>$fleet_address,
+                        "fleet_address"=>$fleet_address,*/
                         "booking_limit"=>$bookingLimit
                         );
                     $table_name = "vechile_details";
@@ -307,9 +308,9 @@ class Driver extends CI_Controller {
                         "insurance_company"=>$insuranceCompany,
                         "insurance_no"=>$insuranceNumber, 
                         "insurance_expire"=>$insuranceExpiredate,                      
-                        "fleet_company"=>$fleet_company,
+                        /*"fleet_company"=>$fleet_company,
                         "fleet_country"=>$fleet_country,
-                        "fleet_address"=>$fleet_address,
+                        "fleet_address"=>$fleet_address,*/
                         "booking_limit"=>$bookingLimit
                         );
                 $UpdateData = $this->AuthModel->updateRecord($where,$table_name,$vechileDetails);
@@ -669,8 +670,34 @@ class Driver extends CI_Controller {
         }        
     }
 
+    public function fleets()
+    {
+        /*$this->load->library('googlemaps');
+        $this->googlemaps->initialize();
+        $marker = array();
+        
+        $marker['position'] = '22.723777, 75.886659';        
+        $marker['infowindow_content'] = 'Garipipliya Road';  
+        $marker['icon']='http://localhost/projects/cititaxi/mapmarker/bike.png';         
+        $this->googlemaps->add_marker($marker);
+        $marker['position'] = 'Vijay nagar square,indore';        
+        $marker['infowindow_content'] = 'Vijay nagar square,indore';
+        $marker['icon']='http://localhost/projects/cititaxi/mapmarker/car2.png';
+        $this->googlemaps->add_marker($marker);
+        $marker['position'] = 'Bombay hospital,indore';
+        $marker['infowindow_content'] = 'Bombay hospital,indore'; 
+        $this->googlemaps->add_marker($marker);
+        $data['map']= $this->googlemaps->create_map();*/
+        $this->load->view('fleetTracking');
+    }
 
-
-    
-
+    public function getfleetlocation()  // for ajax use
+    {
+        $where=array();
+        $orderby='';
+        $data = $this->AuthModel->getMultipleRecord('markers',$where,$orderby);
+        echo '<pre>';
+        print_r($data);
+        //echo json_encode($data);
+    }
 }

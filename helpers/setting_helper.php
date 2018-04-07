@@ -35,6 +35,48 @@ if ( ! function_exists('countryies')){
    }
 }
 
+if ( ! function_exists('getCountryName')){
+   function getCountryName($countryid){
+       //get main CodeIgniter object
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where('countries',array('id'=>$countryid))->row()->name;
+      return $query;
+   }
+}
+
+if ( ! function_exists('getCountryName')){
+   function getCityName($cityid){
+       //get main CodeIgniter object
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where('cities',array('id'=>$cityid))->row()->name;
+      return $query;
+   }
+}
+
+if ( ! function_exists('getallfleets')){
+   function getallfleets(){
+       //get main CodeIgniter object
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get('fleets')->result();
+      return $query;
+   }
+}
+
+if ( ! function_exists('getfleetDetail')){
+   function getfleetDetail($fleetid){
+       //get main CodeIgniter object
+      //return $fleetid;die();
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where('fleets',array('fleet_id'=>$fleetid))->row();
+      return $query;
+   }
+}
+
+
 
 /*if ( ! function_exists('get_userPharmacy')){
    function get_userPharmacy($pharmacy_id){

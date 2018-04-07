@@ -15,8 +15,36 @@ class AuthModel extends CI_Model {
 			$nn = preg_replace('/\s*/m', '',$imageame);
             $d  = $folder_name.'/'.$nn;
             move_uploaded_file($s,$d);
-            return $imageame;
+            return $nn;
 	    }
+    }
+
+    public function MultipleUpload($image,$folder_name)
+    {
+        //print_r($image);die();
+        $output = '';  
+        if(isset($image) && !empty($image))
+        {  
+            $count =0; $unsave=0; $saved_images=''; $unsaved='';
+            foreach($image['name'] as $name => $value)  
+            {  
+                $len = 8;
+                $randno =$this->radomno($len);
+                $imagename =   $randno.$image['name'][$name];
+                $new_name = preg_replace('/\s*/m', '',$imagename); 
+                $sourcePath = $image["tmp_name"][$name];  
+                $targetPath = $folder_name.'/'.$new_name;  
+                move_uploaded_file($sourcePath, $targetPath);
+                $imagenames[] = $new_name;
+               //$file_name = explode(".", $_FILES['images']['name'][$name]);  
+               //$allowed_extension = array("jpg", "jpeg", "png", "gif");  
+               //if(in_array($file_name[1], $allowed_extension))  
+               //{  
+                    
+                //}  
+            }
+            return $imagenames;
+        } 
     }
 
     public function ajaximageUpload($image,$folder_name)
@@ -349,6 +377,8 @@ class AuthModel extends CI_Model {
         $this->db->order_by('distance');
         return $this->db->get()->row();
     }
+
+    
 
 
 	

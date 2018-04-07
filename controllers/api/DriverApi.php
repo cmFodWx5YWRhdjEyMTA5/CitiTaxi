@@ -48,6 +48,118 @@ class DriverApi extends CI_Controller {
         }
     }
 
+    public function driver_signup()
+    {
+        if(isset($_POST['mobile']) && $_POST['mobile']!='')
+        {
+            extract($_POST);
+            $table_name  = "users";
+            $checkEmail =0;
+            if($email!='')
+            {                
+                $checkmail   = array("email"=>$email);
+                $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);     
+            }
+            $checkMobile = array('mobile' =>$mobile,'mobile!='=>'');
+            $mobileExist = $this->AuthModel->checkRows($table_name,$checkMobile);   
+            if($checkEmail>0)
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"Email already Exist");
+                echo json_encode($response);
+            }           
+            elseif($mobileExist>0)
+            {   
+                $response= array("success"=>0,"error"=>1,"message"=>"Mobile number has already registered");
+                echo json_encode($response);
+            }
+            else
+            {
+                $data = array(
+                        "ref_code"=>$this->AuthModel->radomno(6),
+                        'name'=>$name,
+                        'mobile'=>$mobile,
+                        'email'=>$email,   
+                        'address'=>$address,                 
+                        "activeStatus" =>'Inactive',        //Active, Inactive
+                        "signup_status"=>'incomplete'
+                    );
+                if($uid = $this->AuthModel->singleInsert('users',$data))
+                {                    
+                    if(isset($_FILES['licenseimage']) && $_FILES['licenseimage']!='')
+                    {
+                        $folder_name  = 'licenseImage';
+                        $licenseimage = $this->AuthModel->imageUpload($_FILES['licenseimage'],$folder_name);
+                        $licenseData  = array(
+                            "user_id" =>$uid,                            
+                            "licenseImage"=>$licenseimage
+                        );
+                        $this->AuthModel->singleInsert('driver_license',$licenseData);
+                    }
+                    if(isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']!='')
+                    {                        
+                       $vehicleimages =  $this->AuthModel->MultipleUpload($image,$folder_name);
+                       for($i=0; $i<count($vehicleimages); $i++) 
+                        {
+                            $vdata =array('driver_id'=> $uid,'vehicle_image'=> $vehicleimages[$i]);
+                            $this->AuthModel->singleInsert('vehicle_images',$vdata);
+                            $data ='';              
+                        } 
+                    }
+                    if(isset($_FILES['otherdocument']) && $_FILES['otherdocument']['name']!='')
+                    {
+                        $type = $_FILES['otherdocument']['type'];
+                        $otherdocument = $this->AuthModel->imageUpload($_FILES['otherdocument'],'otherdocument');
+                        $odata =array('user_id'=> $uid,'document'=> $otherdocument,'document_type'=>$type);
+                        $this->AuthModel->singleInsert('driver_otherdocument',$odata);
+                    }                    
+                    $response["success"] = 1;
+                    $response["message"] = "Success";
+                    $response["driver_id"] = $uid;
+                    echo json_encode($response);
+                }
+                else
+                {
+                    $response["error"] = 1;
+                    $response["message"] = "Error occur! Please try again";
+                    $response["driver_id"] = '';
+                    echo json_encode($response);
+                }               
+            }
+        }
+    }
+
+
+    public function checkMultipleImage()
+    {
+        print_r($_FILES['otherdocument']['type']);
+        /*$imagename = $this->AuthModel->imageUpload($_FILES['otherdocument'],'otherdocument');
+        echo json_encode($imagename);*/
+    }
+
+    public function uploadVehicleImage()
+    {
+
+        $car_images='';
+        foreach($_FILES['vehicle_image']['tmp_name'] as $key => $tmp_name )
+        {
+            $rand =$this->radomno();
+            $type = $_FILES['vehicle_image']['type'][$key];
+            $image_name = $rand.$_FILES['vehicle_image']['name'][$key];
+            $s =  $_FILES['vehicle_image']['tmp_name'][$key];
+            $name = preg_replace('/\s*/m', '',$image_name);
+            $d = "vechicleImage/".$name;
+            $car_images[]= $name;  
+            $types[]=$type;
+            move_uploaded_file($s,$d);              
+        }
+        for($i=0; $i<count($car_images); $i++) 
+        {
+            $data =array('driver_id'=> $user_id,'vehicle_image'=> $car_images[$i]);
+            $this->AuthModel->singleInsert('vehicle_images',$data);
+            $data ='';              
+        }        
+    }
+
     public function addDriver()
     {
         if(isset($_POST['email']) && $_POST['email']!='')
@@ -103,8 +215,6 @@ class DriverApi extends CI_Controller {
                     );
                 if($uid = $this->AuthModel->singleInsert($table_name,$data))
                 {
-                    
-
                     $response["success"] = 1;
                     $response["message"] = "Success";
                     $response["driver_id"] = $uid;
@@ -285,6 +395,7 @@ class DriverApi extends CI_Controller {
             extract($_POST);
             $updata= array(
                 'user_id'=>$user_id,
+                'address'=>$address,
                 'latitude'=>$latitude,
                 'longitude'=>$longitude
                 );
@@ -322,6 +433,45 @@ class DriverApi extends CI_Controller {
         }
     }
 
+    public function changeStatus()  //change online,offline or power off,on
+    {
+        //status_type  = power,online_status
+        //status = power(on,off),online_status('online','offline')
+        if(isset($_POST['user_id']) && $_POST['user_id']!='' && isset($_POST['status_type']) && $_POST['status_type']!='')
+        {
+            extract($_POST);
+            $where = array('id'=>$user_id);
+            if($status_type=='power')
+            {
+                $upStatus = $this->AuthModel->updateRecord($where,'users',array('power_status'=>$status));
+            }
+            elseif($status_type=='online_status')
+            {
+                $upStatus = $this->AuthModel->updateRecord($where,'users',array('online_status'=>$status));
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>2,'message'=>'invalid status_type');
+                echo json_encode($response);
+            }
+
+            if($upStatus)
+            {
+                $userdata = $this->AuthModel->getSingleRecord('users',$where);
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$userdata);
+                echo json_encode($response);
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>1,'message'=>'status is not update, please try again','data'=>'');
+                echo json_encode($response);
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
     
 
 

@@ -195,7 +195,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group" style="border-top:1px dashed gray;">
+                                    <!--div class="form-group" style="border-top:1px dashed gray;">
                                         <label class="col-md-3 col-xs-12 control-label" ></label>
                                         <div class="col-md-6 col-xs-12" style="font-size: 14px;color:blue; border-left:none !important;">                      
                                             <strong><u>Fleet Company Information</u></strong>
@@ -221,7 +221,20 @@
                                         <div class="col-md-6 col-xs-12">  
                                             <input type="text" name="fleet_address" class="form-control" />
                                         </div>
-                                    </div>
+                                    </div-->
+                                    <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Select Fleet Company</label>
+                                        <div class="col-md-6">              
+                                            <select name='fleet_id' class="form-control" required>
+                                             <option value="">Select</option>   
+                                            <?php foreach(getallfleets() as $t) { ?>
+                                              <option value="<?php print $t->fleet_id; ?>">
+                                                <?php echo $t->fleet_company.' ('.$t->fleet_id.')'; ?>
+                                              </option>
+                                            <?php } ?>                                                                           
+                                            </select>                                              
+                                        </div>
+                                    </div> 
 
                                     <div class="form-group">                                       
                                         <label class="col-md-3 control-label">Service Type Vehicle</label>
@@ -232,10 +245,7 @@
                                               <option value="<?php print $t->typeid; ?>">
                                                 <?php echo $t->servicename; ?>
                                               </option>
-                                            <?php } ?>
-                                                <!--option value="Eco">Eco</option>
-                                                <option value="Biz">Biz</option>
-                                                <option value="Star">Star</option-->                                               
+                                            <?php } ?>                                                                           
                                             </select>   
                                             <span id='typeError' style="color:red;"></span>
                                         </div>

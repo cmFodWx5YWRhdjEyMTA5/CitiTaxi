@@ -82,7 +82,8 @@
                                                 <td><?php echo $list->name; ?></td>                                                
                                                 <td><?php echo $list->email; ?></td>
                                                 <td><?php echo $list->mobile;?></td>
-                                                <td><?php echo $list->fleet_company;?></td>
+                                                <?php $fleet_company = getfleetDetail($list->fleet_id)->fleet_company; ?>
+                                                <td><?php echo $fleet_company;?></td>
                                                 <td><?php echo $list->licenseNumber;?></td>
                                                 <td>
                                                 <?php if($list->image_type==0)

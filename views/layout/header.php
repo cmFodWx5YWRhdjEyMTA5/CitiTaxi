@@ -106,6 +106,17 @@
                         </ul>
                     </li> 
 
+                    <li class="xn-openable <?php if(isset($page) && $page=='fleet'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Fleet');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Fleet</span></a>
+                        <ul>
+                           <li><a href="<?php echo site_url('Fleet/add_fleet');?>"><span class="fa fa-pencil"></span>Add fleet</a></li>
+                           <li><a href="<?php echo site_url('Fleet');?>"><span class="fa fa-sort-alpha-desc"></span>Fleet List</a></li>
+                            <li>
+                                <a href="<?php echo site_url('Fleet/fleet_tracking');?>"><span class="fa fa-taxi"></span><span class="xn-text">Fleet Tracking</span></a>
+                            </li>
+                        </ul>
+                    </li> 
+
                     <li class="xn-openable <?php if(isset($page) && $page=='vehicle'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-taxi"></span> <span class="xn-text"> Vehicle & Fares</span></a>
                         <ul>
@@ -115,7 +126,7 @@
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
-                    </li> 
+                    </li>                     
 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
