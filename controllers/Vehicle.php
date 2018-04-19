@@ -30,39 +30,37 @@ class Vehicle extends CI_Controller {
         if(isset($_POST['submit']))
         {
             //echo "<pre>";
-            //print_r($_POST);die();
+            //print_r($_POST);
+            // `serviceType_id`, `service_name`, `description`, `maximum_load`, `country_id`, `country`, `city_id`, `city`, `currency`, `vehicle_type`, `company_comission_type`, `company_comission_rate`, `distanceUnit`, `minbase_fair`, `min_distance`, `min_distanceUnit`, `mini_distancefair`, `regularChargeEveryDistance`, `regularChargeEveryDistance_unit`, `regularChargeForDistance`, `perMinChargeStatus`, `unitPerMinuteforCharge`, `unitPerMinutecharge`, `regularFreeWaitingMinute`, `regularWaitingPeriodForCharge`, `regularWaitingPeriodCharge`, `morningChargeStatus`, `morningSurchargeUnit`, `morningSurchargePrice`, `morningSurchargeTimeStart`, `morningSurchargeTimeEnd`, `eveningChargeStatus`, `eveningSurchargeUnit`, `eveningSurchargePrice`, `eveningSurchargeTimeStart`, `eveningSurchargeTimeEnd`, `midNightChargeStatus`, `midNightSurchargeUnit`, `midNightSurchargePrice`, `midNightSurchargeTimeStart`, `midNightSurchargeTimeEnd`, `cancelChargeUnitDriver`, `stndCancelChargeDriver`, `cancelChargeUnitPassenger`, `stndCancelChargePassenger`, `WeeklyCancellationLimit`, `multiStopCharge`,
             extract($_POST);
             $data = array(
                 'serviceType_id'=>$service_type, 'service_name'=>$servicename, 'description'=>$description,
                 'maximum_load'=>$maxload,'country_id'=>$country_id, 'country'=>$country, 
                 'city_id'=>$city_id,'city'=>$city, 'currency'=>$currency,
                 'vehicle_type'=>$vehicletype, 'company_comission_type'=>$commsiontype,
-                'company_comission_rate'=>$commissionRate, 'distanceUnit'=>$distanceUnit,
-                 //'preEverymin_charge'=>$preEverymin_charge,'afterEverymin_charge'=>$afterEverymin_charge,
+                'company_comission_rate'=>$commissionRate, 'distanceUnit'=>$distanceUnit,                
                 'minbase_fair'=>$minbase_fair,
-                'min_distance'=>$minDistance, 'min_distUnit'=>$min_distUnit, 'mini_distancefair'=>$mini_distancefair,
-                'regularChargeUpon'=>$regularChargeUponKm,'regularChargeUpon_unit'=>$regularChargeUpon_unit,'uponMinuteCharge'=>$uponMinuteCharge,
-
+                'min_distance'=>$minDistance, 'min_distanceUnit'=>$min_distUnit, 'mini_distancefair'=>$mini_distancefair,
+                'regularChargeEveryDistance'=>$regularChargeUponKm,'regularChargeEveryDistance_unit'=>$regularChargeUpon_unit,
+                'regularChargeForDistance'=>$uponMinuteCharge,
                 'perMinChargeStatus'=>$perMinChargeStatus,'unitPerMinuteforCharge'=>$unitPerMinuteforCharge,
                 'unitPerMinutecharge'=>$unitPerMinutecharge,
-
-                'regFreeWaitingMinute'=>$regFreeWaitingMinute,
-                'regWaitingUnitTime'=>$regWaitingUnitTime, 'regWaitingUnitTimePrice'=>$regWaitingUnitTimePrice,
+                'regularFreeWaitingMinute'=>$regFreeWaitingMinute,
+                'regularWaitingPeriodForCharge'=>$regWaitingUnitTime, 'regularWaitingPeriodCharge'=>$regWaitingUnitTimePrice,
                 'morningChargeStatus'=>$morningChargeStatus,
                 'morningSurchargeUnit'=>$morningSurchargeUnit, 'morningSurchargePrice'=>$morningSurchargePrice,
                 'morningSurchargeTimeStart'=>$morningSurchargeTimeStart, 'morningSurchargeTimeEnd'=>$morningSurchargeTimeEnd,
                 'eveningChargeStatus'=>$eveningChargeStatus, 'eveningSurchargeUnit'=>$eveningSurchargeUnit,
                 'eveningSurchargePrice'=>$eveningSurchargePrice, 'eveningSurchargeTimeStart'=>$eveningSurchargeTimeStart,
                 'eveningSurchargeTimeEnd'=>$eveningSurchargeTimeEnd, 'midNightChargeStatus'=>$midNightChargeStatus,
-                'minNightSurchargeUnit'=>$minNightSurchargeUnit, 'minNightSurchargePrice'=>$minNightSurchargePrice,
-                'minNightSurchargeTimeStart'=>$minNightSurchargeTimeStart, 'minNightSurchargeTimeEnd'=>$minNightSurchargeTimeEnd, 
-                'peaHourkWaitingChargeStatus'=>$peaHourkWaitingChargeStatus, 'peakChargeAfterStart'=>$peakChargeAfterStart,
-                'peakUnitTimePriceMin'=>$peakUnitTimePriceMin, 'peakUnitTimePrice'=>$peakUnitTimePrice,
+
+                'midNightSurchargeUnit'=>$midNightSurchargeUnit, 'midNightSurchargePrice'=>$midNightSurchargePrice,
+                'midNightSurchargeTimeStart'=>$midNightSurchargeTimeStart, 'midNightSurchargeTimeEnd'=>$midNightSurchargeTimeEnd, 
+
+                
                 'cancelChargeUnitDriver'=>$cancelChargeUnitDriver, 'stndCancelChargeDriver'=>$stndCancelChargeDriver,
-                'peakHrCancelChargeDriver'=>$peakHrCancelChargeDriver, 'cancelChargeUnitPassenger'=>$cancelChargeUnitPassenger, 
-                'stndCancelChargePassenger'=>$stndCancelChargePassenger,'peakHrCancelPassengerStatus'=>$peakHrCancelPassengerStatus,
-                'peakHrCancelChargePassenger'=>$peakHrCancelChargePassenger, 
-                'peakHourBookingCancelbyPassenger'=>$peakHourBookingCancelbyPassenger,'multiStopCharge'=>$multiStopCharge
+                'cancelChargeUnitPassenger'=>$cancelChargeUnitPassenger,'stndCancelChargePassenger'=>$stndCancelChargePassenger,
+                'WeeklyCancellationLimit'=>$weeklyCancelLimit,'multiStopCharge'=>$multiStopCharge
                 );
 
             //print_r($data);die();
@@ -176,7 +174,7 @@ class Vehicle extends CI_Controller {
         {
             $data["error"] =1;
             $data["message"] = 'No vehicle fair list found';
-            $data["fairlist"]='';
+            $data["fairlist"]=$fairlist;
             $this->load->view('vehicle_fairs',$data);
         }
     }

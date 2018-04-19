@@ -127,7 +127,7 @@ class AuthModel extends CI_Model {
 
     public function batchInsert($table_name,$data)
     {
-        $this->db->insert_batch($table_name, $data);
+        return $this->db->insert_batch($table_name, $data);
     }
 
     public function checkRows($table_name,$where)
@@ -217,14 +217,14 @@ class AuthModel extends CI_Model {
         return $user_detail;
     }
 
-    public function loginViaMedia($media_id,$email,$login_type,$devicetoken,$device_type)
+    public function loginViaMedia($media_id,$email,$login_type,$devicetoken,$device_type,$user_type)
     {
-        $loginCheck = $this->db->get_where('users', array('email'=>$email));
+        $loginCheck = $this->db->get_where('users', array('email'=>$email,'user_type'=>$user_type));
         $count = $loginCheck->num_rows();
         if($count>0)
         {
             $table_name ="users";
-            $activeWhere = array("email"=>$email,"activeStatus"=>'Active');
+            $activeWhere = array("email"=>$email,"activeStatus"=>'Active','user_type'=>$user_type);
             $this->checkActiveStatus($table_name,$activeWhere);      //Check, User is Active or not by admin;
             $userData    = $loginCheck->row();
             $id          = $userData->id;
@@ -239,21 +239,21 @@ class AuthModel extends CI_Model {
             {
                 $updata = array('fb_id'=>$media_id);
                 $this->updateRecord($checkWhere,$table_name,$updata);
-                return $this->db->get_where('users', array('email'=>$email,'fb_id'=>$media_id))->row();
+                return $this->db->get_where('users', array('email'=>$email,'fb_id'=>$media_id,'user_type'=>$user_type))->row();
             }
             elseif($login_type==2 && ($googleId=='' or $googleId==0))
             {
                 $updata = array('google_id'=>$media_id);
                 $this->updateRecord($checkWhere,$table_name,$updata);
-                return $this->db->get_where('users', array('email'=>$email,'google_id'=>$media_id))->row();
+                return $this->db->get_where('users', array('email'=>$email,'google_id'=>$media_id,'user_type'=>$user_type))->row();
             }
             elseif($login_type==1 && $fb_id==$media_id)
             {
-                return $this->db->get_where('users', array('email'=>$email,'fb_id'=>$media_id))->row();
+                return $this->db->get_where('users', array('email'=>$email,'fb_id'=>$media_id,'user_type'=>$user_type))->row();
             }
             elseif($login_type==2 && $googleId==$media_id)
             {
-                return $this->db->get_where('users', array('email'=>$email,'google_id'=>$media_id))->row();
+                return $this->db->get_where('users', array('email'=>$email,'google_id'=>$media_id,'user_type'=>$user_type))->row();
             }
             else
             {

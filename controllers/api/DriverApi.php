@@ -13,6 +13,70 @@ class DriverApi extends CI_Controller {
         echo json_encode($respose);
     }
 
+    public function login()
+    {
+        //Login type = 0=>simple login, 1= fb_login 2=google login
+        //isset param => login_type,device_token,device_type,email,password,mobile,media_id
+        $response = array("success" => 0, "error" => 0);
+        extract($_REQUEST);
+        $table_name = 'users';
+        if(isset($_REQUEST['login_type']) && $_REQUEST['login_type']==0)
+        {
+            if((isset($_REQUEST['login']) && $_REQUEST['login']!=''))
+            {
+                $checkWhere  = array("mobile"=>$login,"password"=>$password,"user_type"=>1);   
+                $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
+                //echo $checkCrediantial;die();
+                $activeWhere = array("mobile"=>$login,"activeStatus"=>'Active',"user_type"=>1);
+                if($checkCrediantial==0)
+                {
+                    $checkWhere =  array("email"=>$login,"password"=>$password,"user_type"=>1); 
+                    $activeWhere = array("email"=>$login,"activeStatus"=>'Active',"user_type"=>1);
+                    $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
+                }           
+                $data = ''; 
+                //print_r($checkWhere);die();               
+                $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
+                if($checkCrediantial>0)
+                {
+                    $this->AuthModel->checkActiveStatus($table_name,$activeWhere);      //Check, User is Active or not by admin;
+                    $upData     = array("device_token"=>$device_token,"device_type"=>$device_type,'wronglyPassword'=>0);
+                    $this->AuthModel->updateRecord($checkWhere,$table_name,$upData);
+                    $data       = $this->AuthModel->getSingleRecord($table_name,$checkWhere);   
+                    $dataResponse     = $this->AuthModel->keychange($data);
+                    $response  = array("success"=>1, "error" => 0,"message"=>"success","data"=>$dataResponse);
+                    echo json_encode($response);
+                }
+                else
+                {
+                    $this->AuthModel->passwordAttempt($table_name,$checkWhere);
+                    $response  = array("error"=>1,"success"=>0,"message"=>"Invalid Crediantial","data"=>'');
+                    echo json_encode($response);
+                }
+            }
+            else{
+                $this->index();
+            }
+        }
+        elseif (isset($_REQUEST['login_type']) && ($_REQUEST['login_type']==1 || $_REQUEST['login_type']=2)) {
+            if(isset($_REQUEST['media_id']) && $_REQUEST['media_id']!='')
+            {     
+                $user_type = 1;          
+                $data = $this->AuthModel->loginViaMedia($media_id,$login,$login_type,$device_token,$device_type,$user_type);
+                $dataResponse     = $this->AuthModel->keychange($data);
+                $response  = array("success"=>1,"error" => 0,"message"=>"success","data"=>$dataResponse);
+                echo json_encode($response);
+            }   
+            else{
+                $this->index();
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
+
     public function get_dirverProfile()        //driver details
     {
         if(isset($_POST['driver_id']) && (isset($_POST['tag']) && $_POST['tag']=='driver'))
@@ -57,10 +121,10 @@ class DriverApi extends CI_Controller {
             $checkEmail =0;
             if($email!='')
             {                
-                $checkmail   = array("email"=>$email);
+                $checkmail   = array("email"=>$email,"user_type"=>1);
                 $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);     
             }
-            $checkMobile = array('mobile' =>$mobile,'mobile!='=>'');
+            $checkMobile = array('mobile'=>$mobile,"user_type"=>1);
             $mobileExist = $this->AuthModel->checkRows($table_name,$checkMobile);   
             if($checkEmail>0)
             {
@@ -83,11 +147,13 @@ class DriverApi extends CI_Controller {
                         'address'=>$address,                 
                         "activeStatus" =>'Inactive',        //Active, Inactive
                         "signup_status"=>'incomplete',
-                        "user_type"=>1
-                    );
+                        "user_type"=>1,
+                        "device_type"=>$device_type
+
+                    );                
                 if($uid = $this->AuthModel->singleInsert('users',$data))
                 {                    
-                    if(isset($_FILES['licenseimage']) && $_FILES['licenseimage']!='')
+                    if(isset($_FILES['licenseimage']) && $_FILES['licenseimage']['name']!='')
                     {
                         $folder_name  = 'licenseImage';
                         $licenseimage = $this->AuthModel->imageUpload($_FILES['licenseimage'],$folder_name);
@@ -128,15 +194,7 @@ class DriverApi extends CI_Controller {
                 }               
             }
         }
-    }
-
-
-    public function checkMultipleImage()
-    {
-        print_r($_FILES['otherdocument']['type']);
-        /*$imagename = $this->AuthModel->imageUpload($_FILES['otherdocument'],'otherdocument');
-        echo json_encode($imagename);*/
-    }
+    }    
 
     public function uploadVehicleImage()
     {

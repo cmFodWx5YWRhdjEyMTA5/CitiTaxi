@@ -1,4 +1,4 @@
-<?php $data['page']='fleet'; $data['title']='fleet tracking'; $this->load->view('layout/header',$data);?> 
+<?php $data['page']='analytic'; $data['title']='Analytic Dashboard'; $this->load->view('layout/header',$data);?> 
 
 <style>
        #map {
@@ -11,7 +11,7 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title"><strong>Fleet tracking</strong></h3>
+                    <h3 class="panel-title"><strong>Analytic Dashboard</strong></h3>
               
                 </div>
                 <div class="container-fluid">
@@ -23,8 +23,8 @@
                                     <span class="fa fa-car"></span>
                                 </div>                             
                                 <div class="widget-data">
-                                    <div class="widget-title">Total Fleet</div>                                   
-                                    <div class="widget-int num-count">48</div>
+                                    <div class="widget-title">Total Drivers</div>                                   
+                                    <div class="widget-int num-count"><?php $t = getCount('users',array('user_type'=>1)); echo $t; ?></div>
                                 </div>                                
                             </div>
                           </div>
@@ -34,8 +34,8 @@
                                   <span class="fa fa-car"></span>
                               </div>                             
                               <div class="widget-data">
-                                  <div class="widget-title">Total Assigned Fleets</div>                                  
-                                  <div class="widget-int num-count">48</div>
+                                  <div class="widget-title">Active Drivers</div>                                  
+                                  <div class="widget-int num-count"><?php $t = getCount('users',array('user_type'=>1,'activeStatus'=>'Active')); echo $t; ?></div>
                               </div>                                
                           </div>
                           </div>
@@ -45,8 +45,8 @@
                                   <span class="fa fa-car"></span>
                               </div>                             
                               <div class="widget-data">
-                                  <div class="widget-title">Total Unassigned Fleets</div>                                  
-                                  <div class="widget-int num-count">48</div>
+                                  <div class="widget-title">In-Active Drivers</div>                                  
+                                  <div class="widget-int num-count"><?php $t = getCount('users',array('user_type'=>1,'activeStatus!='=>'Active')); echo $t; ?></div>
                               </div>                                
                           </div>
                           </div>
@@ -57,8 +57,8 @@
                                     <span class="fa fa-car"></span>
                                 </div>                             
                                 <div class="widget-data">
-                                    <div class="widget-title">Total Available Vehicles</div>                                    
-                                    <div class="widget-int num-count">48</div>
+                                    <div class="widget-title">Total Passengers</div>                                    
+                                    <div class="widget-int num-count"><?php $tp = getCount('users',array('user_type'=>0)); echo $tp; ?></div>
                                 </div>                                
                             </div>
                           </div>
@@ -68,7 +68,30 @@
                                   <span class="fa fa-car"></span>
                               </div>                             
                               <div class="widget-data">
-                                  <div class="widget-title">Total Unavailable Vehicles</div>                                  
+                                  <div class="widget-title">Active Passengers</div>                                  
+                                  <div class="widget-int num-count"><?php $ap = getCount('users',array('user_type'=>0,'activeStatus'=>'Active')); echo $ap; ?></div>
+                              </div>                                
+                          </div>
+                          </div>
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">In-Active Passenger</div>                                  
+                                  <div class="widget-int num-count"><?php $iap = getCount('users',array('user_type'=>0,'activeStatus!='=>'Active')); echo $iap; ?></div>
+                              </div>                                
+                          </div>
+                          </div>
+
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">Total Bookings</div>                                  
                                   <div class="widget-int num-count">48</div>
                               </div>                                
                           </div>
@@ -79,7 +102,54 @@
                                   <span class="fa fa-car"></span>
                               </div>                             
                               <div class="widget-data">
-                                  <div class="widget-title">Total In-Active Vehicles</div>                                  
+                                  <div class="widget-title">Total Cancelled Trip</div>                                  
+                                  <div class="widget-int num-count">48</div>
+                              </div>                                
+                          </div>
+                          </div>
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">Completed Booking</div>                                  
+                                  <div class="widget-int num-count">48</div>
+                              </div>                                
+                          </div>
+                          </div>
+
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">Total Pending Booking</div>                                  
+                                  <div class="widget-int num-count">48</div>
+                              </div>                                
+                          </div>
+                          </div>
+
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">Driver Cancelled Booking</div>                                  
+                                  <div class="widget-int num-count">48</div>
+                              </div>                                
+                          </div>
+                          </div>
+
+                          <div class="col-md-4">
+                          <div class="widget widget-default widget-item-icon">
+                              <div class="widget-item-left">
+                                  <span class="fa fa-car"></span>
+                              </div>                             
+                              <div class="widget-data">
+                                  <div class="widget-title">Passenger Cancelled Booking</div>                                  
                                   <div class="widget-int num-count">48</div>
                               </div>                                
                           </div>
@@ -98,93 +168,6 @@
                 </div>                
             </div>                    
         </div>
-        <!-- ======================================================================= -->
-
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title"><strong>Manage Fleet</strong></h3>              
-                </div>
-
-                <div class="container-fluid">
-                    <div class="panel-body form-group-separated" style="min-height: 75px;">
-                        <div class="panel-body panel-body-table">                       
-                        <div class="col-md-3">
-                          <div class="col-md-12" style="margin-bottom: 2%;">Vehicle type</div>
-                          <div class="col-md-12">
-                            <select name='service_type' id="service_type" class="form-control" onChange="service(this)">
-                              <option value="">Select</option>
-                              <?php foreach(servicetypes() as $t) { ?>
-                                <option value="<?php print $t->typeid; ?>">
-                                  <?php echo $t->servicename; ?>
-                              </option>
-                              <?php } ?>                                                                                             
-                            </select> 
-                          </div>
-                        </div>                          
-
-
-                        <div class="col-md-2">
-                          <div class="col-md-12" style="margin-bottom: 2%;">Driver id</div>
-                          <div class="col-md-12"><input type="text" name="" class="form-control"></div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="col-md-12" style="margin-bottom: 2%;">Country</div>
-                            <div class="col-md-12">
-                              <select name='country_id' class="form-control select" data-live-search="true" onChange="cities(this)" required>
-                                <option value="">Select Country</option>
-                                  <?php foreach(countryies() as $country) { ?>
-                                    <option value="<?php print $country->id; ?>">
-                                      <?php echo $country->name; ?>
-                                    </option>
-                                      <?php } ?> 
-                              </select>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3">                       
-                            <div class="col-md-12" style="margin-bottom: 2%;">City</div>
-                            <div class="col-md-12">
-                                <select name='city_id' id="city" class="form-control city" required onChange="citiname(this)">
-                                    <option value="">Select City</option>                                             
-                                </select>   
-                            </div>
-                        </div>
-                        <div class="col-md-1" style="margin-top: 1.3%;">                       
-                            <div class="col-md-12">                              
-                              <input type="button" name="" value="search" class="btn btn-submit">
-                            </div>                            
-                        </div>
-                    </div>
-                </div>                
-            </div>                    
-        </div>
-
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title"><strong>Fleet Tracking in map</strong></h3>              
-                </div>                
-                <div class="container-fluid">
-                    <div class="panel-body form-group-separated" style="padding:5px !important">
-                        
-                        <div class="panel-body panel-body-table">
-                        <div id="map"></div>
-                          <!-- <?php echo $map['js']; ?> -->
-                          <!-- <?php echo $map['html']; ?> -->
-                        </div>
-                    </div>
-                </div>                
-            </div>                    
-        </div>
-
-
-
-
-
-
-
-
 
 <?php $this->load->view('layout/footer');?> 
 <script>

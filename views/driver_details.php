@@ -44,7 +44,7 @@
 
                                 <div class="panel-body">
                                     <div class="table-responsive">
-                                     <div style="overflow:scroll; ,max-height:600px;">
+                                     <div style="overflow:scroll; max-height:600px;">
                                      <table id="example" class="table display">
                                         <thead>
                                             <tr>
@@ -62,6 +62,7 @@
                                             <th>Creat_At</th>
                                             <th>Driver Wallet</th>
                                             <th style="text-align:center">Status (online/offline)</th>
+                                            <th>Reset Password</th>
                                             <th>Other Details</th>                                           
                                             <th style="min-width:130px;">Action</th>
                                             <th style="min-width:50px; text-align:center">Edit</th>
@@ -107,6 +108,11 @@
                                                 </td>
                                                 <td><!-- wallet A/c--></td>
                                                 <td style="text-align:center; color:red;"><?php echo $list->online_status; ?></td>
+
+                                                <td><a  href="#" id="link1" data-toggle="modal" data-target="#exampleModal">
+                                                    <button class="btn btn-reset" onclick="changeIt(<?php echo $list->id;?>)">Reset Password</button></a>
+                                                </td>
+
                                                 <td><a href="<?php echo site_url('Driver/other_details/'.$list->id);?>"><button class="btn btn-submit">Other Details</button></a>
                                                 </td>
                                                 <td>
@@ -182,13 +188,79 @@
                     </div>
                 </div>         
 
+<!-- Modal to upload image -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">     
+      <div class="modal-body" style="height:100px;">                  
+        <div class="panel-body form-group-separated">
+        <div class="form-group"> 
+        <label class="col-md-3 col-xs-12 control-label">Enter New Password</label>
+        <div class="col-md-9 col-xs-12">
+            <input type="text" name="password" id="password" class="form-control" required />
+            <input type="hidden" id="userid"/>
+        </div>            
+        </div>
+      </div>      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-reset" data-dismiss="modal">Close</button>
+        <button type="submit" onclick="updatePassword()" class="btn btn-submit">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
                 <!-- END PAGE CONTENT WRAPPER -->
 
 <?php $this->load->view('layout/second_footer');?> 
 
+
+
 <script>
+    function updatePassword()
+    {
+        if(confirm('Do you realy want to update driver password?'))
+        {            
+            var id = document.getElementById('userid').value;
+            var password = document.getElementById('password').value;
+            //alert(password);
+            $.ajax({
+                type:'post',
+                url :site_url+'/Driver/resetpassword',
+                data:{'user_id':id,'password':password},
+                success:function(res){
+                    alert(res);
+                    location.reload(true);
+                }
+
+            });
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+    function changeIt(id)
+    {
+        //alert(id);
+        document.getElementById("userid").value=id;
+        document.getElementById("password").value = random();
+    }
+
+    function random()
+    {
+        var chars = "0123456789";
+        var string_length = 6;
+        var randomstring = '';
+        for (var i=0; i<string_length; i++) {
+          var rnum = Math.floor(Math.random() * chars.length);
+          randomstring += chars.substring(rnum,rnum+1);
+        }
+        return randomstring;
+    }
     function Trip(id)
     {
         alert('Called function Trip');

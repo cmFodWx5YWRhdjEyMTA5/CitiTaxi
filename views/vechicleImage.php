@@ -22,7 +22,7 @@
                                     </div>
                                     <?php }?> 
                                 <div class="panel-heading">
-                                      <h3 class="panel-title"><strong>Vechicle </strong> Image <?php echo count($images); ?></h3> 
+                                      <h3 class="panel-title"><strong>Vechicle Image</strong></h3> 
                                       <div class="btn-group pull-right">
                                      <?php if(count($images)<7){ ?> 
                                      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
@@ -54,22 +54,70 @@
                                             <tr>
                                                 <td style="text-align:center"><?php echo $i++;?></td>                             
                                                 <td>  
-                                                 <a  href="#" id="link1" data-toggle="modal" data-target="#qbimageModal">
-                                                    <img onclick="changeIt(this)" src="<?php echo base_url('vechicleImage/'.$img->vechile_image);?>" width="250" height="150">
-                                                </a>
+                                                  <a  href="#" id="link1" data-toggle="modal" data-target="#qbimageModal">
+                                                      <img onclick="changeIt(this)" src="<?php echo base_url('vechicleImage/'.$img->vechile_image);?>" width="250" height="150">
+                                                  </a>
                                                 </td>                                                
-                                                <td>                                                    
-                                                 <div><input type="file" id="file" value="Select"></div>
-                                                 <div style="margin-top:2%">
-                                                    <input type="button" onclick="imageUpdate(<?php echo $img->image_id; ?>)" class="btn btn-success" value="Update">
+                                                <td>                
+                                                  <div style="margin-top:15%"><input type="file" id="file<?php echo $img->image_id;?>"></div>
+                                                  <div style="margin-top:2%">
+                                                    <input type="button" id="upbutton<?php echo $img->image_id;?>" onclick="imageUpdate<?php echo $img->image_id;?>(<?php echo $img->image_id; ?>)" class="btn btn-submit" value="Update">
                                                     <input type="hidden" id="imgId" value="<?php echo $img->image_id; ?>">
-                                                 </div>
-                                                   
+                                                  </div>                                                   
                                                 </td>
                                                 <td>
-                                                  <input type="button" value="X Delete" class="btn btn-primary" onclick="deleteimage(<?php echo $img->image_id;?>)">
+                                                  <input type="button" value="X Delete" class="btn btn-reset" onclick="deleteimage(<?php echo $img->image_id;?>)" style="margin-top:26%">
                                                 </td>
-                                            </tr>
+                                            </tr>  
+                                            <script>
+                                                function imageUpdate<?php echo $img->image_id;?>(id)
+                                                {          
+
+                                                  var imagename = document.getElementById("file<?php echo $img->image_id;?>").value;
+                                                  if(imagename=='')
+                                                  {
+                                                    alert('please select image');                                                    
+                                                  }
+                                                  else
+                                                  {      
+                                                      var fd = new FormData();                                                  
+                                                      var files = $('#file<?php echo $img->image_id;?>')[0].files[0];        
+                                                      //console.log(files);    
+                                                      fd.append('file',files);
+                                                      fd.append('image_id',id);
+                                                      $.ajax({
+                                                          url: '<?php echo site_url('Driver/imageUpdate'); ?>',
+                                                          type: 'post',
+                                                          data: fd,
+                                                          contentType: false,
+                                                          processData: false,
+                                                          success: function(response){
+                                                              console.log(response);
+                                                              if(response != 'Not update'){
+                                                                  alert(response);   
+                                                                  location.reload();                 
+                                                              }else{
+                                                                  alert(response);
+                                                              }
+                                                          },
+                                                      }); 
+                                                  }
+                                                                                     
+                                                }                                                
+                                            </script>
+                                            <script>
+                                              /*$(document).ready(function(){
+                                                $('#file<!?php echo $img->image_id;?>').change(function(){
+                                                    if($('#file<!?php echo $img->image_id;?>).val()==''){
+                                                      $('#upbutton<!?php echo $img->image_id;?>').attr('disabled',true)
+                                                    } 
+                                                    else{
+                                                      $('#upbutton<!?php echo $img->image_id;?>').attr('disabled',false);
+                                                    }
+                                                });
+                                              });*/
+                                            </script>
+
                                         <?php } ?>
 
                                         </tbody>
@@ -135,29 +183,7 @@
     //alert(name);
     document.getElementById("showImg").innerHTML="<center><button type='button' class='close' data-dismiss='modal'aria-hidden='true' style='color:white;opacity:1;'>&times;</button><img class=img-responsive src='"+name+"'/></center>";
   }
-  function imageUpdate(id)
-  {
-    var fd = new FormData();
-        var files = $('#file')[0].files[0];
-        fd.append('file',files);
-        fd.append('image_id',id);
-        $.ajax({
-            url: '<?php echo site_url('Driver/imageUpdate'); ?>',
-            type: 'post',
-            data: fd,
-            contentType: false,
-            processData: false,
-            success: function(response){
-                console.log(response);
-                if(response != 'Not update'){
-                    alert(response);   
-                    location.reload();                 
-                }else{
-                    alert(response);
-                }
-            },
-        });
-  }
+  
 
   function deleteimage(imageid)
   {
@@ -176,12 +202,12 @@
 
 <script type="text/javascript">
 
-$(document).ready(function(){
-  $('#upload_form').on('submit', function(e){  
+$(document).ready(function(){    
+    $('#upload_form').on('submit', function(e){  
            e.preventDefault();  
            var fd = new FormData(this);
            var vechileid = document.getElementById('vechileid').value;
-           var driverid = document.getElementById('driverid').value;
+           var driverid  = document.getElementById('driverid').value;
            fd.append('vechile',vechileid);
            fd.append('driver',driverid);
            //alert(fd);

@@ -14,6 +14,11 @@ class Home extends CI_Controller {
     {
         $this->load->view('Dashboard');
     }
+
+    public function analytics()
+    {
+        $this->load->view('analytics');
+    }
     public function add_customer()
     {
         if(isset($_POST['submit']))
@@ -407,7 +412,7 @@ class Home extends CI_Controller {
         $typeid      = $_POST['typeid'];
         if($this->AuthModel->updateRecord(array('typeid'=>$typeid),'servicetype',array('servicename'=>$serviceType)))
         {
-            echo 'Service Type has been successfully update';
+            echo 'Service Type has been successfully updated';
         }
         else
         {
@@ -421,7 +426,7 @@ class Home extends CI_Controller {
         $status = $_POST['status'];
         if($this->AuthModel->updateRecord(array('typeid'=>$typeid),'servicetype',array('status'=>$status)))
         {
-            echo 'Status has been successfully updated';
+            echo 'Service status has been successfully changed';
         }
         else
         {
@@ -541,5 +546,10 @@ class Home extends CI_Controller {
         {
             redirect('Welcome');
         }
+    }
+
+    public function range_setting()
+    {
+        $this->load->view('NightSearchSetting');
     }
 }

@@ -72,7 +72,7 @@
                                             </tr>
                                             <tr>
                                                 <th>Minimum distance</th> 
-                                                <td><?php echo $list->min_distance.' '.$list->min_distUnit; ?></td>
+                                                <td><?php echo $list->min_distance.' '.$list->min_distanceUnit; ?></td>
                                             </tr>
                                             <tr>
                                                 <th>Mini distance fair</th> 
@@ -80,11 +80,11 @@
                                             </tr>
                                             <tr>
                                                 <th>Regular Charge(Min)</th> 
-                                                <td><?php echo $list->regularChargeUpon.' '.$list->regularChargeUpon_unit; ?></td>
+                                                <td><?php echo $list->regularChargeEveryDistance.' '.$list->regularChargeEveryDistance_unit; ?></td>
                                             </tr>
                                             <tr>
                                                 <th>Regular x min Charge</th> 
-                                                <td><?php echo $list->regWaitingUnitTimePrice.' '.$list->currency;?></td>
+                                                <td><?php echo $list->regularChargeForDistance.' '.$list->currency;?></td>
                                             </tr>
                                              <tr>
                                                 <th>Per minutes charge Status</th> 
@@ -96,16 +96,16 @@
                                             </tr>
                                             <tr>
                                                 <th>Free Waiting Minute</th> 
-                                                <td><?php echo $list->regFreeWaitingMinute.' Minute'; ?></td>
+                                                <td><?php echo $list->regularFreeWaitingMinute.' Minute'; ?></td>
                                             </tr>
 
                                             <tr>
                                                 <th>Waiting charge every (x) Minutes</th> 
-                                                <td><?php echo $list->regWaitingUnitTime.' Minute'; ?></td>
+                                                <td><?php echo $list->regularWaitingPeriodForCharge.' Minute'; ?></td>
                                             </tr>
                                             <tr>
                                                 <th>Waiting Charge for (x) Minutes</th> 
-                                                <td><?php echo $list->regWaitingUnitTimePrice.' '.$list->currency; ?></td>
+                                                <td><?php echo $list->regularWaitingPeriodCharge.' '.$list->currency; ?></td>
                                             </tr>
 
                                             <tr>
@@ -141,31 +141,13 @@
                                             </tr>
                                             <tr>
                                                 <th>MidNight Surcharge</th> 
-                                                <td><?php echo $list->minNightSurchargePrice.' ('.$list->minNightSurchargeUnit.')';?></td>
+                                                <td><?php echo $list->midNightSurchargePrice.' ('.$list->midNightSurchargeUnit.')';?></td>
                                             </tr>
                                             <tr>
                                                 <th>MidNight Surcharge Time</th> 
-                                                <td><?php echo $list->minNightSurchargeTimeStart.' - '.$list->minNightSurchargeTimeEnd; ?></td>
+                                                <td><?php echo $list->midNightSurchargeTimeStart.' - '.$list->midNightSurchargeTimeEnd; ?></td>
                                             </tr>
-
-                                            <tr style="color:blue;font-size:12px">
-                                                <th>Peak Hours Waiting Charge Status</th> 
-                                                <td><?php echo $list->peaHourkWaitingChargeStatus;?></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Free Peak hour Waiting time</th> 
-                                                <td><?php echo $list->peakChargeAfterStart.' Minute';?></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Price for unit time(every x mins)</th> 
-                                                <td><?php echo $list->peakUnitTimePriceMin.' Minute';?></td>
-                                            </tr>
-
-                                            <tr>
-                                                <th>Price for waiting time</th> 
-                                                <td><?php echo $list->peakUnitTimePrice.' '.$list->currency;?></td>
-                                            </tr>
-
+                                            
                                             <tr>
                                             <th colspan="2" style="color:blue; font-size: 14px; font-weight:600"><u>Cancellation Charges</u></th>
                                             </tr>                                            
@@ -173,29 +155,13 @@
                                             <tr>
                                                 <th>Standar Cancellatioin Charge (Driver)</th> 
                                                 <td><?php echo $list->stndCancelChargeDriver.' '.$list->cancelChargeUnitDriver; ?></td>
-                                            </tr> 
-
-                                            <tr>
-                                                <th>Peak Hour Cancellation Fee(Driver)</th> 
-                                                <td><?php echo $list->peakHrCancelChargeDriver.' '.$list->currency; ?></td>
-                                            </tr>
+                                            </tr>                                             
 
                                             <tr>
                                                 <th>Standerd Cancellation Charge (Passenger)</th> 
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Peak Hour Cancellation(Passenger) Status</th> 
-                                                <td style="color:blue; font-size:14px"><?php echo $list->peakHrCancelPassengerStatus;?></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Peak hour Cancellatioin Charge (Passenger)</th> 
-                                                <td><?php echo $list->peakHrCancelChargePassenger.' '.$list->currency;?></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Peak Hour Cancellation per week Limit</th> 
-                                                <td><?php echo $list->peakHourBookingCancelbyPassenger;?></td>
-                                            </tr>
+                                            </tr>                                            
+                                            
                                             <tr>
                                                 <th>Mutiple Stop Booking Surcharge (Flat Rate)</th> 
                                                 <td><?php echo $list->multiStopCharge.' '.$list->currency;?></td>

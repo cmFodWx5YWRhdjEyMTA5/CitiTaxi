@@ -19,12 +19,12 @@ class Auth extends CI_Controller {
 	{
 		$respose = array("success"=>0,"error"=>0,"message"=>'');
 		$table_name = 'users';
-		if(isset($_POST['email']) && $_POST['email']!='')
+		if(isset($_POST['email']) && $_POST['email']!='' && isset($_POST['mobile']) && $_POST['mobile']!='')
 		{
 			extract($_POST);
-			$checkmail   = array("email"=>$email);
+			$checkmail   = array("email"=>$email,"user_type"=>0);
 			$checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);		
-			$checkMobile = array('mobile' =>$mobile,'mobile!='=>'');
+			$checkMobile = array('mobile' =>$mobile,"user_type"=>0);
 			$mobileExist = $this->AuthModel->checkRows($table_name,$checkMobile);	
 			if($checkEmail>0)
 			{
@@ -105,14 +105,14 @@ class Auth extends CI_Controller {
     		if((isset($_REQUEST['login']) && $_REQUEST['login']!=''))
             {
 
-                $checkWhere  = array("mobile"=>$login,"password"=>$password);   
+                $checkWhere  = array("mobile"=>$login,"password"=>$password,"user_type"=>0);   
                 $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
                 //echo $checkCrediantial;die();
-                $activeWhere = array("mobile"=>$login,"activeStatus"=>'Active');
+                $activeWhere = array("mobile"=>$login,"activeStatus"=>'Active',"user_type"=>0);
                 if($checkCrediantial==0)
                 {
-                    $checkWhere =  array("email"=>$login,"password"=>$password); 
-                    $activeWhere = array("email"=>$login,"activeStatus"=>'Active');
+                    $checkWhere =  array("email"=>$login,"password"=>$password,"user_type"=>0); 
+                    $activeWhere = array("email"=>$login,"activeStatus"=>'Active',"user_type"=>0);
                     $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
                 } 			
  	   			$data = '';	
@@ -142,7 +142,8 @@ class Auth extends CI_Controller {
     	elseif (isset($_REQUEST['login_type']) && ($_REQUEST['login_type']==1 || $_REQUEST['login_type']=2)) {
     		if(isset($_REQUEST['media_id']) && $_REQUEST['media_id']!='')
     		{    			
- 	   			$data = $this->AuthModel->loginViaMedia($media_id,$login,$login_type,$device_token,$device_type);
+    			$user_type	=	0;
+ 	   			$data = $this->AuthModel->loginViaMedia($media_id,$login,$login_type,$device_token,$device_type,$user_type);
  	   			$dataResponse     = $this->AuthModel->keychange($data);
 				$response  = array("success"=>1,"error" => 0,"message"=>"success","data"=>$dataResponse);
 				echo json_encode($response);
@@ -455,7 +456,8 @@ class Auth extends CI_Controller {
   		{
   			$this->index();
   		}
-  	}    
+  	}
+	    
 }
 ?>
 

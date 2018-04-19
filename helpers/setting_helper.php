@@ -97,6 +97,17 @@ if ( ! function_exists('getSingleDetail')){
    }
 }
 
+if ( ! function_exists('getCount')){
+   function getCount($tablename,$where){
+       //get main CodeIgniter object
+      //return $fleetid;die();
+      $ci =& get_instance();       
+      $ci->load->database();
+      $query = $ci->db->get_where($tablename,$where)->num_rows();
+      return $query;
+   }
+}
+
 
 
 /*if ( ! function_exists('get_userPharmacy')){

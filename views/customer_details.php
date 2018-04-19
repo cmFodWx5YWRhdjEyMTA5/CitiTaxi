@@ -11,7 +11,7 @@
                             <div class="panel panel-default">
 
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Registred</strong> Customer</h3>
+                                    <h3 class="panel-title"><strong>Registred Customer</strong></h3>
                                     <?php if(isset($success)==1){ ?>
                                     <div class="alert alert-success">
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>

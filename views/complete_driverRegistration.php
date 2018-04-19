@@ -21,7 +21,7 @@
                              <?php echo $message;?>
                             </div>
                             <?php }?>
-                            <form method="post" action="<?php echo site_url('Driver/addDriver');?>" class="form-horizontal" enctype="multipart/form-data" id="jvalidate" name="frm">
+                            <form method="post" action="<?php echo site_url('Driver/complete_registration/'.$userdata->id);?>" class="form-horizontal" enctype="multipart/form-data" id="jvalidate" name="frm">
                                 <div class="panel-body form-group-separated">
 
                                     <div class="form-group">
@@ -118,13 +118,13 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Driver License number </label>
+                                        <label class="col-md-3 col-xs-12 control-label">Driving License number </label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="licenseno" class="form-control"/>
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Driver License Expiry Date </label>
+                                        <label class="col-md-3 col-xs-12 control-label">Driving License Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="expiredate" class="form-control datepicker" placeholder="DD-MM-YYYY"/>
                                         </div>

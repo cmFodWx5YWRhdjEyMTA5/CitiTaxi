@@ -63,8 +63,7 @@
                                             <th style="min-width:100px;">Regular Charge(Min)</th>
                                             <th style="min-width:100px;">Regular x min Charge</th>
                                             <th style="min-width:100px;">Stnd Cancel charge(Driver)</th>
-                                            <th style="min-width:100px;">Peak Cancel charge(Driver)</th>
-                                            <th style="min-width:100px;">Stnd Cancel charge(Customer)</th>                                            
+                                            <th style="min-width:100px;">Stnderd Cancel charge(Customer)</th>
                                             <th style="min-width:100px;">Peak Max Cancel booking(customer)</th>
                                             <th style="min-width:80px;"> Full Details</th>
                                             <th style="min-width:80px;">Edit</th>
@@ -82,14 +81,13 @@
                                                 <td><?php echo $list->currency;?></td>
                                                 <td><?php echo $list->company_comission_rate.' '.$list->company_comission_type;?></td>
                                                 <td><?php echo $list->minbase_fair.' '.$list->currency;;?></td>
-                                                <td><?php echo $list->min_distance.' '.$list->min_distUnit;?></td>
+                                                <td><?php echo $list->min_distance.' '.$list->min_distanceUnit;?></td>
                                                 <td><?php echo $list->mini_distancefair.' '.$list->currency;;?></td>
-                                                <td><?php echo $list->regularChargeUpon.' '.$list->regularChargeUpon_unit;?></td>
-                                                <td><?php echo $list->uponMinuteCharge;?></td>
+                                                <td><?php echo $list->regularChargeEveryDistance.' '.$list->regularChargeEveryDistance_unit;?></td>
+                                                <td><?php echo $list->regularChargeForDistance;?></td>
                                                 <td><?php echo $list->stndCancelChargeDriver.' '.$list->cancelChargeUnitDriver;?></td>
-                                                <td><?php echo $list->peakHrCancelChargeDriver.' '.$list->cancelChargeUnitDriver;?></td>
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger;?></td>
-                                                <td><?php echo $list->peakHourBookingCancelbyPassenger.' Rides';?></td>
+                                                <td><?php echo $list->WeeklyCancellationLimit.' Rides';?></td>
                                                 <td><a href="<?php echo site_url('Vehicle/fair_full_details/'.$list->fair_id);?>">Full Details</a></td>
                                                 <td><a href="">Edit</a></td>
                                         <?php } ?>

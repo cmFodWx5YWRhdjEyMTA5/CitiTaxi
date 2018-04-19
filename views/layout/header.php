@@ -87,8 +87,12 @@
 
                     <li class="xn-envlop <?php if(isset($page) && $page=='one'){ echo 'active';}?>">
 
-                        <a href="<?php echo site_url('Home/Dashboard');?>"><span class="fa fa-pencil"></span><span class="xn-text">Dashboard</span><label class="badge" id="rowcount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
+                        <a href="<?php echo site_url('Home/Dashboard');?>"><span class="fa fa-dashboard"></span><span class="xn-text">Dashboard</span></a>
                     </li> 
+
+                    <li class="xn-envlop <?php if(isset($page) && $page=='analytic'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/analytics');?>"><span class="fa fa-paw"></span><span class="xn-text">Analytics</span></a>
+                    </li>
 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='two'){ echo 'active';}?>">
@@ -100,7 +104,7 @@
                     </li>
 
                     <li class="xn-openable <?php if(isset($page) && $page=='driver'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Driver</span></a>
+                        <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Driver</span></span><label class="badge2" id="rowcount2" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
                         <ul>
                            <li><a href="<?php echo site_url('Driver/addDriver');?>"><span class="fa fa-pencil"></span>Add Driver</a></li>
 						   <li><a href="<?php echo site_url('Driver');?>"><span class="fa fa-sort-alpha-desc"></span>Driver List</a></li>
@@ -134,7 +138,7 @@
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
                         <ul>
-                                                     	
+                             <li><a href="<?php echo site_url('Home/range_setting');?>"><span class="fa fa-image"></span><span class="xn-text">Range Setting</span></a></li>                        	
                             <li><a href="<?php echo site_url('Home/apptemplate');?>"><span class="fa fa-image"></span><span class="xn-text">App Template Setting</span></a></li>
                            <li><a href="<?php echo site_url('Home/profile');?>"><span class="fa fa-user"></span><span class="xn-text">Admin Profile</span></a></li>
 
