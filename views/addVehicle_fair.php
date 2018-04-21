@@ -1,5 +1,5 @@
 
-<?php $data['page']='vehicle'; $data['title']='Add Fair'; $this->load->view('layout/header',$data);?>
+<?php $data['page']='vehicle'; $data['title']='Add Fare'; $this->load->view('layout/header',$data);?>
 <!-- PAGE CONTENT WRAPPER -->
 <style type="text/css">
 		#personal_information,
@@ -13,7 +13,7 @@
     <div class="col-md-12">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 class="panel-title"><strong>Add Fair</strong></h3>
+                <h3 class="panel-title"><strong>Add Fare</strong></h3>
             </div>           
                 <?php if(isset($error)&& $error==1) { ?>
                 <div class="alert alert-danger">
@@ -26,7 +26,7 @@
                     <?php echo $message;?>
                 </div>
                 <?php }?>
-                <form method="POST" action="<?php echo site_url('Vehicle/add_fair');?>" class="form-horizontal" enctype="multipart/form-data" id="fairvalidate" name="frm">
+                <form method="POST" action="<?php echo site_url('Vehicle/add_fare');?>" class="form-horizontal" enctype="multipart/form-data" id="fairvalidate" name="frm">
                     <div class="panel-body form-group-separated">
                         <div class="form-group">
                             <label class="col-md-3 control-label">Service Type Vehicle</label>
@@ -523,7 +523,7 @@
                     </div>
                     <div class="panel-footer">                                      
                         <input type="reset" value="Reset" class="btn btn-reset">  
-                        <input type="submit" name="submit" value="Add fair" class="btn btn-submit pull-right">
+                        <input type="submit" name="submit" value="Add fare" class="btn btn-submit pull-right">
                     </div>                    
                 </form>
             </div>

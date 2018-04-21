@@ -440,7 +440,7 @@ class Auth extends CI_Controller {
   		{
   			extract($_POST);
   			$where = array('serviceType_id'=>$type_id,'country'=>$country,'city'=>$city);
-  			$resData = $this->AuthModel->getSingleRecord('fair',$where);
+  			$resData = $this->AuthModel->getSingleRecord('fare',$where);
   			if(!empty($resData))
   			{
   				$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$resData);

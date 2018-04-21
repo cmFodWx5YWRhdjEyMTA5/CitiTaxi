@@ -25,7 +25,7 @@ class Vehicle extends CI_Controller {
         }
     }
 
-    public function add_fair()
+    public function add_fare()
     {
         if(isset($_POST['submit']))
         {
@@ -67,7 +67,7 @@ class Vehicle extends CI_Controller {
             if($uid = $this->AuthModel->singleInsert('fair',$data))
             {
                 $respose["success"] = 1;
-                $respose["message"] = "Vehicle Fair has been successfully saved";
+                $respose["message"] = "Vehicle Fare has been successfully saved";
                 $this->load->view('addVehicle_fair',$respose);
             }
             else
@@ -129,10 +129,10 @@ class Vehicle extends CI_Controller {
     {
         $cityid     =   $_POST['city_id'];
         $serviceid  =   $_POST['serviceid'];
-        $checkexist = $this->AuthModel->checkRows('fair',array('city_id'=>$cityid,'serviceType_id'=>$serviceid));
+        $checkexist = $this->AuthModel->checkRows('fare',array('city_id'=>$cityid,'serviceType_id'=>$serviceid));
         if($checkexist>0)
         {
-            echo 'This service type fair already set for this city';
+            echo 'This service type fare already set for this city';
         }
     }
 
@@ -160,11 +160,11 @@ class Vehicle extends CI_Controller {
         }
     }
 
-    public function fairs()
+    public function fares()
     {
         $orderby  = "`fair_id` DESC";
         $where    = array();
-        $fairlist = $this->AuthModel->getMultipleRecord('fair',$where,$orderby);
+        $fairlist = $this->AuthModel->getMultipleRecord('fare',$where,$orderby);
         if(!empty($fairlist))
         {
             $data['fairlist']=$fairlist;            
@@ -173,15 +173,15 @@ class Vehicle extends CI_Controller {
         else
         {
             $data["error"] =1;
-            $data["message"] = 'No vehicle fair list found';
+            $data["message"] = 'No vehicle fare list found';
             $data["fairlist"]=$fairlist;
             $this->load->view('vehicle_fairs',$data);
         }
     }
 
-    public function fair_full_details($fairid)
+    public function fare_full_details($fairid)
     {
-        $data['list'] = $this->AuthModel->getSingleRecord('fair',array('fair_id'=>$fairid));
+        $data['list'] = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fairid));
         $this->load->view('Vehiclefair_fulldetails',$data);
     }
 

@@ -91,19 +91,21 @@ class DriverApi extends CI_Controller {
                 $vechileDetails = $this->AuthModel->getSingleRecord('vechile_details',array('driver_id'=>$driverid));
                 $licenseDetails = $this->AuthModel->getSingleRecord('driver_license',array('user_id'=>$driverid));
                 $Images  = $this->AuthModel->getMultipleRecord('vechile_images',array('driver_id'=>$driverid),$orderby);
+                //echo json_encode($Images);die();
 
                 $data['basic']=$this->AuthModel->keychange($drivers);
                 $data['vechile']= $vechileDetails;                
-                $data['vechileImages']=$this->AuthModel->keychange($Images);
+                $data['vechileImages']=$Images;
+                $data['vehicleImage_url']=base_url('vechicleImage');
                 $data['license']=$this->AuthModel->keychange($licenseDetails);
 
-                $response = array("success"=>1,"error"=>0,"message"=>"success","data"=>$data);
-                echo json_encode($response);
+                $respose = array("success"=>1,"error"=>0,"message"=>"success","data"=>$data);
+                echo json_encode($respose);
             }
             else
             {
-                $response = array("success"=>0,"error"=>1,"message"=>"Something went wrong","data"=>array());
-                echo json_encode($response);
+                $respose = array("success"=>0,"error"=>1,"message"=>"Something went wrong","data"=>array());
+                echo json_encode($respose);
             }
         }
         else
@@ -532,17 +534,211 @@ class DriverApi extends CI_Controller {
             $this->index();
         }
     }
-    
 
+    public function tripRequest()    //for home page
+    {
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!='')
+        {
+            extract($_POST);
+            $tripRequest = $this->BookingModel->getTripRequest($driver_id);
+            if(!empty($tripRequest))
+            {  
+                $booking_id = $tripRequest->booking_id;
+                $dropoffs = $this->AuthModel->getMultipleRecord('booking_dropoffs',array("booking_id"=>$booking_id),"");
+                $tripdata = $this->AuthModel->keychange($tripRequest);
+                $tripData = array(
+                    "booking_id"=>$tripdata->booking_id,
+                    "customer_id"=>$tripdata->customer_id,
+                    "driver_id"=>$tripdata->driver_id,
+                    "booking_address_type"=>$tripdata->booking_address_type,
+                    "driver_note"=>$tripdata->booking_note,
+                    "pickup"=>$tripdata->pickup,
+                    "pickupLat"=>$tripdata->pickupLat,
+                    "pickupLong"=>$tripdata->pickupLong,
+                    "dropoffLocation"=>$dropoffs,
+                    "total_distance"=>$tripdata->total_distance,
+                    "distance_unit"=>$tripdata->distance_unit,
+                    "total_fare"=>$tripdata->total_fare,
+                    "currency"=>$tripdata->currency,
+                    "servicename"=>$tripdata->servicename,
+                    "customer_name"=>$tripdata->name,
+                    "customer_email"=>$tripdata->email,
+                    "customer_mobile"=>$tripdata->mobile,
+                    "image"=>$tripdata->image
+                );
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$tripData);
+                echo json_encode($response);
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>1,'message'=>'No New request','data'=>'');
+                echo json_encode($response);   
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
 
-//===============================================================================================================================//
+    public function TripRequestStatus()
+    {
+        if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['booking_status']) && $_POST['booking_status']!='' )
+        {
+            extract($_POST);
+            $action_at = $date.' '.$time;
+            //booking_status => 0=assigned 1=accept 2=reject by driver 4= done 5=arrived  6=trip start
+            if($booking_status==1)  //accept
+            {
+                $updata = array("booking_status"=>$booking_status);
+            }      
+            elseif($booking_status==2)  // reject
+            {
+                $updata = array("booking_status"=>$booking_status,"cancel_reason"=>$cancel_reason);
+            }            
+            elseif($booking_status==5)  // Arrived
+            {
+                $updata = array("driver_arrived_at"=>$action_at,"booking_status"=>$booking_status);
+            }
+            elseif($booking_status==6)  // Trip Start
+            {
+                $booking_detail = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id));
+                $total_waiting  = date('i',strtotime($action_at)-strtotime($booking_detail->driver_arrived_at));
+                $updata = array("ride_start_at"=>$action_at,"waiting_time"=>$total_waiting,"booking_status"=>$booking_status);
+            }
+            else
+            {
+                $respose = array("error"=>1,"success"=>0,"message"=>"Invalid request");
+                echo json_encode($respose);exit;
+            }
+            if($this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'booking',$updata))
+            {  
+                if($booking_status==2)
+                {
+                    $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array("online_status"=>'online'));
+                    $record = array("booking_id"=>$booking_id,"cancelby_id"=>$driver_id,"cancel_reason"=>$cancel_reason);
+                    $this->AuthModel->singleInsert('booking_cancel_record',$record);
+                }
+                $respose = array("success"=>1,"message"=>"Trip status has been successfully saved");
+                echo json_encode($respose);
+            }   
+            else
+            {
+                $respose = array("error"=>1, "success"=>0,"message"=>"Oops! Something went wrong, Please try again");
+                echo json_encode($respose);
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
 
+    public function TripComplete()
+    {
+        if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['driver_id']) && $_POST['driver_id']!='')
+        {
+            //booking_status 
+            extract($_POST);            
+            $action_at = $date.' '.$time;
+            $finalFair = $this->calculateFair($booking_id,$total_distance,$total_ride_time);   //calculate final fair
+            if(!empty($finalFair))
+            {
+                $checkWhere = array("booking_id"=>$booking_id);
+                $bookingUpdata = array("ride_complete_at"=>$action_at,"total_ride_time"=>$total_ride_time,"total_distance"=>$total_distance,"total_fare"=>$finalFair["total_fair"],"booking_status"=>4);
+                $fairUpdata = array("total_regular_charge"=>$finalFair['total_regular_charge'],"total_per_minute_charge"=>$finalFair['total_per_minute_charge'],"total_waiting_charge"=>$finalFair['total_waiting_charge']);
+                //print_r($fairUpdata);die();
 
-   
+                if($this->AuthModel->updateRecord($checkWhere,'booking',$bookingUpdata))
+                {
+                    if($this->AuthModel->updateRecord($checkWhere,'booking_fare',$fairUpdata))
+                    {
+                        $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
+                        $respose = array("success"=>1, "error"=>0,"message"=>"Thanks for using kotchi. Trip has been successfully completed","total_fair"=>$finalFair["total_fair"].' '.$finalFair['currency']);
+                        echo json_encode($respose);    
+                    }
+                    else
+                    {
+                        $respose = array("success"=>0, "error"=>1,"message"=>"Oops! Something went wrong. Trip details is not saved. Please try again","total_fair"=>$finalFair["total_fare"].' '.$finalFair['currency']);
+                        echo json_encode($respose);  
+                    }                    
+                }
+                else
+                {
+                    $respose = array("success"=>0, "error"=>1,"message"=>"Oops! something went wrong, Please try again");
+                    echo json_encode($respose);
+                } 
+            }
+            else
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"Something wrong in fair details. Please try again");
+                echo json_encode($response);
+            }                      
+        }
+        else
+        {
+            $this->index();
+        }
+    }
 
+    public function calculateFair($booking_id,$total_distance,$total_rideMinute)
+    {
+        $booking_detail = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id));
+        if(!empty($booking_detail))
+        {
+            $fair_detail = $this->AuthModel->getSingleRecord('booking_fare',array('booking_id'=>$booking_id));
+            //echo json_encode($fair_detail);
+            $Extra_waitingMinute  = $booking_detail->waiting_time-$fair_detail->free_waiting_minute;  
+            $total_waitingCharge  = 0;
+            if($Extra_waitingMinute>0)
+            {
+                $total_waitingCharge = $Extra_waitingMinute*($fair_detail->every_waiting_minute_charge/$fair_detail->paid_every_waiting_minute);
+            }            
+            $total_regularCharge = ($total_distance-$fair_detail->mini_distance)*$fair_detail->regular_distance_charge/$fair_detail->regular_charge_distance;                                                                
+            $total_perMinute_charge = $total_rideMinute*$fair_detail->per_minute_charge/$fair_detail->per_minute;
 
+            $total_fair = $fair_detail->base_fair+$fair_detail->multi_address_charge+$fair_detail->mini_distance_fair+$total_waitingCharge+ $total_regularCharge+$total_perMinute_charge;
+            if($fair_detail->morning_surcharge_unit!='')
+            {
+                if($fair_detail->morning_surcharge_unit=='Per')
+                {
+                    $total_fair = $total_fair+(($total_fair*$fair_detail->morning_surcharge)/100);
+                }
+                else
+                {
+                    $total_fair = $total_fair+$fair_detail->morning_surcharge;
+                }
+            }
+            elseif($fair_detail->evening_surcharge_unit!='')
+            {
+                if($fair_detail->evening_surcharge_unit=='Per')
+                {
+                    $total_fair = $total_fair+(($total_fair*$fair_detail->evening_surcharge)/100);
+                }
+                else
+                {
+                    $total_fair = $total_fair+$fair_detail->evening_surcharge;
+                }
+            }
+            elseif($fair_detail->midnight_surcharge_unit!='')
+            {
+                if($fair_detail->midnight_surcharge_unit=='Per')
+                {
+                    $total_fair = $total_fair+(($total_fair*$fair_detail->midnight_surcharge)/100);
+                }
+                else
+                {
+                    $total_fair = $total_fair+$fair_detail->midnight_surcharge;
+                }
+            }
+            $data['total_regular_charge']=$total_regularCharge;
+            $data['total_per_minute_charge']= $total_perMinute_charge;
+            $data['total_waiting_charge']=$total_waitingCharge;
+            $data['total_fair'] = $total_fair;
+            $data['currency']= $booking_detail->currency;
+            return $data;
+        }
+    }
 
-
-    
-
+    //==========================================================================================================//
 }

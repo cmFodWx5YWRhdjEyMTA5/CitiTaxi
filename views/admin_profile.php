@@ -43,15 +43,15 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Profile Image</label>
                                         <div class="col-md-6 col-xs-12">                      
-                                            <input type="file" class="fileinput btn-primary" name="admin_img" id="filename" title="Browse file"/>
+                                            <input type="file" class="fileinput btn-submit" name="admin_img"/>
                                             <img src="<?php echo base_url('userimage/'.$admin->image);?>" style="width:80px; height: 80px;">
                                             <input type="hidden" name="admin_img" value="<?php echo $admin->image; ?>">
                                         </div>
                                     </div>
                                 <div class="panel-footer">
                                     <div class="row">
-                                    <input type="reset" class="btn btn-success" value="Form Reset" style="width:100%; max-width:300px;">                                   
-                                    <input type="submit" name="submit" value="Update" class="btn btn-success pull-right" style="width:100%; max-width:300px; margin-top:5px">
+                                    <input type="reset" class="btn btn-reset" value="Form Reset" style="width:100%; max-width:300px;">                                   
+                                    <input type="submit" name="submit" value="Update" class="btn btn-submit pull-right" style="width:100%; max-width:300px; margin-top:5px">
                                     </div>
                                 </div>
                             </div>

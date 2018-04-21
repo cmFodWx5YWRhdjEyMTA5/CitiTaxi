@@ -127,8 +127,8 @@
                         <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-taxi"></span> <span class="xn-text"> Vehicle & Fares</span></a>
                         <ul>
                             <li><a href="<?php echo site_url('Home/servie_type');?>"><span class="fa fa-taxi"></span><span class="xn-text">Service Type</span></a></li>  
-                            <li><a href="<?php echo site_url('Vehicle/add_fair');?>"><span class="fa fa-dollar"></span><span class="xn-text">Add Vehicle Fares</span></a></li>
-                            <li><a href="<?php echo site_url('Vehicle/fairs');?>"><span class="fa fa-dollar"></span><span class="xn-text">Fare List</span></a></li>
+                            <li><a href="<?php echo site_url('Vehicle/add_fare');?>"><span class="fa fa-dollar"></span><span class="xn-text">Add Vehicle Fares</span></a></li>
+                            <li><a href="<?php echo site_url('Vehicle/fares');?>"><span class="fa fa-dollar"></span><span class="xn-text">Fare List</span></a></li>
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
