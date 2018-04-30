@@ -62,6 +62,7 @@ class Home extends CI_Controller {
                 
                 if($uid = $this->AuthModel->singleInsert($table_name,$data))
                 {
+                    $this->AuthModel->user_score($uid,0);  //add score
                     $respose["success"] = 1;
                     $respose["message"] = "Customer Record has been successfully saved";
                     $this->load->view('add_customer',$respose);

@@ -85,6 +85,25 @@ class BookingModel extends CI_Model {
         return $this->db->get()->row();
     }
 
+    public function getTripInvoice($booking_id)
+    {
+        $this->db->select('booking.*,booking_fare.*,servicetype.*,users.name,email,mobile,image,image_type,vechile_details.*');
+        $this->db->from('booking');
+        $this->db->join('booking_fare','booking.booking_id=booking_fare.booking_id');
+        $this->db->join('users','booking.driver_id=users.id');
+        $this->db->join('servicetype','booking.service_typeid=servicetype.typeid');
+        $this->db->join('vechile_details','booking.driver_id=vechile_details.driver_id');
+        $this->db->where(array('booking.booking_id'=>$booking_id));
+        return $this->db->get()->row();
+    }
+
+    public function countRecordBetweenDates($fromdate,$todate)
+    {
+        $this->db->where('order_date >=', $first_date);
+        $this->db->where('order_date <=', $second_date);
+        return $this->db->get('orders');
+    }
+
     /*public function searchToAddress($rideId,$toAddLat,$toAddLng)
     {
         $this->db->select("ride.*,users.*,( 3959 * acos( cos( radians($toAddLat) ) * cos( radians(`toLat`) ) * cos( radians( `toLng` ) - radians($toAddLng) ) + sin( radians($toAddLat) ) * sin( radians( `toLat` ) ) ) ) AS distance");

@@ -135,6 +135,14 @@ class AuthModel extends CI_Model {
         return $this->db->get_where($table_name,$where)->num_rows();
     }
 
+    public function user_score($user_id,$user_type)
+    {
+        if($this->checkRows('users_score',array('user_id'=>$user_id))==0)
+        {            
+            $this->db->insert('users_score',array("user_id"=>$user_id,'user_type'=>$user_type));
+        }        
+    }
+
     public function passwordAttempt($table_name,$where)
     {
         unset($where['password']);
@@ -377,6 +385,47 @@ class AuthModel extends CI_Model {
         $this->db->order_by('distance');
         return $this->db->get()->row();
     }
+
+    public function Suspend($suspend_days,$user_id)  //when cancel limit exceded
+    {
+        $table_name = "useraction";
+        $byStatus = 'Admin';
+        $suspend_type = $suspend_days.' Day';       
+        $to = date('d-m-Y', strtotime("+".$suspend_type));
+        $todate = $to.' 23:59:59';
+        $fromstring = strtotime(date('d-m-Y H:i:s'));
+        //print_r($todate);
+        $where = array("user_id"=>$user_id);
+        $upwhere = array('id'=>$user_id);
+        $userUpdateData = array('activeStatus'=>'Suspended','suspend_type'=>$suspend_type);
+        $checkExist = $this->AuthModel->checkRows($table_name,$where);
+        if($checkExist>0)
+        {
+            $updata = array('suspand_type'=>$suspend_type,'from'=>date('d-m-Y H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            if($this->AuthModel->updateRecord($where,$table_name,$updata))
+            {
+                $this->AuthModel->updateRecord($upwhere,'users',$userUpdateData);   
+                return true; 
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            $insertData = array("user_id"=>$user_id,'suspand_type'=>$suspend_type,'from'=>date('Y-m-d H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            if($this->AuthModel->singleInsert($table_name,$insertData))
+            {
+                $this->AuthModel->updateRecord($upwhere,'users',$userUpdateData);
+                return true; 
+            }
+            else
+            {
+                return false;
+            }
+        }
+    } 
 
     
 

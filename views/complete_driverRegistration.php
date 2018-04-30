@@ -126,7 +126,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driving License Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="expiredate" class="form-control datepicker" placeholder="DD-MM-YYYY"/>
+                                            <input type="text" id="licensedate" data-provide="datepicker" name="expiredate" class="form-control" placeholder="DD-MM-YYYY"/>
                                         </div>
                                     </div>
                                     
@@ -202,7 +202,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Insurance Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="insuranceExpiredate" class="form-control datepicker" placeholder="DD-MM-YYYY"/>
+                                            <input type="text" id="date" data-provide="datepicker" name="insuranceExpiredate" class="form-control" placeholder="DD-MM-YYYY"/>
                                         </div>
                                     </div>
 
@@ -304,6 +304,17 @@
 
 <script>
    $(document).ready(function(){
+    //disable previous date
+    var date = new Date();
+    date.setDate(date.getDate());
+    $('#date').datepicker({ 
+        startDate: date
+    });
+
+    $('#licensedate').datepicker({ 
+        startDate: date
+    });
+
     // For Technician Password
     var chars = "0123456789";
     var string_length = 6;

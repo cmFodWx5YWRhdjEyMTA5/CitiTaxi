@@ -68,7 +68,8 @@ class Auth extends CI_Controller {
 					);
 				
 				if($uid = $this->AuthModel->singleInsert($table_name,$data))
-				{
+				{					
+					$this->AuthModel->user_score($uid,0)); //save for score
 					$where 			= array("id"=>$uid);
 					$record 		= $this->AuthModel->getSingleRecord($table_name,$where);
 					$dataResponse   = $this->AuthModel->keychange($record);
@@ -345,12 +346,16 @@ class Auth extends CI_Controller {
   				$updata = array('fb_id'=>$fb_id);
   				if($this->AuthModel->updateRecord($where,'users',$updata))
   				{	
-  					$response = array('success'=>1,'error'=>0,'message'=>'success');
+  					$ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+  					$UpdateData                 	= $this->AuthModel->keychange($ProfileData);
+  					$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$UpdateData);
   					echo json_encode($response);
   				}
   				else
   				{
-  					$response = array('success'=>0,'error'=>1,'message'=>'Something went wrong');
+  					$ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+  					$UpdateData                 	= $this->AuthModel->keychange($ProfileData);
+  					$response = array('success'=>0,'error'=>1,'message'=>'Something went wrong','data'=>$UpdateData);
   					echo json_encode($response);
   				}
   			}
@@ -359,12 +364,16 @@ class Auth extends CI_Controller {
   				$updata = array('google_id'=>$google_id);
   				if($this->AuthModel->updateRecord($where,'users',$updata))
   				{	
-  					$response = array('success'=>1,'error'=>0,'message'=>'success');
+  					$ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+  					$UpdateData       = $this->AuthModel->keychange($ProfileData);
+  					$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$UpdateData);
   					echo json_encode($response);
   				}
   				else
   				{
-  					$response = array('success'=>0,'error'=>1,'message'=>'Something went wrong');
+  					$ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+  					$UpdateData       = $this->AuthModel->keychange($ProfileData);
+  					$response = array('success'=>0,'error'=>1,'message'=>'Something went wrong','data'=>$UpdateData);
   					echo json_encode($response);
   				}	
   			}
@@ -420,18 +429,36 @@ class Auth extends CI_Controller {
 
   	public function getServiceType()
   	{
-  		$where = array('status'=>'active');  		
-  		$resData = $this->AuthModel->getMultipleRecord('servicetype',$where,'');
-  		if(!empty($resData))
-  		{
-  			$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$resData);
-  			echo json_encode($response);
-  		}
-  		else
-  		{
-  			$response = array('success'=>0,'error'=>1,'message'=>'No service type found','data'=>array());
-  			echo json_encode($response);
-  		}
+  		if(isset($_POST['city']) && $_POST['city']!='')
+  		{	 
+  			extract($_POST);
+	  		$resData = $this->AuthModel->getMultipleRecord('servicetype',array('status'=>'active'),'');
+	  		if(!empty($resData))
+	  		{
+	  			foreach ($resData as $key => $value) {
+	  				$type_id = $value->typeid;			
+			  		$where = array('serviceType_id'=>$type_id,'country'=>$country,'city'=>$city);
+		  			$fareData = $this->AuthModel->getSingleRecord('fare',$where);
+		  			$res['service']=$resData[$key];
+		  			if(!empty($fareData))
+		  			{
+		  				$res['serviceDetail'] = $fareData;
+		  			}
+		  			$services[]=$res;
+	  			}
+	  			$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$services);
+	  			echo json_encode($response);
+	  		}
+	  		else
+	  		{
+	  			$response = array('success'=>0,'error'=>1,'message'=>'No service type found','data'=>array());
+	  			echo json_encode($response);
+	  		}
+	  	}
+	  	else
+	  	{
+	  		$this->index();
+	  	}
   	}
 
   	public function getServicetypeDetails()
@@ -457,6 +484,48 @@ class Auth extends CI_Controller {
   			$this->index();
   		}
   	}
+
+  	public function addreview()
+    {
+    	if(isset($_POST['booking_id']) && $_POST['booking_id']!='')
+    	{
+    		extract($_POST);
+    		$checkReview  = $this->AuthModel->checkRows('review',array('booking_id'=>$booking_id,'giver_id'=>$giver_id,'receiver_id'=>$receiver_id));
+    		if($checkReview>0)
+    		{
+    			$respose = array("success"=>0, "error"=>1, "message"=>"You already give review for this trip");
+                echo json_encode($respose); 
+    		}
+    		else
+    		{
+    			$data = array(
+    			'booking_id'=>$booking_id,
+    			'giver_id'=>$giver_id,
+    			'receiver_id'=>$receiver_id,
+    			'rating'=>$rating,
+    			'review'=>$review,
+	    		);
+
+	    		if($review_id = $this->AuthModel->singleInsert('review',$data))
+	    		{
+	    			//$notification_message = 'New review for ride id '.$ride_id.'.  '.$review.' and get '.$rating.' rating';
+            		//$this->Communication_model->CheckDeivceForNotification($receiver_id,$notification_message);
+            		$reviewData = $this->AuthModel->getSingleRecord('review',array("review_id"=>$review_id));
+	    			$respose = array("success"=>1, "error"=>0, "message"=>"Thanks for review.","data"=>$reviewData);
+	                echo json_encode($respose); 
+	    		}
+	    		else
+	    		{
+	    			$respose = array("success"=>0, "error"=>1, "message"=>"Something went wrong, Please try again","data"=>'');
+	                echo json_encode($respose);   
+	    		}
+    		}    		
+    	}
+    	else
+        {
+            $this->index();
+        }
+    }
 	    
 }
 ?>

@@ -133,6 +133,7 @@ class Driver extends CI_Controller {
                     );
                 if($uid = $this->AuthModel->singleInsert($table_name,$data))
                 {
+                    $this->AuthModel->user_score($uid,1);  //add score
                     $bankDetails = array(
                         "user_id"=>$uid,
                         "bankName"=>$bankname,
@@ -761,7 +762,8 @@ class Driver extends CI_Controller {
                             "signup_status" =>'complete'
                             );                    
                         if($this->AuthModel->updateRecord(array('id'=>$id),$table_name,$data))
-                        {
+                        {                            
+                            $this->AuthModel->user_score($id,1);  //add score
                             $bankDetails = array(
                                 "user_id"=>$uid,
                                 "bankName"=>$bankname,
