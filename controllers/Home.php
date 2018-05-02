@@ -43,7 +43,7 @@ class Home extends CI_Controller {
             else
             {
                 $imagename ='default.jpg';
-                if(isset($_FILES['image']) && $_FILES['image']!='')
+                if(isset($_FILES['image']) && $_FILES['image']['name']!='')
                 {
                     $folder_name = 'userimage';
                     $imagename   = $this->AuthModel->imageUpload($_FILES['image'],$folder_name);
@@ -546,6 +546,44 @@ class Home extends CI_Controller {
         else
         {
             redirect('Welcome');
+        }
+    }
+
+    public function booking()
+    {
+        $table_name = 'booking';
+        $orderby  = "`booking_id` DESC";
+        $where = array('booking_type'=>'now');
+        //$orderby ="";
+        $customers = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);
+        //print_r($customers);die();
+        if(!empty($customers))
+        {
+            $data['userlist']=$customers;            
+            $this->load->view('booking_details',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'No booking found';
+            $data["userdata"]='';
+            $this->load->view('booking_details',$data);
+        }
+    }
+
+    public function get_dropoff_address()
+    {
+        extract($_POST);
+        $address = $this->AuthModel->getMultipleRecord('booking_dropoffs',array('booking_id'=>$booking_id),'');
+        if(!empty($address))
+        {
+            $res = array("success"=>1,"data"=>$address);
+            echo json_encode($res);
+        }
+        else
+        {
+            $res=array("success"=>0);
+            echo json_encode($res);
         }
     }
 

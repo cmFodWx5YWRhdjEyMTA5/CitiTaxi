@@ -44,7 +44,7 @@ class DriverApi extends CI_Controller {
                     $this->AuthModel->updateRecord($checkWhere,$table_name,$upData);
                     $data       = $this->AuthModel->getSingleRecord($table_name,$checkWhere);   
                     $dataResponse     = $this->AuthModel->keychange($data);
-                    $response  = array("success"=>1, "error" => 0,"message"=>"success","data"=>$dataResponse);
+                    $response  = array("success"=>1, "error"=>0, "message"=>"success", "data"=>$dataResponse);
                     echo json_encode($response);
                 }
                 else
@@ -503,6 +503,7 @@ class DriverApi extends CI_Controller {
         {
             extract($_POST);
             $where = array('id'=>$user_id);
+            $this->AuthModel->checkActiveStatus('users',array('id'=>$user_id));      //Check, User is Active or not by admin;
             if($status_type=='power')
             {
                 $upStatus = $this->AuthModel->updateRecord($where,'users',array('power_status'=>$status));
@@ -648,12 +649,12 @@ class DriverApi extends CI_Controller {
     {
         if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['driver_id']) && $_POST['driver_id']!='')
         {
-            //booking_status 
+            //booking_id,driver_id,customer_id 
             extract($_POST);            
+            $customerNewScore=0;
             $action_at = $date.' '.$time;
             $finalFair = $this->calculateFair($booking_id,$total_distance,$total_ride_time);   //calculate final fair
-            if(!empty($finalFair))
-            {
+            if(!empty($finalFair)){
                 $checkWhere = array("booking_id"=>$booking_id);
                 $bookingUpdata = array("ride_complete_at"=>$action_at,"total_ride_time"=>$total_ride_time,"total_distance"=>$total_distance,"total_fare"=>$finalFair["total_fair"],"booking_status"=>4);
                 $fairUpdata = array("total_regular_charge"=>$finalFair['total_regular_charge'],"total_per_minute_charge"=>$finalFair['total_per_minute_charge'],"total_waiting_charge"=>$finalFair['total_waiting_charge'],"total_surcharge"=>$finalFair['total_surcharge']);
@@ -663,41 +664,56 @@ class DriverApi extends CI_Controller {
                 {
                     $total_commission = ($finalFair["total_fair"]*$companyComm->commission_rate)/100;
                 }
-                else
-                {
+                else{
                     $total_commission = $companyComm->commission_rate;
                 }
-                $score = $this->AuthModel->getSingleRecord('users_score',array("user_id"=>$customer_id)); //get previous score
-                if($this->AuthModel->updateRecord($checkWhere,'booking',$bookingUpdata))
-                {
-                    if($score)
-                    if($this->AuthModel->updateRecord($checkWhere,'booking_fare',$fairUpdata))
-                    {
+            //========================================= Driver Score Section ======================================//
+                $score = $this->AuthModel->getSingleRecord('users_score',array("user_id"=>$driver_id)); //get previous score
+                if($score->total_score<=0){
+                    $newScore = $score->total_score+10;                    
+                }
+                elseif($score->total_score==10){
+                    $newScore = $score->total_score;
+                }
+                else{
+                    $newScore = $score->total_score+0.1;
+                }
+                // echo $newScore;die();   
+                //========================================= Customer Score Section ======================================//
+                if($finalFair["total_fair"]>100){
+                    $nscore = $finalFair%100;
+                    $cscore = $this->AuthModel->getSingleRecord('wallet_balance',array("user_id"=>$customer_id)); //get previous score
+                    $customerNewBalance = $cscore->balance+$nscore;    
+                    $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'wallet_balance',array('balance'=>$customerNewBalance,'update_at'=>$action_at));  
+                    $this->AuthModel->singleInsert('wallet_transaction',array('booking_id'=>$booking_id,'receiver_id'=>$customer_id,'type'=>'cr','amount'=>$customerNewBalance,'description'=>'Booking reward','transaction_status'=>'success'));
+                    //echo $customerNewScore;die();
+                    $bookingUpdata['customer_trip_score'] = $nscore;         
+                }   
+                if($this->AuthModel->updateRecord($checkWhere,'booking',$bookingUpdata)){
+                    if($this->AuthModel->updateRecord($checkWhere,'booking_fare',$fairUpdata)){   
+                       //update score
+                        $this->AuthModel->updateRecord(array("user_id"=>$driver_id),'users_score',array('total_score'=>$newScore));
                         $this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'company_booking_commission',array('total_commission'=>$total_commission,"status"=>1,"commission_at"=>$action_at));
                         $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
                         $respose = array("success"=>1, "error"=>0,"message"=>"Thanks for using kotchi. Trip has been successfully completed","total_fair"=>$finalFair["total_fair"].' '.$finalFair['currency']);
                         echo json_encode($respose);    
                     }
-                    else
-                    {
+                    else{
                         $respose = array("success"=>0, "error"=>1,"message"=>"Oops! Something went wrong. Trip details is not saved. Please try again","total_fair"=>$finalFair["total_fare"].' '.$finalFair['currency']);
                         echo json_encode($respose);  
                     }                    
                 }
-                else
-                {
+                else{
                     $respose = array("success"=>0, "error"=>1,"message"=>"Oops! something went wrong, Please try again");
                     echo json_encode($respose);
                 } 
             }
-            else
-            {
+            else{
                 $response = array("success"=>0,"error"=>1,"message"=>"Something wrong in fair details. Please try again");
                 echo json_encode($response);
             }                      
         }
-        else
-        {
+        else{
             $this->index();
         }
     }
@@ -866,7 +882,7 @@ class DriverApi extends CI_Controller {
                     }
                     elseif($trip_score =='8.0')
                     {
-                        $updatestatus=array('activeStatus'=>'Banned','suspend_type'=>'','blackList_status'=>'yes');
+                        $updatestatus=array('activeStatus'=>'Banned','blackList_status'=>'yes');
                         $wherestatus=array('id'=> $driver_id);
                         $status=$this->StandardModel->update_query('users',$updatestatus,$wherestatus);                    
                         $banned =$banned_count+1;

@@ -69,7 +69,7 @@ class Auth extends CI_Controller {
 				
 				if($uid = $this->AuthModel->singleInsert($table_name,$data))
 				{					
-					$this->AuthModel->user_score($uid,0)); //save for score
+					$this->AuthModel->user_score($uid,0); //save for score
 					$where 			= array("id"=>$uid);
 					$record 		= $this->AuthModel->getSingleRecord($table_name,$where);
 					$dataResponse   = $this->AuthModel->keychange($record);
@@ -109,16 +109,16 @@ class Auth extends CI_Controller {
                 $checkWhere  = array("mobile"=>$login,"password"=>$password,"user_type"=>0);   
                 $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
                 //echo $checkCrediantial;die();
-                $activeWhere = array("mobile"=>$login,"activeStatus"=>'Active',"user_type"=>0);
+                $activeWhere = array("mobile"=>$login,"user_type"=>0);
                 if($checkCrediantial==0)
                 {
-                    $checkWhere =  array("email"=>$login,"password"=>$password,"user_type"=>0); 
-                    $activeWhere = array("email"=>$login,"activeStatus"=>'Active',"user_type"=>0);
+                    $checkWhere =  array("email"=>$login, "password"=>$password,"user_type"=>0); 
+                    $activeWhere = array("email"=>$login, "user_type"=>0);
                     $checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
                 } 			
  	   			$data = '';	
- 	   			//print_r($checkWhere);die(); 	   			
 				$checkCrediantial = $this->AuthModel->checkRows($table_name,$checkWhere);
+ 	   			//print_r($activeWhere);die(); 	   			
 				if($checkCrediantial>0)
 				{
 					$this->AuthModel->checkActiveStatus($table_name,$activeWhere);      //Check, User is Active or not by admin;
@@ -525,6 +525,64 @@ class Auth extends CI_Controller {
         {
             $this->index();
         }
+    }
+
+    public function checkActiveStatus()   //To check user current Active status
+    {
+    	if(isset($_POST['user_id']) && $_POST['user_id']!='')
+    	{
+    		extract($_POST);
+    		if($this->AuthModel->checkActiveStatus('users',array('id'=>$user_id)))      //Check, User is Active or not by admin;
+    		{
+    			$respose = array("success"=>1, "error"=>0, "message"=>"success","data"=>'');
+	            echo json_encode($respose);
+    		}
+    		else
+    		{
+    			$respose = array("success"=>0, "error"=>1, "message"=>"Something went wrong!","data"=>'');
+	            echo json_encode($respose);
+    		}
+    	}
+    	else
+        {
+            $this->index();
+        }
+    }
+
+    public function myRating()
+    {
+    	if(isset($_POST['user_id']) && $_POST['user_id']!='')
+    	{
+    		extract($_POST);    		
+    		$resData = $this->AuthModel->getMultipleRecord('review',array('receiver_id'=>$user_id),'');
+	  		if(!empty($resData))
+	  		{
+	  			foreach ($resData as $rating => $r) {
+	  				$giver_id = $r->giver_id;
+	  				$giver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$giver_id));
+	  				$res['review']=$resData[$rating];
+	  				$resData[$rating]->image='';	
+	  				$resData[$rating]->name  ='';  			
+	  				if(!empty($giver_data))
+	  				{
+	  					if($giver_data->image_type==0){
+	  						$image = base_url('/userimage/'.$giver_data->image);	  					
+	  					}
+	  					else{
+	  							$image = $giver_data->image;}
+	  					$resData[$rating]->image = $image;
+	  					$resData[$rating]->name  = $giver_data->name;
+	  				}	  				
+	  			}
+	  			$response = array("success"=>1, "error"=>0, "message"=>"success","data"=>$resData);
+	            echo json_encode($response);
+	  		}
+	  		else
+	  		{
+	  			$response = array("success"=>0, "error"=>1, "message"=>"No rating","data"=>'');
+	            echo json_encode($response);
+	  		}
+    	}
     }
 	    
 }

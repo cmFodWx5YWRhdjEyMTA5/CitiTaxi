@@ -132,7 +132,14 @@
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
-                    </li>                     
+                    </li>  
+
+                    <li class="xn-openable <?php if(isset($page) && $page=='booking'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/userlist');?>"><span class="fa fa-car"></span> <span class="xn-text">Manage Booking</span><label class="badge" id="rowcount1" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
+                        <ul>
+                              <li><a href="<?php echo site_url('Home/booking');?>"><span class="fa fa-sort-alpha-desc"></span>Booking List</a></li>
+                        </ul>
+                    </li>                   
 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">

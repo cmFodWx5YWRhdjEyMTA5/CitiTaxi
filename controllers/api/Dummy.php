@@ -333,6 +333,15 @@ class Dummy extends CI_Controller {
             $this->index();
         }
     }
+
+    public function insertRecords()  //for insert record in new table
+    {
+        $users = $this->DummyModel->getMultipleRecord('users',array(),'');
+        foreach ($users as $key => $value) {
+            $user_id = $value->id;
+            $this->DummyModel->singleInsert('wallet_balance',array('user_id'=>$user_id,'update_at'=>date('Y-m-d H:i:s')));
+        }
+    }
 }
 
 

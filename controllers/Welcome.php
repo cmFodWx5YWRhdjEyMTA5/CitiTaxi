@@ -116,7 +116,7 @@ class Welcome extends CI_Controller {
 		}
 	}
 
-	public function reset_assword()     //for user
+	public function reset_password()     //for user
 	{
 		$data=new stdClass();
 		$email=$_GET['email'];

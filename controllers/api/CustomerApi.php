@@ -129,6 +129,7 @@ class CustomerApi extends CI_Controller {
                             "currency"=>$fairDetails->currency,
                             "payment_type"=>$payment_type,                           
                         );
+                    
                     if($booking_id = $this->AuthModel->singleInsert('booking',$bookingData))
                     {
                         $dropoffs=[];

@@ -169,14 +169,29 @@ class AuthModel extends CI_Model {
 
     public function checkActiveStatus($table_name,$where)
     {
-        $status = $this->db->get_where($table_name,$where)->num_rows();
-        if($status!=0){
-            return true;
-        }
-        else{
-           $response  = array("error"=>401,"message"=>"You are now inactive. Please contact with help support","data"=>'');
-            echo json_encode($response);
-            exit();
+        $status = $this->db->get_where($table_name,$where)->row();
+        //print_r($status);die();
+        if(!empty($status)){
+            if($status->activeStatus=='Active')
+            {
+                return true;
+            }
+            elseif($status->activeStatus=='Suspended')
+            {
+                $response  = array("error"=>401, "success"=>0,"message"=>"Your account has been suspended for ".$status->suspend_type.". Please contact with help support","data"=>'');
+                echo json_encode($response);
+                exit();
+            }
+            elseif($status->activeStatus=='Banned'){
+                $response  = array("error"=>401,"success"=>0,"message"=>"Your account has been Banned. Please contact with help support","data"=>'');
+                echo json_encode($response);
+                exit();
+            }
+            else{
+                $response  = array("error"=>401,"success"=>0,"message"=>"You are now inactive. Please contact with help support","data"=>'');
+                echo json_encode($response);
+                exit();            
+            }        
         }
     }
 
@@ -296,6 +311,8 @@ class AuthModel extends CI_Model {
         $count=$check->num_rows();      
         if($count>0)
         {
+            $forget_stamp = date('Y-m-d H:i:s');
+            $this->updateRecord(array('email'=>$email),'users',array('forget_timestamp'=>$forget_stamp));
             $res= $check->row();
             $data = new stdClass();
             $data->email = $res->email;
@@ -309,12 +326,55 @@ class AuthModel extends CI_Model {
             'wordwrap'=> TRUE,
             'mailtype' => 'html'
             );
+
+            $this->email->set_newline("\r\n");
+            $this->email->initialize($config);
+            $this->email->from('cititaxi@gmail.com','cititaxi'); 
+            $this->email->to($res->email);
+            $this->email->subject('Forget Passwoord');
+            $this->email->message($message);
+            if($this->email->send())
+            {
+                return 0;
+            } 
+            else
+            {
+                return 1;  
+            }
+        }
+        else
+        {           
+            return 2;
+            
+        }
+    }
+    public function recover_walletPin($table_name,$email,$user_type)
+    {
+        $check=$this->db->get_where($table_name,array('email'=>$email,'user_type'=>$user_type));
+        $count=$check->num_rows();      
+        if($count>0)
+        {
+            $forget_stamp = date('Y-m-d H:i:s');
+            $this->updateRecord(array('email'=>$email,'user_type'=>$user_type),'users',array('recoverpin_timestamp'=>$forget_stamp));
+            $res= $check->row();
+            $data = new stdClass();
+            $data->email = $res->email;
+            $data->password = $res->password;       
+            //----------------------------------------------------------------------------//
+            $this->load->library('email');
+            $subject = "Recover Pin";
+            $message = $this->load->view('recover_walletPinTemp',$data,true);
+            $config=array(
+            'charset'=>'utf-8',
+            'wordwrap'=> TRUE,
+            'mailtype' => 'html'
+            );
             $this->load->library('email');
             $this->email->set_newline("\r\n");
             $this->email->initialize($config);
-            $this->email->from('cititaxi@gmail.com','kotchi'); 
+            $this->email->from('cititaxi@gmail.com','CitiTaxi'); 
             $this->email->to($res->email);
-            $this->email->subject('Forget Passwoord');
+            $this->email->subject($subject);
             $this->email->message($message);
             if($this->email->send())
             {
@@ -426,6 +486,29 @@ class AuthModel extends CI_Model {
             }
         }
     } 
+
+    public function checkRequiredParam($paramarray,$type)
+    {  
+        $returnArr = array();
+        $NovalueParam = array();
+        foreach ($paramarray as $val)         
+        {           
+            if (empty($type[$val]))         
+            {
+                $NovalueParam[] = $val;
+            }
+        }
+        if (is_array($NovalueParam) && count($NovalueParam) > 0)
+        {
+            $returnArr['status'] = 0;            
+            $returnArr['message'] = 'Sorry, You missed ' . implode(', ', $NovalueParam) . ' parameters';
+            return $returnArr;
+        }
+        else
+        {
+            return $returnArr;
+        }    
+    }
 
     
 

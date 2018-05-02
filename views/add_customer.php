@@ -42,7 +42,7 @@
                                     <div class="form-group">                                        
                                         <label class="col-md-3 col-xs-12 control-label">Password</label>
                                         <div class="col-md-6 col-xs-12">
-                                            <input type="text" id="password1" name="password" class="form-control" minlength="5" />
+                                            <input type="password" id="password1" name="password" class="form-control" minlength="5" />
                                         </div>
                                     </div>
 

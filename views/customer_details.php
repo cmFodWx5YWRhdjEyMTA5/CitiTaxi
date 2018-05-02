@@ -112,7 +112,7 @@
                                                       if ( $('#<?php echo $list->id;?>').val() == 'Trip' )Trip(<?php echo $list->id; ?>)
                                                       else if ( $('#<?php echo $list->id;?>').val() == 'Banned' )
                                                       {
-                                                      if (confirm('Are you realy want to banne this user?')) Banned(<?php echo $list->id; ?>,'Banned');return false;
+                                                      if (confirm('Are you realy want to Banned this user?')) Banned(<?php echo $list->id; ?>,'Banned');return false;
                                                       }  
                                                       else if ( $('#<?php echo $list->id;?>').val() == 'Active' )
                                                       {
