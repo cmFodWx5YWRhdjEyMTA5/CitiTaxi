@@ -6,10 +6,15 @@
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title"><strong>Services Type</strong></h3>
-                    <div class="btn-group pull-right">
+                    <!--div class="btn-group pull-right">
                          <button type="button" class="btn btn-submit" data-toggle="modal" data-target="#exampleModal">
                              Add Service Type
                          </button>   
+                     </div-->
+                     <div class="btn-group pull-right">
+                      <a href="<?php echo site_url('Home/add_service');?>">
+                         <button type="button" class="btn btn-submit">Add Service Type</button>   
+                      </a>
                      </div>
                 </div>
                 <div class="container-fluid">
@@ -22,9 +27,12 @@
                                                 <tr>
                                                     <th width="50">#</th>
                                                     <th>Service Name</th>
+                                                    <th>Select Image</th>
+                                                    <th>Un-Select Image</th>
                                                     <th>Status</th>
                                                     <th width="100">Edit</th>
                                                     <th width="100">Action</th>
+                                                    <th width="100">Delete</th>
                                                 </tr>
                                             </thead>
                                             <tbody> 
@@ -32,17 +40,29 @@
                                                 <tr">
                                                     <td class="text-center"><?php echo $i++; ?></td>
                                                     <td><strong><?php echo $v->servicename; ?></strong></td>
+                                                    <td><img src="<?php echo base_url('/serviceimage/'.$v->selected_image); ?>" width="100" height="100"></td>
+                                                    <td><img src="<?php echo base_url('/serviceimage/'.$v->unselected_image); ?>" width="100" height="100"></td>
+                                                    
                                                     <td style="color:<?php if($v->status=='active'){ echo 'green';} else{echo 'red';} ?>"><strong><?php echo strtoupper($v->status); ?></strong></td>
                                                     <td>
-                                                        <a  href="#" data-toggle="modal" data-target="#exampleModal1">
-                                                        <button class="btn btn-default btn-rounded btn-sm" onclick="changeIt(<?php echo "'".$v->servicename."',".$v->typeid; ?>)"><span class="fa fa-pencil"></span>
+                                                        <a  href="<?php echo site_url('Home/updateServiceType/'.$v->typeid); ?>">
+                                                        <button class="btn btn-default btn-rounded btn-sm" ><span class="fa fa-pencil"></span>
                                                         </button>
                                                     </td>
+
+                                                    <!--td>
+                                                        <a  href="#" data-toggle="modal" data-target="#exampleModal1">
+                                                        <button class="btn btn-default btn-rounded btn-sm" onclick="changeIt(<php echo "'".$v->servicename."',".$v->typeid; ?>)"><span class="fa fa-pencil"></span>
+                                                        </button>
+                                                    </td-->
                                                     <td>
                                                         <?php if($v->status=='active'){ $status ='deactive';} else{$status='active';}?>
 
                                                         <input type='button' class="btn btn-danger btn-rounded btn-sm" onClick="changeStatus(<?php echo $v->typeid;?>,<?php echo "'".$status."'";?>);" value="<?php echo $status; ?>">
                                                     </td>
+                                                    <td>
+                                                        <input type="button" value="Delete" class="btn btn-reset" onclick="deleteservice(<?php echo $v->typeid;?>)">
+                                                    </td> 
                                                 </tr>
                                                 <?php } ?>                                           
                                                
@@ -171,5 +191,23 @@
     {
         $('#types').val(servicename);
         $('#typeid').val(id);
+    }
+
+    function deleteservice(servicetypeid)
+    {
+      var r = confirm("Are you realy want to delete this service");
+      if(r==true)
+      {
+          $.ajax({
+          method:'POST',
+          url:"<?php echo site_url('Home/deleteservice_type');?>",
+          data:{'serviceid':servicetypeid},
+          success:function(data){
+            alert(data);
+            location.reload();
+          },
+        });
+      }
+      
     }
 </script>

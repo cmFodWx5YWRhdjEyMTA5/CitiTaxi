@@ -185,6 +185,21 @@ class Welcome extends CI_Controller {
 		}
 	}
 
+	public function checkdriverRequest()  //to check new driver request
+    {
+        $newdrivercount = $this->AuthModel->checkRows('users',array('signup_status'=>'incomplete','seen_status'=>0));
+        print_r($newdrivercount);
+
+    }
+
+    public function checkpendingBooking()  //to check later booking request
+    {
+        $where  = "((booking_status=9 or booking_status=2) and booking_type='later' and seen_status=0)";
+        $newdrivercount = $this->AuthModel->checkRows('booking',$where);
+        print_r($newdrivercount);
+
+    }
+
 	public function unauthrised()
 	{
 		$data['heading']='404 Page Not Found';

@@ -7,7 +7,7 @@ class Driver extends CI_Controller {
         if($this->session->userdata('email')=='')
         {
             redirect(base_url());
-        }   
+        }          
     }
 
     public function index()        //driver details

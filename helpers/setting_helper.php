@@ -20,7 +20,7 @@ if ( ! function_exists('servicetypes')){
        //get main CodeIgniter object
       $ci =& get_instance();       
       $ci->load->database();
-      $query = $ci->db->get('servicetype')->result();
+      $query = $ci->db->get_where('servicetype',array('status'=>'active'))->result();
       return $query;
    }
 }
@@ -107,6 +107,31 @@ if ( ! function_exists('getCount')){
       return $query;
    }
 }
+if ( ! function_exists('get_rating')){
+    function get_rating($user_id)
+    {
+        $ci =& get_instance();       
+        $ci->load->database();
+        $rr =$ci->db->get_where('review',array('receiver_id'=>$user_id))->result();       
+        $NofRating   = count($rr);        
+        $userRating  = 0;
+        $countRating = 0;
+        if(!empty($rr))
+        {
+            foreach ($rr as $ratecount) {
+                $rate= $ratecount->rating;
+                $countRating = $countRating+$rate;
+            }            
+            $n =$countRating/$NofRating;
+            $userRating = round($n,2);
+            return $userRating;
+        }
+        else
+        {
+            return $userRating;
+        }
+    }
+  }
 
 
 

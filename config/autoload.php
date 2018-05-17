@@ -132,4 +132,6 @@ $autoload['language'] = array();
 |
 |	$autoload['model'] = array('first_model' => 'first');
 */
-$autoload['model'] = array('AuthModel','BookingModel','StandardModel');
+$autoload['model'] = array('AuthModel','BookingModel','AbhiModel');
+
+$autoload['time_zone'] = date_default_timezone_set('Asia/Kolkata');

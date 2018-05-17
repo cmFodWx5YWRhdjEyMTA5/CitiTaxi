@@ -79,6 +79,7 @@
                                                 <td><?php echo $list->country; ?></td>
                                                 <td><?php echo $list->city;?></td>
                                                 <td><?php echo $list->currency;?></td>
+                                                <?php if($list->company_comission_type=='Per'){$list->company_comission_type='Percentage';} ?>
                                                 <td><?php echo $list->company_comission_rate.' '.$list->company_comission_type;?></td>
                                                 <td><?php echo $list->minbase_fair.' '.$list->currency;;?></td>
                                                 <td><?php echo $list->min_distance.' '.$list->min_distanceUnit;?></td>
@@ -88,7 +89,7 @@
                                                 <td><?php echo $list->stndCancelChargeDriver.' '.$list->cancelChargeUnitDriver;?></td>
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger;?></td>
                                                 <td><?php echo $list->WeeklyCancellationLimit.' Rides';?></td>
-                                                <td><a href="<?php echo site_url('Vehicle/fair_full_details/'.$list->fair_id);?>">Full Details</a></td>
+                                                <td><a href="<?php echo site_url('Vehicle/fare_full_details/'.$list->fair_id);?>">Full Details</a></td>
                                                 <td><a href="">Edit</a></td>
                                         <?php } ?>
                                         </tbody>

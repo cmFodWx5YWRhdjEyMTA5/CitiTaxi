@@ -17,7 +17,7 @@
 
                                 <div class="panel-heading">
 
-                                    <h3 class="panel-title"><strong>Driver</strong>  Details</h3>
+                                    <h3 class="panel-title"><strong>Driver List</strong></h3>
                                     <?php if(isset($sucess)==1){ ?>
 
                                     <div class="alert alert-success">
@@ -51,7 +51,7 @@
                                             <th>Sr.No</th>
                                             <th style="min-width:80px;">Status</th>
                                             <th style="min-width:80px; text-align:center">Driver ID</th>
-                                            <th style="width:50px !important; text-align:center">Rating</th>
+                                            <th style="min-width:50px !important;">Rating</th>
                                             <th>Name</th>
                                             <th>Email</th>
                                             <th>Phone</th>
@@ -60,7 +60,7 @@
                                             <th>Image</th>
                                             <th>Address</th>
                                             <th>Creat_At</th>
-                                            <th>Driver Wallet</th>
+                                            <th style="min-width:80px !important;">Driver Wallet</th>
                                             <th style="text-align:center">Status (online/offline)</th>
                                             <th>Reset Password</th>
                                             <th>Other Details</th>                                           
@@ -79,7 +79,7 @@
                                                     <br><?php echo $list->suspend_type; ?>
                                                 </td>
                                                 <td><?php echo $list->id; ?></td>
-                                                <td><!--Rating--></td>
+                                                <td><?php echo get_rating($list->id);?></td>
                                                 <td><?php echo $list->name; ?></td>                                                
                                                 <td><?php echo $list->email; ?></td>
                                                 <td><?php echo $list->mobile;?></td>
@@ -106,7 +106,9 @@
                                                 <td><?php $t=$list->created_at;  $s=explode(" ",$t); $e=implode(" / ",$s);
                                                          echo $e; ?>
                                                 </td>
-                                                <td><!-- wallet A/c--></td>
+                                                <td><?php $wallet = getSingleDetail('wallet_balance',array('user_id'=>$list->id));
+                                                if(!empty($wallet)){echo $wallet->balance;}else{echo '0';}
+                                                ?> MMK</td>
                                                 <td style="text-align:center; color:red;"><?php echo $list->online_status; ?></td>
 
                                                 <td><a  href="#" id="link1" data-toggle="modal" data-target="#exampleModal">

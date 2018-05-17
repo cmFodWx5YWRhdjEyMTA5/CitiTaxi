@@ -429,31 +429,49 @@ class Auth extends CI_Controller {
 
   	public function getServiceType()
   	{
-  		if(isset($_POST['city']) && $_POST['city']!='')
+  		if(isset($_POST['city']) && $_POST['city']!='' && isset($_POST['device_type']) && $_POST['device_type']!='')
   		{	 
-  			extract($_POST);
-	  		$resData = $this->AuthModel->getMultipleRecord('servicetype',array('status'=>'active'),'');
-	  		if(!empty($resData))
-	  		{
-	  			foreach ($resData as $key => $value) {
-	  				$type_id = $value->typeid;			
-			  		$where = array('serviceType_id'=>$type_id,'country'=>$country,'city'=>$city);
-		  			$fareData = $this->AuthModel->getSingleRecord('fare',$where);
-		  			$res['service']=$resData[$key];
-		  			if(!empty($fareData))
-		  			{
-		  				$res['serviceDetail'] = $fareData;
+  			extract($_POST);  //'device_type'
+  			$paramarray = array('customer_id','country','city','device_token');
+            $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+            if(isset($vResponse['status']) && $vResponse['status']==0)
+            {
+                $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                echo json_encode($response);die();
+            }
+            else
+            {
+            	$this->AuthModel->checkActiveStatus('users',array('id'=>$customer_id));
+            	$resData = $this->AuthModel->getMultipleRecord('servicetype',array('status'=>'active'),'');
+            	$this->AuthModel->updateRecord(array('id'=>$customer_id),'users',array("device_token"=>$device_token,'device_type'=>$device_type));
+		  		if(!empty($resData))
+		  		{
+		  			foreach ($resData as $key => $value) {
+		  				//echo 'join()';die();
+		  				$type_id = $value->typeid;	
+		  				//echo $type_id;die();		
+				  		$where = array('serviceType_id'=>$type_id,'country'=>$country,'city'=>$city);
+			  			$fareData = $this->AuthModel->getSingleRecord('fare',$where);
+			  			//print_r($fareData);die();
+			  			$service  = $this->AuthModel->keychange($resData[$key]);
+			  			//print_r($service);die();
+			  			$res['service']=$service;
+			  			//print_r($res);die();
+			  			if(!empty($fareData))
+			  			{
+			  				$res['serviceDetail'] = $fareData;
+			  			}
+			  			$services[]=$res;
 		  			}
-		  			$services[]=$res;
-	  			}
-	  			$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$services);
-	  			echo json_encode($response);
-	  		}
-	  		else
-	  		{
-	  			$response = array('success'=>0,'error'=>1,'message'=>'No service type found','data'=>array());
-	  			echo json_encode($response);
-	  		}
+		  			$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$services);
+		  			echo json_encode($response);
+		  		}
+		  		else
+		  		{
+		  			$response = array('success'=>0,'error'=>1,'message'=>'No service type found','data'=>array());
+		  			echo json_encode($response);
+		  		}
+            }	  		
 	  	}
 	  	else
 	  	{
@@ -584,7 +602,8 @@ class Auth extends CI_Controller {
 	  		}
     	}
     }
-	    
+
+    	    
 }
 ?>
 

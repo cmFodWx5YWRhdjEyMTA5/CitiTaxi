@@ -200,6 +200,14 @@ class AuthModel extends CI_Model {
         return $this->db->get_where($table_name,$where)->row();
     }
 
+    public function getColumnSum($table_name,$col_name,$where)
+    {
+        $this->db->select_sum($col_name);
+        $this->db->where($where);
+        $sum = $this->db->get($table_name)->row(); 
+        return $sum;
+    }    
+
     public function getMultipleRecord($table_name,$where,$orderby)
     {
     	$this->db->order_by($orderby);
@@ -233,6 +241,19 @@ class AuthModel extends CI_Model {
             if($key=='licenseImage')
             {
                $user_detail->licenseImage= base_url().'licenceImage/'.$user_detail->licenseImage;
+            }
+            if($key=='selected_image')
+            {
+               $user_detail->selected_image= base_url().'serviceimage/'.$user_detail->selected_image;
+               //print_r($user_detail->selected_image);die();
+            }
+            if($key=='unselected_image')
+            {
+               $user_detail->unselected_image= base_url().'serviceimage/'.$user_detail->unselected_image;
+            }
+            if($key=='dropoff')
+            {
+                $user_detail->dropoff= json_decode($user_detail->dropoff);
             }
             if(isset($user_detail->password))
             {unset($user_detail->password); }
@@ -510,9 +531,76 @@ class AuthModel extends CI_Model {
         }    
     }
 
+    public function get_rating($user_id)
+    {
+        $rr = $this->db->get_where('review',array('receiver_id'=>$user_id))->result();       
+        $NofRating   = count($rr);        
+        $userRating  = 0;
+        $countRating = 0;
+        if(!empty($rr))
+        {
+            foreach ($rr as $ratecount) {
+                $rate= $ratecount->rating;
+                $countRating = $countRating+$rate;
+            }            
+            $n =$countRating/$NofRating;
+            $userRating = round($n,2);
+            return $userRating;
+        }
+        else
+        {
+            return $userRating;
+        }
+    }
+
+    public function checkThenInsertorUpdate($table_name,$data,$where)
+    {
+        $check = $this->checkRows($table_name,$where);
+        if($check==0)
+        {
+            if($this->singleInsert($table_name,$data))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if($this->updateRecord($where,$table_name,$data))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    public function tableConfig()
+    {
+        $config['full_tag_open'] = "<ul class='pagination'>";
+        $config['full_tag_close'] ="</ul>";
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['cur_tag_open'] = "<li class='disabled'><li class='active'><a href='#'>";
+        $config['cur_tag_close'] = "<span class='sr-only'></span></a></li>";
+        $config['next_tag_open'] = "<li>";
+        $config['next_tagl_close'] = "</li>";
+        $config['prev_tag_open'] = "<li>";
+        $config['prev_tagl_close'] = "</li>";
+        $config['first_tag_open'] = "<li>";
+        $config['first_tagl_close'] = "</li>";
+        $config['last_tag_open'] = "<li>";
+        $config['last_tagl_close'] = "</li>";
+        // Initialize
+        return $config;       
+    }
+
     
-
-
 	
 }
 ?>

@@ -78,6 +78,16 @@ class CustomerApi extends CI_Controller {
         if(!empty($jsonData) && !empty($jsonData['dropoff']))
         {
             //customer_id,address_type(single,multiple),fromaddress,fromLat,fromLong,toaddress,toLat,toLong,service_type_id, date,time,booking_type(now,later),country,city
+            if($jsonData['booking_type']=='later')
+            {
+                $paramarray = array('later_pickup_date','later_pickup_time');
+                $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$jsonData);
+                if(isset($vResponse['status']) && $vResponse['status']==0)
+                {
+                    $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                    echo json_encode($response);die();
+                }
+            }                      
             $customer_id            = $jsonData['customer_id'];
             $country                = $jsonData['country'];
             $city_name              = $jsonData['city_name'];
@@ -94,19 +104,66 @@ class CustomerApi extends CI_Controller {
             $total_regular_charge   = $jsonData['total_regular_charge'];
             $total_perminute_charge = $jsonData['total_perminute_charge'];
             $total_fair             = $jsonData['total_fair'];
-            $booking_type           = $jsonData['booking_type'];     //(now,later) 
+            $booking_type           = $jsonData['booking_type'];     //(now,later)
+            $later_pickup_date      = $jsonData['later_pickup_date']; 
+            $later_pickup_time      = $jsonData['later_pickup_time']; 
             $booking_note           = $jsonData['booking_note'];
-            $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay
+            $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay           
 
+            //=================================================================================================//
+            
             $fairDetails            = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_type_id,"country"=>$country,"city"=>$city_name));  
             //check service available in this city or not
             if(!empty($fairDetails))
-            {                               
-                $nearbyDriver = $this->BookingModel->searchDriver($pickupLat,$pickupLong,$date,$time,$service_type_id);  
+            {
+                if($jsonData['booking_type']=='later'){
+                    $nearbyDriver = true;
+                    $driver_id    = 0;
+                    $booking_status=8; // will assign later
+                    $later_pickup = $later_pickup_date.' '.$later_pickup_time;
+                    $later_pickup_string = strtotime($later_pickup);
+                    $later_pickup_at = date('d-m-Y h:i A',strtotime($later_pickup));
+                }
+                else{ 
+                    $nearbyDriver = '';
+                    $allDriverNearBy  = $this->BookingModel->searchNearByDriver($pickupLat,$pickupLong,$date,$time,$service_type_id);
+                    //print_r($allDriverNearBy);die();
+                    if(!empty($allDriverNearBy))
+                    {
+                        foreach ($allDriverNearBy as $near) {
+                            $driver = $near->user_id;
+                            $nearly  = $this->BookingModel->searchDriver($pickupLat,$pickupLong,$date,$time,$service_type_id,$driver); 
+                            //echo json_encode($nearbyDriver);die();
+                            if(!empty($nearly)){                                                        
+                                $driver_id = $nearly->id;                                
+                                $booking_status=0; //assign driver
+                                $later_pickup_at ='';
+                                $later_pickup_string = '';
+                                //print_r($this->db->last_query());die();
+                                if($nearly->destination_status=='on')
+                                {   
+                                    //echo $driver_id;
+                                    if($this->checkDriverDestinations($driver_id,$dropoff))
+                                    { 
+                                        $nearbyDriver = $nearly;
+                                        goto getfinaldriver;
+                                        break;
+                                        //$nearbyDriver = $nearbyDriver;//echo $driver_id;
+                                        //exit();
+                                    }                                    
+                                }
+                                else{
+                                    $nearbyDriver = $nearly;
+                                } 
+
+                            }                            
+                        }//echo 'mil gya'.$driver_id;                                                
+                    }
+                }
+                getfinaldriver:
                 //echo json_encode($nearbyDriver);die();
                 if(!empty($nearbyDriver))
-                {
-                    $driver_id = $nearbyDriver->id;  
+                {                                         
                     $booking_at = $date.' '.$time;                   
                     $bookingData =  array(
                             "customer_id"=>$customer_id,
@@ -122,14 +179,17 @@ class CustomerApi extends CI_Controller {
                             "booking_at" =>$booking_at,
                             "booking_at_string"=>strtotime($booking_at),
                             "booking_type"=>$booking_type,
+                            "later_pickup_at"=>$later_pickup_at,
+                            "later_pickup_string"=>$later_pickup_string,
                             "total_ride_time"=>$total_ride_time,
                             "total_distance"=>$total_ride_distance,
                             "distance_unit"=>$fairDetails->distanceUnit,
                             "total_fare"=>$total_fair,
                             "currency"=>$fairDetails->currency,
-                            "payment_type"=>$payment_type,                           
-                        );
-                    
+                            "payment_type"=>$payment_type, 
+                            "booking_status"=>$booking_status,                          
+                        );                   
+                    //print_r($bookingData);die();                    
                     if($booking_id = $this->AuthModel->singleInsert('booking',$bookingData))
                     {
                         $dropoffs=[];
@@ -145,33 +205,44 @@ class CustomerApi extends CI_Controller {
                         {                            
                             $this->saveFairDetails($fairDetails,$booking_id,$date,$time,$booking_address_type,$total_regular_charge,$total_perminute_charge);   //save fair details
 
-                            $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array("online_status"=>'offline'));
-                            //Change online status so other request will not get.    
-                            $commissionData = array("booking_id"=>$booking_id,"driver_id"=>$driver_id,"commission_type"=>$fairDetails->company_comission_type,"commission_rate"=>$fairDetails->company_comission_rate,"commission_at"=>$date.' '.$time);
-                            $this->AuthModel->singleInsert('company_booking_commission',$commissionData);                       
+                            if($jsonData['booking_type']=='now') // when current booking
+                            {                                 
+                                /*$commissionData = array("booking_id"=>$booking_id,"driver_id"=>$driver_id,"commission_type"=>$fairDetails->company_comission_type,"commission_rate"=>$fairDetails->company_comission_rate,"commission_at"=>$date.' '.$time);
+                                $this->AuthModel->singleInsert('company_booking_commission',$commissionData); */
 
-                            $vehicle = $this->AuthModel->getSingleRecord('vechile_details',array("driver_id"=>$driver_id));//get vehicle details
-                            $resdata = $this->AuthModel->keychange($nearbyDriver);
-                            $tripData = array(  
-                                                "booking_id"=>$booking_id,
-                                                "driver_id"=>$driver_id,
-                                                "driver_image"=>$resdata->image,
-                                                "driver_name"=>$resdata->name,
-                                                "driver_mobile"=>$resdata->mobile,
-                                                "service_typeid"=>$resdata->typeid,
-                                                "service_name"=>$resdata->servicename,
-                                                "vehicle_id"=>$vehicle->vechileId,
-                                                "vehicle_name"=>$vehicle->brand.' '.$vehicle->sub_brand,
-                                                "vehicle_no"=>$vehicle->number_plate,                                                
-                                                "liveaddress"=>$resdata->liveaddress,                                                
-                                                "livelatitude"=>$resdata->latitude,                                                
-                                                "livelongitude"=>$resdata->longitude,
-                                                "pickup"=>$pickup,
-                                                "pickupLat"=>$pickupLat,
-                                                "pickupLong"=>$pickupLong,                                              
-                                            );
-                            $response = array('success'=>1,'error'=>0,'message'=>'Booking successfull',"data"=>$tripData);
-                            echo json_encode($response);
+                                $vehicle = $this->AuthModel->getSingleRecord('vechile_details',array("driver_id"=>$driver_id));//get vehicle details
+                                $resdata = $this->AuthModel->keychange($nearbyDriver);
+                                $tripData = array(  
+                                                    "booking_id"=>$booking_id,
+                                                    "driver_id"=>$driver_id,
+                                                    "driver_image"=>$resdata->image,
+                                                    "driver_name"=>$resdata->name,
+                                                    "driver_mobile"=>$resdata->mobile,
+                                                    "service_typeid"=>$resdata->typeid,
+                                                    "service_name"=>$resdata->servicename,
+                                                    "vehicle_id"=>$vehicle->vechileId,
+                                                    "vehicle_name"=>$vehicle->brand.' '.$vehicle->sub_brand,
+                                                    "vehicle_no"=>$vehicle->number_plate,                 
+                                                    "liveaddress"=>$resdata->liveaddress,                                 
+                                                    "livelatitude"=>$resdata->latitude,                                               
+                                                    "livelongitude"=>$resdata->longitude,
+                                                    "pickup"=>$pickup,
+                                                    "pickupLat"=>$pickupLat,
+                                                    "pickupLong"=>$pickupLong, 
+                                                    "free_waiting_minute"=>$fairDetails->regularFreeWaitingMinute,
+                                                    "waiting_period"=>$fairDetails->regularWaitingPeriodForCharge,
+                                                    "waiting_period_charge"=>$fairDetails->regularWaitingPeriodCharge,
+                                                    "currency"=>$fairDetails->currency,                                             
+                                                );
+
+                                $response = array('success'=>1,'error'=>0,'message'=>'Booking successfull',"data"=>$tripData,'booking_id'=>$booking_id);
+                                echo json_encode($response);
+                            }
+                            else
+                            {
+                                $response = array('success'=>1,'error'=>0,'message'=>'Booking successfull',"data"=>'','booking_id'=>$booking_id);
+                                echo json_encode($response);
+                            }
                         }
                         else{
                             $this->AuthModel->delete_record('booking',array('booking_id'=>$booking_id));
@@ -179,14 +250,12 @@ class CustomerApi extends CI_Controller {
                             echo json_encode($response);                            
                         }
                     }
-                    else
-                    {
+                    else{
                         $response = array("success"=>0,"error"=>1,"message"=>"Oops! something went wrong, please try again");
                         echo json_encode($response);
                     }
                 }
-                else
-                {
+                else{
                     $response = array("success"=>0,"error"=>1,"message"=>"Sorry! No driver found at your pickup location");
                     echo json_encode($response);
                 }
@@ -196,13 +265,66 @@ class CustomerApi extends CI_Controller {
                 echo json_encode($response);
             } 
         }
-        else
-        {
+        else{
             $this->index();
         }
     }
+
+    public function checkDriverDestinations($driver_id,$dropoff)
+    {
+        $des = $this->AuthModel->getSingleRecord('driver_destination',array('driver_id'=>$driver_id));
+        if(!empty($des))
+        {
+            $destinationLat = $des->destination_lat;
+            $destinationLng = $des->destination_lng;    
+            //print_r($dropoff);die();  
+            if(count($dropoff>0)) //if multiple address then check far distance address
+            {
+                foreach($dropoff as $k =>$v)
+                {  
+                    $dropoffLat    = $v['dropoffLat'];
+                    $dropoffLong   = $v['dropoffLong'];
+                    $dist   = $this->BookingModel->distance($destinationLat,$destinationLng,$dropoffLat,$dropoffLong,'k');
+                    //$dist   = $this->BookingModel->searchDriverDestination($dropoffLat,$dropoffLong,$driver_id);
+                    //echo json_encode($dist);die();
+                    //$dist         = $this->BookingModel->GetDrivingDistance($destinationLat,$dropoffLat,$destinationLng,$dropoffLong);
+                    //if(!empty($dist)){
+                        $r['dist']     = $dist;
+                        $r['positon']  = $k; 
+                        $r['droplat']      = $dropoffLat; 
+                        $r['droplng']      = $dropoffLong; 
+                        $r['destLat']      =  $destinationLat;       
+                        $r['destLng']      =  $destinationLng;       
+                        $dropoffs[]    = $r;
+                    //}
+                }
+                //print_r($dropoffs);die();            
+                //print_r($dropoffs);die();
+                if(!empty($dropoffs)){
+                    $maxDropIndex    = array_search(max($dropoffs),$dropoffs); //get longest address index
+                    //echo $maxDropIndex;die();
+                    $dropoffLat      = $dropoff[$maxDropIndex]['dropoffLat'];
+                    $dropoffLng      = $dropoff[$maxDropIndex]['dropoffLong'];                               
+                }
+                else{
+                    $dropoffLat      = $dropoff[0]['dropoffLat'];
+                    $dropoffLng      = $dropoff[0]['dropoffLong'];
+                }
+            }
+            else{
+                $dropoffLat      = $dropoff[0]['dropoffLat'];
+                $dropoffLng      = $dropoff[0]['dropoffLong'];            
+            }
+            if($this->BookingModel->searchDriverDestination($dropoffLat,$dropoffLng,$driver_id)){            
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+    } 
     
-    public function saveFairDetails($fairDetails,$booking_id,$bookdate,$booktime,$booking_address_type,$total_regular_charge,$total_perminute_charge)
+    public function saveFairDetails($fairDetails,$booking_id,$bookdate,$booktime,$booking_address_type,$total_regular_charge,$total_perminute_charge)  //Book driver part
     {
         $time       = strtotime($bookdate.' '.$booktime);
         $fairdata = array(
@@ -266,10 +388,12 @@ class CustomerApi extends CI_Controller {
         if(isset($_POST['booking_id']) && $_POST['booking_id']!='')
         {
             extract($_POST);
-            $tripReceipt = $this->BookingModel->getTripInvoice($booking_id);
+            $tripReceipt = $this->BookingModel->getTripInvoice($booking_id);            
             //echo json_encode($tripReceipt);die();
             if(!empty($tripReceipt))
             {
+                $driver_id = $tripReceipt->driver_id;
+                $tripReceipt->driver_rating = get_rating($driver_id);
                 $dropoffs = $this->AuthModel->getMultipleRecord('booking_dropoffs',array("booking_id"=>$booking_id),"");
                 $tripdata = $this->AuthModel->keychange($tripReceipt);
                 $response = array("success"=>1,"error"=>0,"message"=>"success","tripReceipt"=>$tripdata,"dropoffs"=>$dropoffs);
@@ -385,76 +509,243 @@ class CustomerApi extends CI_Controller {
         }
     } 
 
-    /*public function OldTripRejectByCustomer()
+    public function my_points()   //Bonus&Gallery my_point tab
     {
-        if(isset($_POST['booking_id']) && $_POST['booking_id'] && isset($_POST['customer_id']) && $_POST['customer_id']!='')
-        {            
-            $checkBookingStatus = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id));
-            if(!empty($checkBookingStatus))
-            {                
-                $updata = array("booking_status"=>3,"cancel_reason"=>$cancel_reason);
-                if($this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'booking',$updata))
-                {       
-                    $score = $this->AuthModel->getSingleRecord('users_score',array("user_id"=>$customer_id));
-                    if($checkBookingStatus->booking_status==1)   //cancel after accept
-                    {
-                        $preAcceptCancel = $score->total_cancel_after_accept;
-                        $newAcceptCancel = $preAcceptCancel+1;  
-                        if($score->banned_count==0 && $newAcceptCancel<3)
-                        {
-                            $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',array("total_cancel_after_accept"=>$newAcceptCancel));                            
-                        }                      
-                        elseif($score->banned_count==0 && $newAcceptCancel==3)
-                        {
-                            $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',array("total_cancel_after_accept"=>$newAcceptCancel,'banned_count'=>1));
-                            $this->AuthModel->updateRecord(array('id'=>$customer_id),'users',array('active_status'=>'banned'));
-                        }
-                        elseif($score->banned_count==1 && $newAcceptCancel==3)
-                        {
-                            $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',array("total_cancel_after_accept"=>$newAcceptCancel,'banned_count'=>1));
-                            $this->AuthModel->updateRecord(array('id'=>$customer_id),'users',array('active_status'=>'banned'));
-                        }
-                    }
-                    elseif($checkBookingStatus->booking_status==0)   //cancel before accept
-                    {
-                        $preCancel       = $score->total_cancel_before_accept;
-                        $newPreAcceptCancel = $preCancel+1;                        
-                        if($score->banned_count==0 && $newPreAcceptCancel==3)
-                        {
-                            $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',array("total_cancel_before_accept"=>$newPreAcceptCancel,'banned_count'=>1));
-                            $this->AuthModel->updateRecord(array('id'=>$customer_id),'users',array('active_status'=>'banned'));
-                        }
-                    }
-                    $record = array("booking_id"=>$booking_id,"cancelby_id"=>$driver_id,"cancel_reason"=>$cancel_reason);
-                    $this->AuthModel->singleInsert('booking_cancel_record',$record);                
+        if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+            extract($_POST);
+            $total_booking = $this->AuthModel->checkRows('booking',array('customer_id'=>$user_id));
+            $total_point=0;
+            if($total_booking>0){
+                $bookings = $this->AuthModel->getMultipleRecord('booking',array('customer_id'=>$user_id),"");
+                foreach ($bookings as $key => $value) {
+                    $total_point = $total_point+$value->customer_trip_score;
+                    $booking_id  = $value->booking_id;
+                    //get dropoff location
+                    $booking_dropoffs=booking_dropoffs($booking_id);
+                    $res['booking_id'] = $booking_id;
+                    $res['pickup']=$value->pickup;
+                    $res['pickuplat']=$value->pickupLat;
+                    $res['pickupLong']=$value->pickupLong;
+                    $res['booking_at']=$value->booking_at;
+                    $res['booking_status']=$value->booking_status;
+                    $res['earn_point']=$value->customer_trip_score;
+                    $res['dropoff']=$booking_dropoffs;
+                    $resData[]=$res;                 
                 }
-                else
-                {
-                    $respose = array("error"=>1,"success"=>0,"message"=>"Oops! Something went wrong, Please try again");
-                    echo json_encode($respose);
-                }            
+                $response  = array("error"=>0,"success"=>1,"message"=>"success",'point_balance'=>$total_point,"bookingData"=>$resData);
+                echo json_encode($response);die();
+            }
+            else{
+                $response  = array("error"=>0,"success"=>2,"message"=>"No booking found");
+                echo json_encode($response);die();
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
+    public function getTripDriverDetails()
+    {
+        if(isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {
+            extract($_POST);
+            //echo $customer_id;
+            $tripRequest = $this->BookingModel->getTripDriverDetails($customer_id);
+            //print_r($this->db->last_query());die();
+            //echo json_encode($tripRequest);die();
+            if(!empty($tripRequest))
+            {  
+                $booking_id = $tripRequest->booking_id;
+                $dropoffs = $this->AuthModel->getMultipleRecord('booking_dropoffs',array("booking_id"=>$booking_id),"");
+                $tripdata = $this->AuthModel->keychange($tripRequest);
+                $tripData = array(
+                    "booking_id"=>$tripdata->booking_id,
+                    "customer_id"=>$tripdata->customer_id,
+                    "driver_id"=>$tripdata->driver_id,
+                    "booking_address_type"=>$tripdata->booking_address_type,
+                    "driver_note"=>$tripdata->booking_note,
+                    "pickup"=>$tripdata->pickup,
+                    "pickupLat"=>$tripdata->pickupLat,
+                    "pickupLong"=>$tripdata->pickupLong,
+                    "dropoffLocation"=>$dropoffs,
+                    "total_distance"=>$tripdata->total_distance,
+                    "distance_unit"=>$tripdata->distance_unit,
+                    "total_fare"=>$tripdata->total_fare,
+                    "payment_type"=>$tripdata->payment_type,
+                    "currency"=>$tripdata->currency,
+                    "servicename"=>$tripdata->servicename,
+                    "driver_name"=>$tripdata->name,
+                    "driver_email"=>$tripdata->email,
+                    "driver_mobile"=>$tripdata->mobile,
+                    "image"=>$tripdata->image,
+                    "vehileId"=>$tripdata->vechileId,
+                    "vehilename"=>$tripdata->brand.' '.$tripdata->sub_brand,
+                    "vehicle_no"=>$tripdata->number_plate,
+                    "rating"=>get_rating($tripdata->driver_id),                    
+                    "free_waiting_minute"=>$tripdata->free_waiting_minute,
+                    "waiting_period"=>$tripdata->paid_every_waiting_minute,
+                    "waiting_period_charge"=>$tripdata->every_waiting_minute_charge,                    
+                );
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$tripData);
+                echo json_encode($response);
             }
             else
             {
-                $respose = array("error"=>1,"success"=>0,"message"=>"Invalid booking");
-                echo json_encode($respose);
-
-            }            
+                $response = array('success'=>0,'error'=>1,'message'=>'No New booking','data'=>'');
+                echo json_encode($response);   
+            }
         }
         else
         {
             $this->index();
         }
-    } */ 
+    }
 
-            // =================================Develope by Abhishek=====================================================//
-    public function completeBooking()
+    public function add_favourite_booking()
+    {
+        if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {
+            extract($_POST);
+            $this->AuthModel->updateRecord(array("booking_id"=>$booking_id,'customer_id'=>$customer_id),'booking',array("favourite_status"=>1));
+            $affected_rows = $this->db->affected_rows();
+            if($affected_rows>0){
+                $response = array('success'=>1,'error'=>0,'message'=>'success');
+                echo json_encode($response);
+            }
+            else{
+                $response = array('success'=>0,'error'=>1,'message'=>'Something went wrong, Please try again');
+                echo json_encode($response);
+            }
+        }
+        else{
+            $this->index();
+        }        
+    }
+
+    public function get_favourite_booking()
+    {
+        if(isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {
+            extract($_POST);            
+            $favourite = $this->AuthModel->getMultipleRecord('booking',array('customer_id'=>$customer_id,'favourite_status'=>1),'');
+            if(!empty($favourite))
+            { 
+               foreach ($favourite as $key => $value) {
+                $booking_id = $value->booking_id;
+                $service_id = $value->service_typeid;
+                $service = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$service_id,'status'=>'active'));               
+                $dropoff = $this->AuthModel->getMultipleRecord('booking_dropoffs',array('booking_id'=>$booking_id),'');
+                $res['booking_id']  = $value->booking_id;
+                $res['customer_id'] = $value->customer_id;
+                $res['pickup']      = $value->pickup;
+                $res['pickupLat']   = $value->pickupLat;
+                $res['pickupLong']  = $value->pickupLong;
+                $res['favourite_status'] = $value->favourite_status;
+                $res['dropoff']     = $dropoff; 
+                if(!empty($service)){
+                    $res['service_typeid']  = $service->typeid;
+                    $res['servicename']     = $service->servicename;
+                    $res['selected_image']  = base_url().'serviceimage/'.$service->selected_image;                    
+                }
+                else{
+                    $res['service_typeid']  = '';
+                    $res['servicename']     = '';
+                    $res['selected_image']  = ''; 
+                }
+                $favourites[]=$res;
+               }                               
+                //echo json_encode($res);
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$favourites);
+                echo json_encode($response);            
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>1,'message'=>'No favourite ride found','data'=>$favourite);
+                echo json_encode($response);
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
+
+    public function delete_favourite_booking()
+    {
+        if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {
+            extract($_POST);
+            
+            if($this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'booking',array("favourite_status"=>0)))
+            {
+                $favourite = $this->AuthModel->getMultipleRecord('booking',array('customer_id'=>$customer_id,'favourite_status'=>1),'');
+                if(!empty($favourite))
+                { 
+                   foreach ($favourite as $key => $value) {
+                    $booking_id = $value->booking_id;
+                    $service_id = $value->service_typeid;
+                    $service = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$service_id,'status'=>'active'));
+                    $dropoff = $this->AuthModel->getMultipleRecord('booking_dropoffs',array('booking_id'=>$booking_id),'');
+                    $res['booking_id']  = $value->booking_id;
+                    $res['customer_id'] = $value->customer_id;
+                    $res['pickup']      = $value->pickup;
+                    $res['pickupLat']   = $value->pickupLat;
+                    $res['pickupLong']  = $value->pickupLong;
+                    $res['favourite_status'] = $value->favourite_status;
+                    $res['dropoff']     = $dropoff; 
+                    if(!empty($service)){
+                        $res['service_typeid']  = $service->typeid;
+                        $res['servicename']     = $service->servicename;
+                        $res['selected_image']  = base_url().'serviceimage/'.$service->selected_image;                    
+                    }
+                    else{
+                        $res['service_typeid']  = '';
+                        $res['servicename']     = '';
+                        $res['selected_image']  = ''; 
+                    }
+                    $favourites[]=$res;                    
+                   }                   
+                    $response = array('success'=>1,'error'=>0,'message'=>'Favourite ride has been successfully removed','data'=>$favourites);
+                    echo json_encode($response);                                 
+                }
+                else
+                {
+                    $response = array('success'=>2,'error'=>0,'message'=>'Favourite ride has been successfully removed. No favourite ride remain','data'=>$favourite);
+                    echo json_encode($response);  
+                }
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>1,'message'=>'Something went wrong, Please try again');
+                echo json_encode($response);
+            }     
+        }
+        else
+        {
+            $this->index();
+        }
+    }
+
+    public function get_Advancebooking()
+    {
+        if(isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {
+
+        }
+    }
+
+    
+
+    // =================================Develope by Abhishek=====================================================//
+    
+    public function getCompleteBooking()
     {      
         $response=array();
         $responsedata=array();                
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('customer_id');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {
             echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
@@ -463,19 +754,20 @@ class CustomerApi extends CI_Controller {
         {
             $customer_id= $_REQUEST['customer_id'];
             $date=strtotime(date("Y-m-d h:i:s"));
-            $where = '(customer_id='.$customer_id.' AND (booking_status!=2 or booking_status!=3))';
-            //$where=array('customer_id'=>$customer_id,'booking_status'=>'4');
-            $response1=$this->StandardModel->select_query('booking',$where);
+            //$where = '(customer_id='.$customer_id.' AND (booking_status!=2 or booking_status!=3))';
+            $where=array('customer_id'=>$customer_id,'booking_status'=>'4');
+            $response1=$this->AbhiModel->select_query('booking',$where);
             if(!empty($response1)){
             foreach($response1 as $deliver)
             {
                 $response['booking_id']=$deliver->booking_id;
+                $response['favourite_status']= $deliver->favourite_status;
                 $response['booking_status']=$deliver->booking_status;
                 $response['ride_complete_at']=$deliver->ride_complete_at;
                 $response['booking_at']=$deliver->booking_at;
                 $response['pickup']=$deliver->pickup;
                 //$wheree=array('booking_id'=> $response['booking_id']);
-                //$booking_dropoffs=$this->StandardModel->select_query('booking_dropoffs',$wheree);
+                //$booking_dropoffs=$this->AbhiModel->select_query('booking_dropoffs',$wheree);
                 $booking_dropoffs=booking_dropoffs($response['booking_id']);
                 //$response['dropoff']=$booking_dropoffs[0]->dropoff;
                 $response['dropoff']=$booking_dropoffs;
@@ -485,18 +777,18 @@ class CustomerApi extends CI_Controller {
             }
             else
             {
-                echo json_encode(array('response'=>'false','message'=>'Please enter valid customerid !'));die;
+                echo json_encode(array('response'=>'false','message'=>'No Complete booking'));die;
             }     
         }            
     }
 
-    public function CancelBooking()
+    public function getCancelBooking()
     {      
         $response=array();
         $responsedata=array();            
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('customer_id');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {
             echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
@@ -505,21 +797,23 @@ class CustomerApi extends CI_Controller {
         {
             $customer_id= $_REQUEST['customer_id'];
             $date=strtotime(date("Y-m-d h:i:s"));
-            $where= '(customer_id='.$customer_id.' and (booking_status=2 or booking_status=3))';
+            $where= '(customer_id='.$customer_id.' and (booking_status=2 or booking_status=3 or booking_status=7))';
             //$where=array('customer_id'=>$customer_id,'booking_status'=>'3');
-            $response1=$this->StandardModel->select_query('booking',$where);
+            $response1=$this->AbhiModel->select_query('booking',$where);
             if(!empty($response1))
             {
                 foreach($response1 as $deliver)
                 {
                     $response['booking_id']=$deliver->booking_id;
                     $response['booking_status']=$deliver->booking_status;
+                    $response['favourite_status']= $deliver->favourite_status;
                     $response['booking_at']=$deliver->booking_at;
                     $response['cancel_reason']=$deliver->cancel_reason;
                     $response['pickup']=$deliver->pickup;         
-                    $wheree=array('booking_id'=> $response['booking_id']);
-                    $booking_dropoffs=$this->StandardModel->select_query('booking_dropoffs',$wheree);
-                    $response['dropoff']=$booking_dropoffs[0]->dropoff;
+                    $booking_dropoffs=booking_dropoffs($deliver->booking_id);
+                    //$wheree=array('booking_id'=> $response['booking_id']);
+                    //$booking_dropoffs=$this->AbhiModel->select_query('booking_dropoffs',$wheree);
+                    $response['dropoff']=$booking_dropoffs;
                     $responsedata[]=$response;                   
                 }                
                 echo json_encode(array('response'=>'true','Cancelled'=>$responsedata));                
@@ -555,5 +849,11 @@ class CustomerApi extends CI_Controller {
             exit;
         }
     }*/
+
+    public function getDistance()
+    {
+        $data = $this->BookingModel->distance('22.751196','75.894815','22.713913','75.874234','k');
+        print_r($data);
+    }
 
 }

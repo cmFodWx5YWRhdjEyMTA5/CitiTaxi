@@ -36,7 +36,7 @@
                                             <th>Rating</th>
                                             <th>Email</th>
                                             <th>Phone</th>
-                                            <th>trip Requested</th>
+                                            <th>Trip Requested</th>
                                             <th>Completed</th>
                                             <th>Cancelled</th>
                                             <th>Referral Code</th>
@@ -62,14 +62,16 @@
                                                 else{
                                                 echo "<img src=".$list->image." width='60px' height='60px' style='border-radius:33px'>"; } ?>  
                                                 </td>
-                                                <td><!--Rating--></td>
+                                                <td><?php echo get_rating($list->id);?></td>
                                                 <td><?php echo $list->email; ?></td>
                                                 <td><?php echo $list->mobile;?></td>
-                                                <td><!--trip Requested--></td>
-                                                <td><!--trip Completed--></td>
-                                                <td><!--trip Cancelled--></td>
+                                                <td><?php echo getCount('booking',array('customer_id'=>$list->id))?></td>
+                                                <td><?php echo getCount('booking',array('customer_id'=>$list->id,'booking_status'=>4))?></td>
+                                                <td><?php $where = '((customer_id='.$list->id.') and (booking_status=3 or booking_status=7))'; echo getCount('booking',$where)?></td>
                                                 <td><?php echo $list->ref_code;?></td>
-                                                <td><!--Wallet Amount--></td>
+                                                <td><?php $wallet = getSingleDetail('wallet_balance',array('user_id'=>$list->id));
+                                                if(!empty($wallet)){echo $wallet->balance;}else{echo '0';}
+                                                ?></td>
                                                 <td><?php $t=$list->created_at;   $s=explode(" ",$t);  $e=implode(" / ",$s);
                                                          echo $e; ?>
                                                 </td>                                                

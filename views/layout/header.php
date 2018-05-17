@@ -100,11 +100,12 @@
                         <ul>
                             <li><a href="<?php echo site_url('Home/add_customer');?>"><span class="fa fa-pencil"></span>Add Customer</a></li>
 							<li><a href="<?php echo site_url('Home/customers');?>"><span class="fa fa-sort-alpha-desc"></span>Customer List</a></li>
+                            <li><a href="<?php echo site_url('Home/loadRecord');?>"><span class="fa fa-sort-alpha-desc"></span>Customers</a></li>
                         </ul>
                     </li>
 
                     <li class="xn-openable <?php if(isset($page) && $page=='driver'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Driver</span></span><label class="badge2" id="rowcount2" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
+                        <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Driver</span></span><label class="badge" id="drivercount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
                         <ul>
                            <li><a href="<?php echo site_url('Driver/addDriver');?>"><span class="fa fa-pencil"></span>Add Driver</a></li>
 						   <li><a href="<?php echo site_url('Driver');?>"><span class="fa fa-sort-alpha-desc"></span>Driver List</a></li>
@@ -135,9 +136,10 @@
                     </li>  
 
                     <li class="xn-openable <?php if(isset($page) && $page=='booking'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Home/userlist');?>"><span class="fa fa-car"></span> <span class="xn-text">Manage Booking</span><label class="badge" id="rowcount1" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
+                        <a href="<?php echo site_url('Home/userlist');?>"><span class="fa fa-car"></span> <span class="xn-text">Manage Booking</span><label class="badge" id="bookingcount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
                         <ul>
-                              <li><a href="<?php echo site_url('Home/booking');?>"><span class="fa fa-sort-alpha-desc"></span>Booking List</a></li>
+                            <li><a href="<?php echo site_url('Home/booking');?>"><span class="fa fa-sort-alpha-desc"></span>Booking List</a></li>
+                            <li><a href="<?php echo site_url('Home/pendingbooking');?>"><span class="fa fa-sort-alpha-desc"></span>Pending Booking</a></li>
                         </ul>
                     </li>                   
 
@@ -154,7 +156,7 @@
                     </li> 
                     <li class="<?php if(isset($page) && $page=='website'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Home/websitepages');?>"><span class="fa fa-pencil"></span><span class="xn-text">Website Content setting</span></a>
-                    </li>
+                    </li>                   
                 </ul>
                 <!-- END X-NAVIGATION -->
             </div>
@@ -196,4 +198,42 @@
                 <!-- END BREADCRUMB -->                       
 
         <!-- PAGE CONTENT WRAPPER -->
+
+<script>
+    setInterval(function() {
+        checkpendingBooking();// Do something every 5 seconds
+        checkuser();        
+    }, 4000);
+
+
+function checkpendingBooking()
+{
+    $.ajax({
+        url: "<?php echo site_url('Welcome/checkpendingBooking');?>",
+        success: function (data) {
+            console.log(data);
+            if(data!=0)
+            {
+                //var x = document.getElementById("audio-alert");
+                //x.play();  
+                $("#bookingcount").html(data);
+            }
+        }
+    });
+};
+
+function checkuser() {
+    $.ajax({
+        url: "<?php echo site_url('Welcome/checkdriverRequest');?>",
+        success: function (list) {
+            console.log(list);
+            if(list!=0){
+                $("#drivercount").html(list);
+                }
+            }
+        });
+    };
+    
+</script>
+
 

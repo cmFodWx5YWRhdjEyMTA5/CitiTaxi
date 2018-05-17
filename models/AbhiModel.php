@@ -1,16 +1,9 @@
-<?php if(!defined('BASEPATH')) exit('No direct script access allowed');
-ob_start();
-class StandardModel extends CI_Model
-{     
-    function __construct()
-    {
-        parent::__construct();    
-        /*if($this->session->userdata('ses_time_zone'))
-        {
-            date_default_timezone_set($this->session->userdata('ses_time_zone'));
-        }*/
+<?php
+class AbhiModel extends CI_Model {
+	function __construct() {
+        parent::__construct();
     }
-    
+
     public function getcategory_all(){
         
         return $this->db->get('category')->result();
@@ -655,22 +648,7 @@ function selectdriverdetail($tbl_name,$driver_id)
     }
     
     function sendvartsu($customer_email,$code)
-    {
-        
-
-/*   $this->load->library('email');
-        $this->email->set_newline("\r\n");
-        $this->email->set_mailtype("html");
-
-        $this->email->from('Host01.net.in', 'Vartsu'); 
-        $this->email->to($customer_mail);
-
-        $this->email->subject('Vartsu Car Details');
-
-        $this->email->message('Hello '.$customer_name.',<br><br>  Thank you for submit car details <br> <br>Thank you!');
-
-        $this->email->send();
-*/
+    {       
 
         $this->load->library('email');
         $this->email->set_newline("\r\n");
@@ -680,9 +658,7 @@ function selectdriverdetail($tbl_name,$driver_id)
         $this->email->to($customer_email);
 
         $this->email->subject('Confirmation Code');
-        $this->email->message('Hello '.$customer_email.',<br><br>Please get confirmation code.<br> Confirmation code: '.$code.'<br><br>Thank you!');
-
-    //  $this->email->message('testing Thank you!');
+        $this->email->message('Hello '.$customer_email.',<br><br>Please get confirmation code.<br> Confirmation code: '.$code.'<br><br>Thank you!');   
 
         if ($this->email->send())
         {
@@ -702,8 +678,6 @@ function selectdriverdetail($tbl_name,$driver_id)
         //$folderPath='/api_assets/images/';
         //$fileName='6548.jpg';
         $m_img_real=$_SERVER['DOCUMENT_ROOT'].$folderPath.$fileName;
-        
-        
         if (file_exists($m_img_real)) 
         {
              unlink($m_img_real);
@@ -720,9 +694,9 @@ function selectdriverdetail($tbl_name,$driver_id)
         $this->db->where_in('user_id',$res_arr);
         $query =  $this->db->get();
         return $query->result_array();
-        
-        
     }
+
+
     function getLikedHangoutsDetails($res_arr)
     {
         $this->db->select("*");
@@ -813,148 +787,7 @@ function selectdriverdetail($tbl_name,$driver_id)
         }
     }
 
-   public function mailconfig()
-   {$config = array();
-   $config['useragent'] = "CodeIgniter";
-   $config['mailpath'] = "/usr/bin/sendmail"; // or "/usr/sbin/sendmail 25"
-   $config['protocol'] = "smtp";
-   $config['smtp_host'] = "localhost";
-   $config['smtp_port'] = "25";
-   $config['mailtype'] = 'html';
-   $config['charset'] = 'utf-8';
-   //config['newline'] = "\r\n";
-   $config['wordwrap'] = TRUE;
-   return $config;
+
+	
 }
-
-public function sendmanojs($user_email)
-{
-$data = new stdClass();
-$from = $user_email;
-//$data->result = $userdata;
-$data->user_fullname="govind";
-$data->pass="123456";
-//$data = array('user_fullname' =>$user_fullname,'user_password' =>$pass);
-$this->load->library('email');
-
-$config = $this->mailconfig();
-$this->email->initialize($config);
-$subject = 'New Order';
-$message = $this->load->view('forgotPasswordTemplate',$data,true);
-//$config=array('charset'=>'utf-8','wordwrap'=> TRUE,'mailtype' => 'html');
-$this->email->initialize($config);//$this->email->to('shubhamapptech6@gmail.com');
-$this->email->to('abhiapptech@gmail.com');
-$this->email->set_newline("\r\n");
-$this->email->from('shubhamapptech6@gmail.com','ConnectMart');
-$this->email->subject($subject);
-$this->email->message($message);
-if ($this->email->send())
-        {
-            echo 'email send';
-        }
-        else
-        {
-            show_error($this->email->print_debugger());
-            die;
-            echo 'email not send';
-        }
-}
-
-
-    function sendmanoja($user_email)
-    {
-        //echo $admin_email;die;
-        $user_fullname='abhishek';
-        $pass='123456';
-        $this->load->library('parser');
-        $data = array('user_fullname' =>$user_fullname,'user_password' =>$pass);
-        $this->load->library('email');
-        $this->email->set_newline("\r\n");
-        $this->email->set_mailtype('html');
-        //$headers = "X-Mailer: PHP". phpversion() ."\r\n";
-    //  $headers ='X-Mailer: PHP/' . phpversion();
-    //    $headers = "MIME-Version: 1.0\r\n";
-    //    $headers = "Content-type: text/html; charset=iso-8859-1\r\n";
-      //  $this->email->set_header($headers,'value1');
-        $this->email->from('shubhamapptech6@gmail.com','ConnectMart'); 
-        $this->email->to($user_email);
-        $html=$this->parser->parse('forgotPasswordTemplate',$data,true);
-        $this->email->subject('Order confirmation');
-       // $html=$this->parser->parse('forgotPasswordTemplate',$data,true);
-       //$this->email->message('Hello '.$user_email.',<br><br> Your order successfully created. Thank you!');
-        $this->email->message($html);
-
-        if ($this->email->send())
-        {
-            echo 'email send';
-        }
-        else
-        {
-            echo 'email not send';
-        }
-    }
-    //}
-    function sendmanojc($user_email) {
-        //echo $admin_email;die;
-        $this ->load->library('parser');
-        $user_fullname='abhishek';
-        $pass='123456';
-    
-        $data = array('user_fullname' => $user_fullname, 'user_password' => $pass);
-        $html = $this ->parser->parse('forgotPasswordTemplate', $data,true);
-
-        $result = '';
-        $this ->load->library('email');
-
-        //---------------------------
-    $this ->email-> initialize(array('protocol' => 'smtp', 'smtp_host' => 'smtp.sendgrid.net', 'smtp_user'=>'abhishek98277','smtp_pass' =>'abhishek8', 'smtp_port' =>587, 'mailtype' => 'html', 'crlf' => "\r\n", 'newline' => "\r\n"));
-
-        $this ->email->from('shubhamapptech6@gmail.com', 'ZiNG');
-        //noreply@getzing.co
-        $this->email->to($user_email);
-
-        $this->email->subject('ZiNG password update');
-        $this->email->message($html);
-
-        if ($this->email->send()) {
-            echo 'send';
-        } else {
-            //  show_error($this->email->print_debugger());
-            //die;
-            echo 'not send';
-        }
-    }
-public function sendmanoj($customer_email)    {    
-    $data['result'] = 'a';     
-     //  $technician_email = $user_email;       
-       $config=array( 'charset'=>'utf-8',
-        'wordwrap'=> TRUE,        
-        'mailtype' => 'html');        
-       $this->email->set_newline("\r\n");        
-       $this->email->initialize($config);       
-        $message  = 'Hi,'."\r\n";        
-        $message .= 'Congratulations for being a part of our team. Our whole team welcome to you. We are looking forward for the company’s success with you.'."\r\n\r\n";       
-         $message .= $this->load->view('newOrder',$data,true);        
-         $this->load->library('email');        
-         $this->email->from('business@ckarmainc.com','ConnectMart');        
-         $this->email->to($customer_email);        
-         $this->email->subject('New registration');        
-         $this->email->message($message);        
-        
-        if ($this->email->send()) {
-            echo 'send';
-        } else {
-            //  show_error($this->email->print_debugger());
-            //die;
-            echo 'not send';
-        }            
-     }
-
-    
-}
-
 ?>
-
-
-
-

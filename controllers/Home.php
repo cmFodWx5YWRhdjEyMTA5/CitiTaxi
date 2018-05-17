@@ -3,11 +3,14 @@
 class Home extends CI_Controller {
 	function __construct() {
         parent::__construct();  
-        $this->load->model('AuthModel');   
+        $this->load->model('AuthModel');       
+
         if($this->session->userdata('email')=='')
         {
             redirect(base_url());
         }   
+        $this->load->library('pagination');
+        $this->load->model('DummyModel');
     }
 
     public function index()        //customer details
@@ -195,6 +198,91 @@ class Home extends CI_Controller {
             $this->load->view('customer_details',$data);
         }
     }
+
+    public function loadRecord($rowno=0)
+    {     
+        // Search text
+        $search_text = "";
+        if($this->input->post('submit') != NULL ){
+            $search_text = $this->input->post('search');
+            $this->session->set_userdata(array("search"=>$search_text));
+        }
+        //For Table pagaination
+        $rowperpage = 10;        
+        if($rowno != 0){  $rowno = ($rowno-1) * $rowperpage;  } 
+        $allcount = $this->AuthModel->checkRows('users',array());
+        $customers = $this->DummyModel->getData($rowno,$rowperpage,$search_text,'users',array());
+        $config = $this->AuthModel->tableConfig();
+        $config['base_url'] = site_url().'/Home/loadRecord';   
+        $config['use_page_numbers'] = TRUE;     
+        $config['total_rows'] = $allcount;
+        $config['per_page'] = $rowperpage;
+        $this->pagination->initialize($config);
+        $data['pagination'] = $this->pagination->create_links();        
+        $data['row'] = $rowno;
+        $data['search'] = $search_text;
+        //End Table pagaination
+        $orderby  = "`id` DESC";     
+       
+        //print_r($customers);die();
+        if(!empty($customers))
+        {
+            $data['userlist']=$customers;            
+            $this->load->view('user_view',$data);
+        }
+        else
+        {
+            //$data["error"] =1;
+            //$data["message"] = 'No customers available';
+            $data["userlist"]=$customers;
+            $this->load->view('user_view',$data);
+        }
+    }
+
+    public function loadRecords($rowno=0){
+        
+        // Search text
+        $search_text = "";
+        if($this->input->post('submit') != NULL ){
+            $search_text = $this->input->post('search');
+            $this->session->set_userdata(array("search"=>$search_text));
+        }/*else{
+            if($this->session->userdata('search') != NULL){
+                $search_text = $this->session->userdata('search');
+            }
+        }*/
+        // Row per page
+        $rowperpage = 5;
+        // Row position
+        if($rowno != 0){
+            $rowno = ($rowno-1) * $rowperpage;
+        }       
+        // All records count
+        $allcount = $this->DummyModel->checkRows('users',array());
+        //$allcount = $this->DummyModel->getrecordCount($search_text,'countries',array());
+        //echo $allcount;die();
+        // Get  records
+        $users_record = $this->DummyModel->getData($rowno,$rowperpage,$search_text,'users',array()); 
+        //echo "<pre>";
+        //print_r($users_record);die();
+        // Pagination Configuration
+
+        $config = $this->tableConfig();
+        $config['base_url'] = site_url().'/Home/loadRecord';  
+        $config['use_page_numbers'] = TRUE;      
+        $config['total_rows'] = $allcount;
+        $config['per_page'] = $rowperpage;
+
+        $this->pagination->initialize($config);
+        $data['pagination'] = $this->pagination->create_links();
+        $data['userlist'] = $users_record;
+        $data['row'] = $rowno;
+        $data['search'] = $search_text;
+        // Load view
+        $this->load->view('user_view',$data);
+    }
+
+    
 
     public function changePassword()
 	{
@@ -394,6 +482,128 @@ class Home extends CI_Controller {
         $this->load->view('serviceType',$data);
     }
 
+    public function add_service()
+    {
+        if(isset($_POST['submit']))
+        {
+            extract($_POST);
+            $service       = array("servicename"=>$service_name);
+            $checkservice  = $this->AuthModel->checkRows('servicetype',$service); 
+            if($checkservice>0)
+            {
+                $response = array("pagetype"=>'Add',"success"=>1,"message"=>'Service Type has already existed');
+                $this->load->view('add_serviceType',$response);
+            }
+            else{
+                $selectimage = 'select.jpg';
+                if(isset($_FILES['selectimage']['name']) && $_FILES['selectimage']['name']!='')
+                {
+                    $folder_name = 'serviceimage';
+                    $selectimage   = $this->AuthModel->imageUpload($_FILES['selectimage'],$folder_name);
+                }
+                $unselectimage = 'unselect.jpg';
+                if(isset($_FILES['unselectimage']['name']) && $_FILES['unselectimage']['name']!='')
+                {
+                    $folder_name = 'serviceimage';
+                    $unselectimage   = $this->AuthModel->imageUpload($_FILES['unselectimage'],$folder_name);
+                }
+                $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage);
+            
+                if($this->AuthModel->singleInsert('servicetype',$data))
+                {
+                    $response = array("pagetype"=>'Add',"success"=>1,"message"=>'Service Type has been successfully saved');
+                    $this->load->view('add_serviceType',$response);
+                }
+                else
+                {
+                    $response = array("pagetype"=>'Add',"success"=>1,"message"=>'Oops! Something went wrong, Please try again');
+                    $this->load->view('add_serviceType',$response);               
+                }
+            }                  
+        }
+        else{
+            $response=array("pagetype"=>'Add');
+            $this->load->view('add_serviceType',$response);   
+        }
+    }
+
+    public function updateServiceType($service_id)
+    {
+        if($service_id=='')
+        {
+            redirect('Home/servie_type');
+        }
+        else
+        {            
+            $service = $this->AuthModel->getSingleRecord('servicetype',array("typeid"=>$service_id));
+            if(!empty($service))
+            {
+                if(isset($_POST['submit']))
+                {
+                    extract($_POST);                    
+                    $services       = array("servicename"=>$service_name);
+                    $checkservice  = $this->AuthModel->checkRows('servicetype',$services); 
+                    if($checkservice>0 && $service_name!=$service->servicename)
+                    {
+                        $response = array("pagetype"=>'Update',"error"=>1,"message"=>'Service Type has already existed',"service"=>$service,'service_id'=>$service_id);
+                        $this->load->view('add_serviceType',$response);
+                    }
+                    else
+                    {
+                        $selectimage = $service->selected_image;
+                        if(isset($_FILES['selectimg']['name']) && $_FILES['selectimg']['name']!='')
+                        {
+                            $folder_name = 'serviceimage';
+                            $selectimage   = $this->AuthModel->imageUpload($_FILES['selectimg'],$folder_name);
+                        }
+                        $unselectimage = $service->unselected_image;
+                        if(isset($_FILES['unselectimg']['name']) && $_FILES['unselectimg']['name']!='')
+                        {
+                            $folder_name = 'serviceimage';
+                            $unselectimage   = $this->AuthModel->imageUpload($_FILES['unselectimg'],$folder_name);
+                        }
+                        $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage);
+                        if($this->AuthModel->updateRecord(array('typeid'=>$service_id),'servicetype',$data))
+                        {
+                            $service = $this->AuthModel->getSingleRecord('servicetype',array("typeid"=>$service_id));
+                            $response = array("pagetype"=>'Update',"success"=>1,"message"=>'Service has been successfully update',"service"=>$service,'service_id'=>$service_id);
+                            $this->load->view('add_serviceType',$response);
+                        }
+                        else
+                        {
+                            $response = array("pagetype"=>'Update',"success"=>1,"message"=>'Oops! Something went wrong, Please try again',"service"=>$service,'service_id'=>$service_id);
+                            $this->load->view('add_serviceType',$response);               
+                        } 
+                    }
+                                    
+                }
+                else{
+                    $response=array("pagetype"=>'Update',"service"=>$service,'service_id'=>$service_id);
+                    $this->load->view('add_serviceType',$response);   
+                }
+            }
+            else
+            {
+                print_r("Unauthorised request");
+            }
+        }        
+    }
+
+    public function checkServiceName()       //for ajax use
+    {
+        $table_name="servicetype";
+        $checkmobile = array('servicename' =>$_POST['service_type']);
+        $checkServiceName  = $this->AuthModel->checkRows($table_name,$checkmobile); 
+        if($checkServiceName>0)
+        {
+            echo json_encode(FALSE);
+        }
+        else
+        {
+            echo json_encode(true);
+        }
+    }
+
     public function addServiceType()
     {
         $serviceType = $_POST['servicetype'];
@@ -407,7 +617,7 @@ class Home extends CI_Controller {
         }
     }
 
-    public function updateServiceType()
+    /*public function updateServiceType()
     {
         $serviceType = $_POST['servicetype'];
         $typeid      = $_POST['typeid'];
@@ -418,6 +628,27 @@ class Home extends CI_Controller {
         else
         {
             echo 'Oops! Something went wrong, Please try again';
+        }
+    }*/
+    public function deleteservice_type()
+    {
+        if($_POST['serviceid']!='')
+        { 
+            $serviceid= $_POST['serviceid'];
+            $table_name = "servicetype";
+            $checkWhere = array('typeid'=>$serviceid);
+            if($this->AuthModel->delete_record($table_name,$checkWhere))
+            {
+                echo "Service type has been successfully removed";
+            }
+            else
+            {
+                echo "Oops! Something went wrong, Please try again";
+            }
+        }
+        else
+        {
+            echo "Oops! Something went wrong, Please try again";
         }
     }
 
@@ -585,6 +816,75 @@ class Home extends CI_Controller {
             $res=array("success"=>0);
             echo json_encode($res);
         }
+    }
+
+    public function pendingbooking()
+    {
+        $this->AuthModel->updateRecord(array('seen_status'=>0),'booking',array('seen_status'=>1));        
+        $orderby    = "`booking_id` DESC";
+        $where      = "((booking_status!=4 or booking_status!=3 or booking_status!=7) and booking_type='later')";
+        $customers = $this->AuthModel->getMultipleRecord('booking',$where,$orderby);
+        //print_r($customers);die();
+        if(!empty($customers))
+        {
+            $data['userlist']=$customers;            
+            $this->load->view('pending_details',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'No booking found';
+            $data["userdata"]='';
+            $this->load->view('pending_details',$data);
+        }
+    }    
+
+    public function nearbydriver($booking_id,$city)        //driver details
+    {  
+        if($booking_id!='' && $city!='')
+        {
+            $data['booking_id'] = $booking_id;
+            $table_name = 'users';
+            $orderby  = "`id` DESC";
+            $where = array('city'=>$city,'user_type'=>'1','power_status'=>'on','activeStatus'=>'Active');       
+            $drivers = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);
+            if(!empty($drivers))
+            {               
+                $data['userlist']=$drivers;            
+                $this->load->view('nearbydriver',$data);
+            }
+            else
+            {
+                $data["error"] =1;
+                $data["message"] = 'No Driver found';
+                $data["userdata"]='';
+                $this->load->view('nearbydriver',$data);
+            }
+        }
+        else
+        {
+            redirect(base_url());
+        }        
+    } 
+
+    public function assignbooking()  //ajax use
+    {
+        extract($_POST);
+        if($this->AuthModel->updateRecord(array('booking_id'=>$booking_id),'booking',array('driver_id'=>$driver_id,'booking_status'=>0)))
+        {
+            echo 'Booking has been successfully assigned';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong';           
+        }
+    }
+
+   
+
+    public function check()
+    {
+        echo 'hii';
     }
 
     public function range_setting()

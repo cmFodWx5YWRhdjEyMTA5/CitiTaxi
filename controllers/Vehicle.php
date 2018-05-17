@@ -178,9 +178,8 @@ class Vehicle extends CI_Controller {
             $this->load->view('vehicle_fairs',$data);
         }
     }
-
     public function fare_full_details($fairid)
-    {
+    {      
         $data['list'] = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fairid));
         $this->load->view('Vehiclefair_fulldetails',$data);
     }

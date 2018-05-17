@@ -252,9 +252,48 @@ class DummyModel extends CI_Model {
         return $this->db->get()->row();
     }
 
-     
+    // Fetch records    
+    public function getDatas($rowno,$rowperpage,$search="",$table_name,$where) {
+        //echo $table_name;die();
+        $this->db->limit($rowperpage,$rowno);
+        $response = $this->db->get_where($table_name,$where)->result_array();
+        return $response;
+        //print_r($this->db->last_query());die();
+    }
 
 
-	
+
+    // Fetch records
+    public function getData($rowno,$rowperpage,$search="",$table_name,$where) {
+                
+        $this->db->select('*');
+        $this->db->from($table_name);
+        $this->db->where($where);
+        if($search != ''){
+            $this->db->like('name', $search);
+            //$this->db->or_like('email', $search);
+        }
+        $this->db->limit($rowperpage, $rowno);  
+        $query = $this->db->get();        
+        return $query->result();
+    }
+
+    // Select total records
+    public function getrecordCount($search = '',$table_name,$where) {        
+
+        $this->db->select('count(*) as allcount');
+        $this->db->from($table_name);
+        $this->db->where($where);
+      
+        if($search != ''){
+            $this->db->like('name', $search);
+            //$this->db->or_like('email', $search);
+        }
+        $query = $this->db->get();
+        $result = $query->result_array();
+        return $result[0]['allcount'];
+    }
+
+
 }
 ?>

@@ -58,6 +58,7 @@
                                                 <th>Vehicle Type</th> 
                                                 <td><?php echo $list->vehicle_type;?></td>
                                             </tr>
+                                            <?php if($list->company_comission_type=='Per'){$list->company_comission_type='Percentage';} ?>
                                             <tr>
                                                 <th>Company Commission</th> 
                                                 <td><?php echo $list->company_comission_rate.' ( '.$list->company_comission_type.' )';  ?></td>

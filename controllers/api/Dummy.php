@@ -6,6 +6,7 @@ class Dummy extends CI_Controller {
         //$this->load->helper(form,url);
         $this->load->model("AuthModel");      
         $this->load->model("DummyModel");
+        $this->load->library('encrypt');        
     }
 
     public function index()
@@ -15,6 +16,12 @@ class Dummy extends CI_Controller {
 		$respose["message"]="Access Denied";
 		echo json_encode($respose);
 	}
+
+    public function genratePassword()
+    {
+        $password = $this->encrypt->encode($this->input->post('password'));
+        echo $password;
+    }
 
     public function addvechile()
     {

@@ -512,6 +512,19 @@ class DriverApi extends CI_Controller {
             {
                 $upStatus = $this->AuthModel->updateRecord($where,'users',array('online_status'=>$status));
             }
+            elseif($status_type=='destination_status')  //on,off
+            {
+                $destination = $this->AuthModel->getSingleRecord('driver_destination',array('driver_id'=>$user_id));
+                if(!empty($destination))
+                {
+                    $upStatus = $this->AuthModel->updateRecord($where,'users',array('destination_status'=>$status));               
+                }
+                else
+                {
+                    $response = array("success"=>0,"error"=>1,"message"=>"You have not set his destination yet.","data"=>""); 
+                    echo json_encode($response);die(); 
+                }                
+            }
             else
             {
                 $response = array('success'=>0,'error'=>2,'message'=>'invalid status_type');
@@ -586,11 +599,14 @@ class DriverApi extends CI_Controller {
     {
         if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['booking_status']) && $_POST['booking_status']!='' )
         {
+            //params  = booking_id,booking_status,driver_id
             extract($_POST);
             $action_at = $date.' '.$time;
             //booking_status => 0=assigned 1=accept 2=reject by driver 4= done 5=arrived  6=trip start
             if($booking_status==1)  //accept
             {
+                //Change online status so other request will not get.
+                $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array("online_status"=>'offline'));
                 $updata = array("booking_status"=>$booking_status);
             }          
             elseif($booking_status==5)  // Arrived
@@ -598,8 +614,13 @@ class DriverApi extends CI_Controller {
                 $updata = array("driver_arrived_at"=>$action_at,"booking_status"=>$booking_status);
             }
             elseif($booking_status==6)  // Trip Start
-            {
+            {               
                 $booking_detail = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id));
+                $fairDetails  = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$booking_detail->service_typeid,"country"=>$booking_detail->country,"city"=>$booking_detail->city));
+                
+                $commissionData = array("booking_id"=>$booking_id,"driver_id"=>$driver_id,"commission_type"=>$fairDetails->company_comission_type,"commission_rate"=>$fairDetails->company_comission_rate,"commission_at"=>$date.' '.$time);
+                $this->AuthModel->singleInsert('company_booking_commission',$commissionData);   // save company commission
+
                 $total_waiting  = date('i',strtotime($action_at)-strtotime($booking_detail->driver_arrived_at));
                 $updata = array("ride_start_at"=>$action_at,"waiting_time"=>$total_waiting,"booking_status"=>$booking_status);
             }
@@ -685,7 +706,7 @@ class DriverApi extends CI_Controller {
                     $cscore = $this->AuthModel->getSingleRecord('wallet_balance',array("user_id"=>$customer_id)); //get previous score
                     $customerNewBalance = $cscore->balance+$nscore;    
                     $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'wallet_balance',array('balance'=>$customerNewBalance,'update_at'=>$action_at));  
-                    $this->AuthModel->singleInsert('wallet_transaction',array('booking_id'=>$booking_id,'receiver_id'=>$customer_id,'type'=>'cr','amount'=>$customerNewBalance,'description'=>'Booking reward','transaction_status'=>'success'));
+                    $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$customer_id,'type'=>'cr','amount'=>$customerNewBalance,'description'=>'Booking id '.$booking_id.' reward','transaction_status'=>'success'));
                     //echo $customerNewScore;die();
                     $bookingUpdata['customer_trip_score'] = $nscore;         
                 }   
@@ -693,8 +714,13 @@ class DriverApi extends CI_Controller {
                     if($this->AuthModel->updateRecord($checkWhere,'booking_fare',$fairUpdata)){   
                        //update score
                         $this->AuthModel->updateRecord(array("user_id"=>$driver_id),'users_score',array('total_score'=>$newScore));
+                        //update driver booking commission
                         $this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'company_booking_commission',array('total_commission'=>$total_commission,"status"=>1,"commission_at"=>$action_at));
+                        //update driver online_Status
                         $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
+
+
+                        
                         $respose = array("success"=>1, "error"=>0,"message"=>"Thanks for using kotchi. Trip has been successfully completed","total_fair"=>$finalFair["total_fair"].' '.$finalFair['currency']);
                         echo json_encode($respose);    
                     }
@@ -785,6 +811,57 @@ class DriverApi extends CI_Controller {
         }
     }
 
+    public function getDriverAdvanceDetail()
+    {
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!='' && isset($_POST['device_type']) && $_POST['device_type']!=''){
+            extract($_POST);
+            $paramarray = array('driver_id','device_token');
+            $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+            if(isset($vResponse['status']) && $vResponse['status']==0)
+            {
+                $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                echo json_encode($response);die();
+            }
+            else
+            {
+                $this->AuthModel->checkActiveStatus('users',array('id'=>$driver_id));   //To check Driver Active Status
+                $this->AuthModel->updateRecord(array('id'=>$driver_id),'users',array("device_token"=>$device_token,'device_type'=>$device_type));
+                //===========================================================================================//
+                $score = $this->AuthModel->getSingleRecord('users_score',array('user_id'=>$driver_id));
+                $total_booking =  $this->AuthModel->checkRows('booking',array('driver_id'=>$driver_id)); //count total booking
+                $wallet_balance = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$driver_id));
+                if(!empty($wallet_balance)){$balance = $wallet_balance->balance;}else{$balance=0;}  //get wallet balance
+                if(!empty($score))
+                {
+                    $userscore    = $score->total_score;  //total cancellation score
+                    $total_cancel = $score->total_cancel_before_accept+$score->total_cancel_after_accept;  //total cancel
+                    $where = '(driver_id='.$driver_id.' and (booking_status=1 or booking_status=4))';
+                    $acceptance = $this->AuthModel->checkRows('booking',$where);
+                    $acceptancePercentage = ($total_booking*$acceptance)/100; //total acceptance
+                    $cancellationPercentage = ($total_booking*$total_cancel)/100;
+                    $rating = $this->AuthModel->get_rating($driver_id);
+                    $response = array("success"=>1,'error'=>0,"userscore"=>$userscore,'acceptance'=>$acceptancePercentage,'cancellation'=>$cancellationPercentage,'total_cancelled'=>$total_cancel,'rating'=>$rating,'bonus'=>0,'citiPay_balance'=>$balance);
+                    echo json_encode($response); 
+                }
+                else
+                {
+                    $userscore    = 0;
+                    $total_cancel = 0;  //total cancel
+                    $where = '(driver_id='.$driver_id.' and (booking_status=1 or booking_status=4))';
+                    $acceptance = $this->AuthModel->checkRows('booking',$where);
+                    $acceptancePercentage = ($total_booking*$acceptance)/100; //total acceptance
+                    $cancellationPercentage = ($total_booking*$total_cancel)/100;
+                    $rating = $this->AuthModel->get_rating($driver_id);
+                    $response = array("success"=>1,'error'=>0,"userscore"=>$userscore,'acceptance'=>$acceptancePercentage,'cancellation'=>$cancellationPercentage,'total_cancelled'=>$total_cancel,'rating'=>$rating,'bonus'=>0,'citiPay_balance'=>$balance);
+                    echo json_encode($response);  
+                }
+            }            
+        }
+        else{
+            $this->index();
+        }
+    }
+
     public function logout()
     {
         if(isset($_POST['user_id']))
@@ -807,16 +884,82 @@ class DriverApi extends CI_Controller {
         }
     }
 
+
+    public function set_DriverDestination()
+    {
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!='')
+        {
+            extract($_POST);
+            $paramarray = array('driver_id','destination_address','destination_lat','destination_lng','set_at');
+            $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+            if(isset($vResponse['status']) && $vResponse['status']==0)
+            {
+                $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                echo json_encode($response);die();
+            }
+            else
+            {
+                $data = array(
+                    "driver_id"=>$driver_id,
+                    "destination_address"=>$destination_address,
+                    "destination_lat"=>$destination_lat,
+                    "destination_lng"=>$destination_lng,
+                    "update_at"=>$set_at,
+                    );
+                if($this->AuthModel->checkThenInsertorUpdate('driver_destination',$data,array('driver_id'=>$driver_id)))
+                {
+                    $destination = $this->AuthModel->getSingleRecord('driver_destination',array('driver_id'=>$driver_id));
+                    $response = array("success"=>1,"error"=>0,"message"=>"Destination has been successfully saved","data"=>$destination);
+                    echo json_encode($response);
+                }
+                else
+                {
+                    $destination = $this->AuthModel->getSingleRecord('driver_destination',array('driver_id'=>$driver_id));
+                    $response = array("success"=>0,"error"=>1,"message"=>"Something went wrong. Please try again","data"=>$destination);
+                    echo json_encode($response);
+                }
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
+
+    public function get_myDestination()
+    {
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!='')
+        {
+            extract($_POST);
+            $destination = $this->AuthModel->getSingleRecord('driver_destination',array('driver_id'=>$driver_id));
+            if(!empty($destination))
+            {
+                $response = array("success"=>1,"error"=>0,"message"=>"success","data"=>$destination); 
+                echo json_encode($response);               
+            }
+            else
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"You have not set his destination yet.","data"=>""); 
+                echo json_encode($response); 
+            }
+        }
+        else
+        {
+            $this->index();
+        }
+    }
+
     //================================================Develope by Abhisek======================================//
 
-    public function BookingRejectByDriver()
-    {      
-       $response=array();
-       $responsedata=array();
+    public function BookingRejectByDriver()  //notification done
+    {
+        //param => booking_id,driver_id,customer_id,cancel_reason
+        $response=array();
+        $responsedata=array();
             
         $current_time=date('Y-m-d H:i:s',time());
-        $data_val = array('booking_id','driver_id','cancel_reason');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $data_val = array('booking_id','driver_id','customer_id','cancel_reason');
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {
             echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
@@ -825,16 +968,17 @@ class DriverApi extends CI_Controller {
         {
             $booking_id= $_REQUEST['booking_id'];
             $driver_id= $_REQUEST['driver_id'];
+            $customer_id= $_REQUEST['customer_id'];
             $cancel_reason= $_REQUEST['cancel_reason'];
             $date=strtotime(date("Y-m-d h:i:s"));
         
             $where=array('booking_id'=>$booking_id,'driver_id'=>$driver_id);
-            $response1=$this->StandardModel->select_query('booking',$where);                
+            $response1=$this->AbhiModel->select_query('booking',$where);                
             if(!empty($response1))
             {                       
                 $booking_status=$response1[0]->booking_status;
                 $where=array('user_id'=>$driver_id);
-                $response11=$this->StandardModel->select_query('users_score',$where);
+                $response11=$this->AbhiModel->select_query('users_score',$where);
                 $trip_score_check=$response11[0]->total_score;
                 $banned_count=$response11[0]->banned_count;
                 $trip_score=$trip_score_check-0.1;
@@ -844,7 +988,7 @@ class DriverApi extends CI_Controller {
                     $total_cancel_accept=$total_cancel_after_accept+1;
                     $update_score=array('total_score'=>$trip_score,'total_cancel_after_accept'=>$total_cancel_accept);          
                     $wheree=array('user_id'=> $driver_id);
-                    $booking_dropoffs=$this->StandardModel->update_query('users_score',$update_score,$wheree);
+                    $booking_dropoffs=$this->AbhiModel->update_query('users_score',$update_score,$wheree);
                 }
                 elseif ($booking_status=='0')
                 {
@@ -852,22 +996,31 @@ class DriverApi extends CI_Controller {
                     $total_cancel_before=$total_cancel_before_accept+1;
                     $update_score=array('total_score'=>$trip_score,'total_cancel_before_accept'=>$total_cancel_before);          
                     $wheree=array('user_id'=> $driver_id);
-                    $booking_dropoffs=$this->StandardModel->update_query('users_score',$update_score,$wheree);
+                    $booking_dropoffs=$this->AbhiModel->update_query('users_score',$update_score,$wheree);
                 }
 
                 $cancellbooking=array('booking_status'=>'2','cancel_reason'=>$cancel_reason);          
                 $wh=array('booking_id'=>$booking_id,'driver_id'=>$driver_id);
-                $bookingCanelled=$this->StandardModel->update_query('booking',$cancellbooking,$wh);
+
+                //============================Update in Booking table===================================//
+
+                $bookingCanelled=$this->AbhiModel->update_query('booking',$cancellbooking,$wh);
                 if($bookingCanelled)
                 {
+                    $customer_msg = "Sorry! Your Booking has been cancelled by driver";
+                    //$this->Communication_model->sendToPassenger($customer_id,$customer_msg);
                     if($trip_score == '8.9')
                     {
                         $updatestatus=array('activeStatus'=>'Suspend','suspend_type'=>'7 Day');          
                         $wherestatus=array('id'=> $driver_id);
-                        $status=$this->StandardModel->update_query('users',$updatestatus,$wherestatus);
+                        $status=$this->AbhiModel->update_query('users',$updatestatus,$wherestatus);
                         //-----------------useraction------------------------
 
                         $this->AuthModel->Suspend(7,$driver_id);
+                        //=================Notification======================//
+                        $drivermessage = "Booking has been cancelled. Your account is suspend for 7 days due to exceeded weekly cancellation limit";                                               
+                        //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
+
                         echo json_encode(array('response'=>'true','Data'=>'Booking has been cancelled. Your account is suspend for 7 days due to exceeded weekly cancellation limit'));                        
                       //---------------------------------------------------                        
                     }
@@ -875,29 +1028,36 @@ class DriverApi extends CI_Controller {
                     {            
                         $updatestatus=array('activeStatus'=>'Suspend','suspend_type'=>'14 Day');          
                         $wherestatus=array('id'=> $driver_id);
-                        $status=$this->StandardModel->update_query('users',$updatestatus,$wherestatus);
-                       //-------------------
-                         $this->AuthModel->Suspend(7,$driver_id);
+                        $status=$this->AbhiModel->update_query('users',$updatestatus,$wherestatus);
+                        //-------------------
+                        $this->AuthModel->Suspend(7,$driver_id);
+                        //=================Notification======================//
+                        $drivermessage = "Booking has been cancelled. Your account is suspend for 14 days due to exceeded 2nd time weekly cancellation limit";                                              
+                        //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
+
                          echo json_encode(array('response'=>'true','Data'=>'Booking has been cancelled. Your account is suspend for 14 days due to exceeded 2nd time weekly cancellation limit'));die;                        
                     }
-                    elseif($trip_score =='8.0')
-                    {
-                        $updatestatus=array('activeStatus'=>'Banned','blackList_status'=>'yes');
+                    elseif($trip_score =='8.0'){
+                        $updatestatus=array('activeStatus'=>'Banned','suspend_type'=>'','blackList_status'=>'yes');
                         $wherestatus=array('id'=> $driver_id);
-                        $status=$this->StandardModel->update_query('users',$updatestatus,$wherestatus);                    
+                        $status=$this->AbhiModel->update_query('users',$updatestatus,$wherestatus);                    
                         $banned =$banned_count+1;
                         $updatestatus=array('banned_count'=>$banned);  
                         $whereid=array('user_id'=> $driver_id);        
-                        $status=$this->StandardModel->update_query('users_score',$updatestatus,$whereid);
+                        $status=$this->AbhiModel->update_query('users_score',$updatestatus,$whereid);
+                        //=================Notification======================//
+                        $drivermessage = "Booking has been cancelled. Your account is black listed due to exceeded weekly cancellation limit many times";   
+                        //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
                         echo json_encode(array('response'=>'true','Data'=>'Booking has been cancelled. Your account is black listed due to exceeded weekly cancellation limit many times'));die;                
                     }
-                    else
-                    {
+                    else{
+                        //=================Notification======================//
+                        $drivermessage = "Your booking has been successfully cancelled";   
+                        //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
                         echo json_encode(array('response'=>'true','Data'=>'Your booking has been successfully cancelled'));
                     }
                 }
-                else
-                {
+                else{
                     $respose = array("response"=>'false',"message"=>"Oops! Something went wrong, Please try again");
                     echo json_encode($respose);
                 }
@@ -906,14 +1066,14 @@ class DriverApi extends CI_Controller {
             echo json_encode(array('response'=>'false','message'=>'Please enter valid booking id!'));die;
             }     
         }
-    }  
+    }   
     public function completeBooking()
     {      
         $response=array();
         $responsedata=array();            
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('driver_id');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
         }
@@ -924,7 +1084,7 @@ class DriverApi extends CI_Controller {
             $todate= $_REQUEST['todate'];
             $date=strtotime(date("Y-m-d h:i:s"));
             $where=array('driver_id'=>$driver_id,'booking_status'=>'4');
-            $response1=$this->StandardModel->select_queryfromdatetotwodate('booking',$where,$fromdate,$todate);
+            $response1=$this->AbhiModel->select_queryfromdatetotwodate('booking',$where,$fromdate,$todate);
             if(!empty($response1)){
                 foreach($response1 as $deliver){
                     $service_type = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$deliver->service_typeid));
@@ -939,7 +1099,7 @@ class DriverApi extends CI_Controller {
 
                     $response['pickup']=$deliver->pickup;
                     $wheree=array('booking_id'=> $response['booking_id']);
-                    $booking_dropoffs=$this->StandardModel->select_query('booking_dropoffs',$wheree);
+                    $booking_dropoffs=$this->AbhiModel->select_query('booking_dropoffs',$wheree);
                     $response['dropoff']=$booking_dropoffs[0]->dropoff;   
                     $responsedata[]=$response;
                 }
@@ -956,7 +1116,7 @@ class DriverApi extends CI_Controller {
        $responsedata=array();            
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('driver_id');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
         }else
@@ -967,7 +1127,7 @@ class DriverApi extends CI_Controller {
             $date   =strtotime(date("Y-m-d h:i:s"));
             $where = '(driver_id='.$driver_id.' AND (booking_status=2 or booking_status=3))';
             // $where=array('driver_id'=>$driver_id,'booking_status'=>'3');
-            $response1=$this->StandardModel->select_queryfromdatetotwodate('booking',$where,$fromdate,$todate);
+            $response1=$this->AbhiModel->select_queryfromdatetotwodate('booking',$where,$fromdate,$todate);
             if(!empty($response1))
             {
                 foreach($response1 as $deliver){
@@ -983,7 +1143,7 @@ class DriverApi extends CI_Controller {
                     $response['cancel_reason']=$deliver->cancel_reason;
                     $response['pickup']=$deliver->pickup;
                     $wheree=array('booking_id'=> $response['booking_id']);
-                    $booking_dropoffs=$this->StandardModel->select_query('booking_dropoffs',$wheree);
+                    $booking_dropoffs=$this->AbhiModel->select_query('booking_dropoffs',$wheree);
                     $response['dropoff']=$booking_dropoffs[0]->dropoff;   
                     $responsedata[]=$response;                   
                 }
@@ -1002,7 +1162,7 @@ class DriverApi extends CI_Controller {
         $responsedata=array();                
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('driver_id');
-        $validation = $this->StandardModel->param_validation($data_val,$_REQUEST);
+        $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
         if(isset($validation['status']) && $validation['status']=='0')
         {echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
         }else
@@ -1012,7 +1172,7 @@ class DriverApi extends CI_Controller {
             $todate     = $_REQUEST['todate'];
             $date       = strtotime(date("Y-m-d h:i:s"));
             $where      =array('driver_id'=>$driver_id,'booking_status'=>'2');
-            $response1=$this->StandardModel->select_query('booking',$where);
+            $response1=$this->AbhiModel->select_query('booking',$where);
             if(!empty($response1))
             {
                 foreach($response1 as $deliver){
@@ -1028,7 +1188,7 @@ class DriverApi extends CI_Controller {
                     $response['cancel_reason']=$deliver->cancel_reason;
                     $response['pickup']=$deliver->pickup;
                     $wheree=array('booking_id'=> $response['booking_id']);
-                    $booking_dropoffs=$this->StandardModel->select_query('booking_dropoffs',$wheree);
+                    $booking_dropoffs=$this->AbhiModel->select_query('booking_dropoffs',$wheree);
                     $response['dropoff']=$booking_dropoffs[0]->dropoff;   
                     $responsedata[]=$response; 
                 }

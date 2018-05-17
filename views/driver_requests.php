@@ -76,7 +76,7 @@
                                                 <?php } ?></td>
                                                 <td>
                                                     <a href="#" data-toggle="modal" data-target="#exampleModal">
-                                                        <button class="btn btn-submit" onclick="vehicleImages(<?php echo $list->id;?>)">Vechile Image</button></a>
+                                                        <button class="btn btn-submit" onclick="vehicleImages(<?php echo $list->id;?>)">Vehicle Image</button></a>
                                                 </td>
                                                 <?php $otherdoc = getSingleDetail('driver_otherdocument',array('user_id'=>$list->id)); ?>
                                                 <td>  
@@ -123,36 +123,7 @@
                                                   <strong>Delete</strong></i>
                                                  </a>
                                                 </td>          
-                                            </tr>
-                                            <script>
-                                                $(document).ready(function(){                                               
-                                                    $('#<?php echo $list->id;?>').change(function() 
-                                                    {
-                                                      if ( $('#<?php echo $list->id;?>').val() == 'Trip' )Trip(<?php echo $list->id; ?>)
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'Banned' )
-                                                      {
-                                                      if (confirm('Are you realy want to banne this user?')) Banned(<?php echo $list->id; ?>,'Banned');return false;
-                                                      }  
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'Active' )
-                                                      {
-                                                      if (confirm('Are you realy want to Active this user? If this user has suspended, It will Active.')) Banned(<?php echo $list->id; ?>,'Active');return false;
-                                                      }                                                      
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'days3' ) 
-                                                      {
-                                                      if (confirm('Are you realy want to Suspend this user for 3days?')) Suspend(<?php echo $list->id; ?>,3);return false;
-                                                      }
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'days7' ) 
-                                                      {
-                                                      if (confirm('Are you realy want to Suspend this user for 7days?')) Suspend(<?php echo $list->id; ?>,7);return false;
-                                                      }
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'days30' )
-                                                      {
-                                                      if (confirm('Are you realy want to Suspend this user for 30 days?')) Suspend(<?php echo $list->id; ?>,30);return false;
-                                                      }
-                                                      else if ( $('#<?php echo $list->id;?>').val() == 'Score' ) Score(<?php echo $list->id; ?>);
-                                                    });
-                                                    });                                                
-                                                </script>
+                                            </tr>                                           
                                         <?php } ?>
                                         </tbody>
                                     </table> 
@@ -177,6 +148,7 @@
     <!-- Modal content-->
         <div class="modal-content">      
             <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <center><span style="color:red;margin-bottom:5px;">**Please Click on image to download.</span></center>
             <div class="col-md-12" id="showImg"></div>       
             <div class="modal-footer">
                <button type="button" class="btn btn-submit" data-dismiss="modal">Close</button>
@@ -186,7 +158,7 @@
 </div>
 
 
-<script>
+<script>    
     function completeRequest(id)
     {
         var location  = site_url+'/Driver/complete_registration/'+id;
@@ -226,7 +198,7 @@
     }
 
     function vehicleImages(user_id)
-    {     
+    {    
         var images = '';
         $('#showImg').html('');
         $.ajax({
@@ -239,8 +211,8 @@
                 if(res.error==0)
                 {
                     for(var i=0; i<res.images.length; i++)
-                    { 
-                        images = '<div class="col-md-4"><img src="'+base_url+"/vechicleImage/"+res.images[i].vechile_image+'" width="99%" height="120px" style="padding-bottom:2px;"></div>';
+                    {                         
+                        images = '<div class="col-md-4"><a target="blank" href="'+base_url+"/vechicleImage/"+res.images[i].vechile_image+'" download><img src="'+base_url+"/vechicleImage/"+res.images[i].vechile_image+'" width="100%" height="120px" style="padding-bottom:2px;"></a></div>';
                         $('#showImg').append(images);
                         //console.log(images);
                         images='';
@@ -251,7 +223,6 @@
                     $('#showImg').append(res.message);
                 }
             }
-        });
-        
-    }
+        });        
+    }    
 </script>
