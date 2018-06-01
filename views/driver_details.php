@@ -58,10 +58,13 @@
                                             <th>Company Name</th>
                                             <th>License ID</th>
                                             <th>Image</th>
-                                            <th>Address</th>
+                                            <th>Address</th>                                            
                                             <th>Creat_At</th>
                                             <th style="min-width:80px !important;">Driver Wallet</th>
                                             <th style="text-align:center">Status (online/offline)</th>
+                                            <th>Daily Booking Limit</th>
+                                            <th>Services</th>
+                                            <th>Update Services</th>
                                             <th>Reset Password</th>
                                             <th>Other Details</th>                                           
                                             <th style="min-width:130px;">Action</th>
@@ -103,6 +106,8 @@
                                                           echo $list->city.' , '.$list->nationality;
                                                     ?>
                                                 </td>
+                                                <?php $services = getMultipleDetail('vehicle_servicetype',array('driver_id'=>$list->id));
+                                                 ?>                                                
                                                 <td><?php $t=$list->created_at;  $s=explode(" ",$t); $e=implode(" / ",$s);
                                                          echo $e; ?>
                                                 </td>
@@ -110,6 +115,18 @@
                                                 if(!empty($wallet)){echo $wallet->balance;}else{echo '0';}
                                                 ?> MMK</td>
                                                 <td style="text-align:center; color:red;"><?php echo $list->online_status; ?></td>
+                                                <td style="min-width:120px;text-align:center;"><?php echo $list->booking_limit; ?></td>
+                                                <!--driver services-->
+                                                <td><?php  if(!empty($services)){
+                                                    foreach ($services as $s => $r) {
+                                                        //echo $r->service_type_id;
+                                                        $sd =  getSingleDetail('servicetype',array('typeid'=>$r->service_type_id));
+                                                        //echo json_encode($sd);
+                                                        if(!empty($sd)){ echo '<strong>'.$sd->servicename.', </strong>';}
+                                                        }
+                                                    }  ?>                                                    
+                                                </td>
+                                                <td></td>
 
                                                 <td><a  href="#" id="link1" data-toggle="modal" data-target="#exampleModal">
                                                     <button class="btn btn-reset" onclick="changeIt(<?php echo $list->id;?>)">Reset Password</button></a>

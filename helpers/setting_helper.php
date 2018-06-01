@@ -86,7 +86,7 @@ if ( ! function_exists('getSingleDetail')){
       return $query;
    }
 }
-if ( ! function_exists('getSingleDetail')){
+if ( ! function_exists('getMultipleDetail')){
    function getMultipleDetail($tablename,$where){
        //get main CodeIgniter object
       //return $fleetid;die();

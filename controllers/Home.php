@@ -94,10 +94,17 @@ class Home extends CI_Controller {
             if(isset($_POST['submit']))
             {   
                 extract($_POST);
-                $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);                
-                $checkWhere  = array("mobile"=>$mobiles);
+                $ProfileData = $this->AuthModel->getSingleRecord($table_name,$where); 
+                $checkmail   = array("email"=>$emails,'user_type'=>0);
+                $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);               
+                $checkWhere  = array("mobile"=>$mobiles,'user_type'=>0);
                 $checkMobile = $this->AuthModel->checkRows($table_name,$checkWhere);
-                if($checkMobile>0 && $mobiles != $ProfileData->mobile)
+                if($checkEmail>0 && $emails != $ProfileData->email)
+                {
+                    $respose  = array("error"=>1,"message"=>"Email already Exist","customer"=>$ProfileData);
+                    $this->load->view('updateCustomer',$respose);                    
+                }
+                elseif($checkMobile>0 && $mobiles != $ProfileData->mobile)
                 {
                     $respose  = array("error"=>1,"message"=>"Mobile number already registered","customer"=>$ProfileData);
                     $this->load->view('updateCustomer',$respose);
@@ -114,7 +121,8 @@ class Home extends CI_Controller {
                     }
                     $updata= array(                 
                             "name"          =>$name,
-                            "mobile"        =>$mobiles, 
+                            "mobile"        =>$mobiles,
+                            "email"         =>$emails,
                             "gender"        =>$gender,
                             "image"         =>$imagename,
                             "image_type"    =>$image_type,          //0=normal, 1=media                 
@@ -880,11 +888,108 @@ class Home extends CI_Controller {
         }
     }
 
-   
+    public function add_point(){
+        if(isset($_POST['submit'])){
+            extract($_POST);
+            $checkdata     = array("country"=>$country,'city'=>$city);
+            $checkCity  = $this->AuthModel->checkRows('point_system',$checkdata); 
+            if($checkCity>0)
+            {
+                $response = array('error'=>1,"message"=>'Point system has already exist for '.$city);
+                $this->load->view('addpoint',$response);
+            }
+            else{
+                $data = array(
+                    "country"=>$country,
+                    "city"   =>$city,
+                    "currency"=>$currency,
+                    "every_amount_spent"=>$amount_spent,
+                    "get_point" =>$get_point,
+                    "expire_date"=>$expire_date,
+                    "expire_string"=>strtotime($expire_date),
+                    "point_at" =>date('d-m-Y h:i A')
+                );
+                //print_r($data);die();
+                if($this->AuthModel->singleInsert('point_system',$data)){
+                    $response = array("success"=>1,"message"=>"Point has been successfully saved");
+                    $this->load->view('addpoint',$response);
+                }
+                else{
+                    $response = array("error"=>1,"message"=>"Oops! something went wrong, Please try again");
+                    $this->load->view('addpoint',$response);
+                }
+            }          
+        }
+        else{
+            $this->load->view('addpoint');  
+        }
+    }
 
-    public function check()
+    public function getpoints(){
+        $points = $this->AuthModel->getMultipleRecord('point_system',array(),'point_id DESC');
+        if(!empty($points)){
+            $response = array('points'=>$points);
+            $this->load->view('getpoints',$response);
+        }
+        else{
+            $response = array('error'=>1,'message'=>'Point record is not available');
+            $this->load->view('getpoints',$response);
+        }
+    }
+
+    public function update_point($point_id){
+        if($point_id==''){
+            redirect('Home/');
+        }
+        else{ 
+            $pointdata = $this->AuthModel->getSingleRecord('point_system',array('point_id'=>$point_id));
+            if(isset($_POST['submit'])){
+                extract($_POST);
+                $data= array(
+                    "every_amount_spent"=>$amount_spent,
+                    "get_point" =>$get_point,
+                    "expire_date"=>$expire_date,
+                    "expire_string"=>strtotime($expire_date),
+                    "point_at" =>date('d-m-Y h:i A')
+                    );
+                if($this->AuthModel->updateRecord(array('point_id'=>$point_id),'point_system',$data)){
+                    $pointdata = $this->AuthModel->getSingleRecord('point_system',array('point_id'=>$point_id));
+                    $response = array('success'=>1,'message'=>'Record has been successfully updated','point'=>$pointdata);
+                    $this->load->view('updatepoint',$response); 
+                }
+                else{
+                    $response = array('error'=>1,'message'=>'Opps! Record is not update. Please try again','point'=>$pointdata);
+                    $this->load->view('updatepoint',$response); 
+                }
+            }
+            else{
+                $response = array('point'=>$pointdata);
+                $this->load->view('updatepoint',$response);           
+            }
+        }
+    }
+
+    public function delete_point($point_id)
     {
-        echo 'hii';
+        if($point_id!='')
+        {             
+            if($this->AuthModel->delete_record('point_system',array('point_id'=>$point_id)))
+            {
+                echo '<script>alert("Record has been successfully removed");
+                window.location.href="'.site_url('Home/getpoints').'";
+                </script>';
+            }
+            else
+            {
+                echo '<script>alert("Record is not removed, Please try again");
+                window.location.href="'.site_url('Home/getpoints').'";
+                </script>';
+            }
+        }
+        else
+        {
+            redirect(site_url('Home/getpoints'));
+        }
     }
 
     public function range_setting()

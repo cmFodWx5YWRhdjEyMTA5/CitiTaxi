@@ -141,8 +141,15 @@
                             <li><a href="<?php echo site_url('Home/booking');?>"><span class="fa fa-sort-alpha-desc"></span>Booking List</a></li>
                             <li><a href="<?php echo site_url('Home/pendingbooking');?>"><span class="fa fa-sort-alpha-desc"></span>Pending Booking</a></li>
                         </ul>
-                    </li>                   
+                    </li>  
 
+                    <li class="xn-openable <?php if(isset($page) && $page=='point'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/points');?>"><span class="fa fa-dollar"></span> <span class="xn-text">Point System</span></a>
+                        <ul>
+                            <li><a href="<?php echo site_url('Home/add_point');?>"><span class="fa fa-pencil"></span>Add Point</a></li>
+                            <li><a href="<?php echo site_url('Home/getpoints');?>"><span class="fa fa-sort-alpha-desc"></span>Points</a></li>
+                        </ul>
+                    </li>
 
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
@@ -211,7 +218,7 @@ function checkpendingBooking()
     $.ajax({
         url: "<?php echo site_url('Welcome/checkpendingBooking');?>",
         success: function (data) {
-            console.log(data);
+            //console.log(data);
             if(data!=0)
             {
                 //var x = document.getElementById("audio-alert");
@@ -226,7 +233,7 @@ function checkuser() {
     $.ajax({
         url: "<?php echo site_url('Welcome/checkdriverRequest');?>",
         success: function (list) {
-            console.log(list);
+            //console.log(list);
             if(list!=0){
                 $("#drivercount").html(list);
                 }

@@ -64,7 +64,7 @@ class Vehicle extends CI_Controller {
                 );
 
             //print_r($data);die();
-            if($uid = $this->AuthModel->singleInsert('fair',$data))
+            if($uid = $this->AuthModel->singleInsert('fare',$data))
             {
                 $respose["success"] = 1;
                 $respose["message"] = "Vehicle Fare has been successfully saved";
@@ -82,6 +82,135 @@ class Vehicle extends CI_Controller {
             $this->load->view('addVehicle_fair');
         }
     }
+
+    public function update_fare($fare_id)
+    {
+        if($fare_id!='')
+        {
+            $fare_details = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fare_id));
+
+            if(isset($_POST['submit']))
+            {
+                //echo "<pre>";
+                //print_r($_POST);die();
+                // `serviceType_id`, `service_name`, `description`, `maximum_load`, `country_id`, `country`, `city_id`, `city`, `currency`, `vehicle_type`, `company_comission_type`, `company_comission_rate`, `distanceUnit`, `minbase_fair`, `min_distance`, `min_distanceUnit`, `mini_distancefair`, `regularChargeEveryDistance`, `regularChargeEveryDistance_unit`, `regularChargeForDistance`, `perMinChargeStatus`, `unitPerMinuteforCharge`, `unitPerMinutecharge`, `regularFreeWaitingMinute`, `regularWaitingPeriodForCharge`, `regularWaitingPeriodCharge`, `morningChargeStatus`, `morningSurchargeUnit`, `morningSurchargePrice`, `morningSurchargeTimeStart`, `morningSurchargeTimeEnd`, `eveningChargeStatus`, `eveningSurchargeUnit`, `eveningSurchargePrice`, `eveningSurchargeTimeStart`, `eveningSurchargeTimeEnd`, `midNightChargeStatus`, `midNightSurchargeUnit`, `midNightSurchargePrice`, `midNightSurchargeTimeStart`, `midNightSurchargeTimeEnd`, `cancelChargeUnitDriver`, `stndCancelChargeDriver`, `cancelChargeUnitPassenger`, `stndCancelChargePassenger`, `WeeklyCancellationLimit`, `multiStopCharge`,
+                extract($_POST);
+                $data = array(
+                    'description'=>$description,
+                    'maximum_load'=>$maxload,
+                    'vehicle_type'=>$vehicletype,
+                    'company_comission_type'=>$commsiontype,
+                    'company_comission_rate'=>$commissionRate,
+                    'distanceUnit'=>$distanceUnit,                
+                    'minbase_fair'=>$minbase_fair,
+                    'min_distance'=>$minDistance,
+                    'min_distanceUnit'=>$min_distUnit, 
+                    'mini_distancefair'=>$mini_distancefair,                    
+                    'regularChargeEveryDistance'=>$regularChargeUponKm,
+                    'regularChargeEveryDistance_unit'=>$regularChargeUpon_unit,
+                    'regularChargeForDistance'=>$uponMinuteCharge,                    
+                    'perMinChargeStatus'=>$perMinChargeStatus,
+                    'unitPerMinuteforCharge'=>$unitPerMinuteforCharge,
+                    'unitPerMinutecharge'=>$unitPerMinutecharge,
+                    'regularFreeWaitingMinute'=>$regFreeWaitingMinute,
+                    'regularWaitingPeriodForCharge'=>$regWaitingUnitTime,
+                    'regularWaitingPeriodCharge'=>$regWaitingUnitTimePrice,
+                    'cancelChargeUnitDriver'=>$cancelChargeUnitDriver,
+                    'stndCancelChargeDriver'=>$stndCancelChargeDriver,
+                    'cancelChargeUnitPassenger'=>$cancelChargeUnitPassenger,
+                    'stndCancelChargePassenger'=>$stndCancelChargePassenger,
+                    'WeeklyCancellationLimit'=>$weeklyCancelLimit,
+                    'multiStopCharge'=>$multiStopCharge
+                    );
+
+                //print_r($data);die();
+                if($uid = $this->AuthModel->updateRecord(array('fair_id'=>$fare_id),'fare',$data))
+                {
+                    $fare_details = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fare_id));
+                    $response["success"] = 1;
+                    $response["message"] = "Vehicle Fare has been successfully update";
+                    $response['fare']    = $fare_details;
+                    $this->load->view('updateVehicle_fair',$response);
+                }
+                else
+                {                    
+                    $response["error"] = 1;
+                    $response["message"] = "Error occur! Please try again";
+                    $response['fare']    = $fare_details;
+                    $this->load->view('updateVehicle_fair',$response);
+                }           
+            }
+            else
+            {
+                $response = array('fare'=>$fare_details);
+                $this->load->view('updateVehicle_fair',$response);
+            }
+        }
+        else
+        {
+            redirect('Home');
+        }
+    }
+
+    public function update_surcharge($fare_id)
+    {
+        if($fare_id!='')
+        {
+            $fare_details = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fare_id));
+
+            if(isset($_POST['submit']))
+            {
+                //echo '<pre>';
+                //print_r($_POST);die();
+                extract($_POST);
+                $data = array(
+                    'morningChargeStatus'=>$morningChargeStatus,
+                    'morningSurchargeUnit'=>$morningSurchargeUnit,
+                    'morningSurchargePrice'=>$morningSurchargePrice,
+                    'morningSurchargeTimeStart'=>$morningSurchargeTimeStart,
+                    'morningSurchargeTimeEnd'=>$morningSurchargeTimeEnd,
+                    'eveningChargeStatus'=>$eveningChargeStatus,
+                    'eveningSurchargeUnit'=>$eveningSurchargeUnit,
+                    'eveningSurchargePrice'=>$eveningSurchargePrice,
+                    'eveningSurchargeTimeStart'=>$eveningSurchargeTimeStart,
+                    'eveningSurchargeTimeEnd'=>$eveningSurchargeTimeEnd,
+                    'midNightChargeStatus'=>$midNightChargeStatus,
+                    'midNightSurchargeUnit'=>$midNightSurchargeUnit,
+                    'midNightSurchargePrice'=>$midNightSurchargePrice,
+                    'midNightSurchargeTimeStart'=>$midNightSurchargeTimeStart,
+                    'midNightSurchargeTimeEnd'=>$midNightSurchargeTimeEnd, 
+                );
+                if($uid = $this->AuthModel->updateRecord(array('fair_id'=>$fare_id),'fare',$data))
+                {
+                    $fare_details = $this->AuthModel->getSingleRecord('fare',array('fair_id'=>$fare_id));
+                    $response["success"] = 1;
+                    $response["message"] = "Surcharge has been successfully update";
+                    $response['fare']    = $fare_details;
+                    $this->load->view('update_fareSurcharge',$response);
+                }
+                else
+                {                    
+                    $response["error"] = 1;
+                    $response["message"] = "Error occur! Please try again";
+                    $response['fare']    = $fare_details;
+                    $this->load->view('update_fareSurcharge',$response);
+                } 
+                //print_r($data);die();
+            }
+            else
+            {
+                $response = array('fare'=>$fare_details);
+                $this->load->view('update_fareSurcharge',$response);
+            }
+
+        }
+        else
+        {
+            redirect('Home');
+        }
+    }
+
+
 
     public function cities($countryid)
     {

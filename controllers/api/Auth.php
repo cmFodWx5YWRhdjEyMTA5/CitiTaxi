@@ -159,6 +159,24 @@ class Auth extends CI_Controller {
     	}
 	}
 
+	public function logout(){
+		if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+			extract($_POST);
+			$upData     = array("device_token"=>'','online_status'=>'offline');
+			if($this->AuthModel->updateRecord(array('id'=>$user_id),'booking',$upData)){
+				$response  = array("success"=>1,"error" => 0,"message"=>"Logout successfull !");
+				echo json_encode($response);
+			}
+			else{
+				$response  = array("success"=>0,"error" =>1,"message"=>"Something went wrong! Please try again");
+				echo json_encode($response);
+			}
+		}
+		else{
+    		$this->index();
+    	}
+	}
+
 
     public function ForgetPassword()
 	{
@@ -311,7 +329,11 @@ class Auth extends CI_Controller {
 			if($UpdateData)
 			{
 				$ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
-				$UpdateData                 	= $this->AuthModel->keychange($ProfileData);
+				$UpdateData       = $this->AuthModel->keychange($ProfileData);
+				$rating           =get_rating($userid);
+				$UpdateData->rating = $rating;
+				$UpdateData->wallet_balance=$this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$userid))->balance;
+
 				$response["error"]				= 0;	
 				$response["success"]			= 1;
 				$response["message"]			= "Success";

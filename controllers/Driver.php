@@ -126,10 +126,12 @@ class Driver extends CI_Controller {
                     "image_type"    =>0,          //0=normal, 1=media
                     "nationality"   =>$nationality,
                     "city"          =>$city,
+                    "currency"      =>$currency,
                     "address"       =>$address,
                     "activeStatus"  =>'Active',        //Active, Inactive
                     "device_type"   =>2,         //0=android, 1=ios, 2=web
-                    "fleet_id"      =>$fleet_id
+                    "fleet_id"      =>$fleet_id,
+                    "booking_limit" =>$bookingLimit,
                     );
                 if($uid = $this->AuthModel->singleInsert($table_name,$data))
                 {
@@ -146,14 +148,15 @@ class Driver extends CI_Controller {
                         "driver_id"=>$uid,
                         "brand"=>$brand,
                         "sub_brand"=>$subbrand,
+                        "color"=>$color,
                         "number_plate"=>$vehicle_NoPlate,
                         "insurance_company"=>$insuranceCompany,
                         "insurance_no"=>$insuranceNumber,
-                        "insurance_expire"=>$insuranceExpiredate,                        
+                        "insurance_expire"=>$insuranceExpiredate                        
                         /*"fleet_company"=>$fleet_company,
                         "fleet_country"=>$fleet_country,
                         "fleet_address"=>$fleet_address,*/
-                        "booking_limit"=>$bookingLimit
+                        
                         );
                     $table_name = "vechile_details";
                     if($vid= $this->AuthModel->singleInsert($table_name,$vechileDetails))
@@ -206,10 +209,16 @@ class Driver extends CI_Controller {
             $profileData = $this->AuthModel->getSingleRecord($table_name,$where);
             if(isset($_POST['submit'])){
                 extract($_POST);
-                $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);                
-                $checkWhere  = array("mobile"=>$mobiles);
+                $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+                $checkmail   = array("email"=>$emails,'user_type'=>1);
+                $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);              
+                $checkWhere  = array("mobile"=>$mobiles,'user_type'=>1);
                 $checkMobile = $this->AuthModel->checkRows($table_name,$checkWhere);
-                if($checkMobile>0 && $mobiles != $ProfileData->mobile)
+                if($checkEmail>0 && $emails != $ProfileData->email){
+                    $respose  = array("error"=>1,"message"=>"This email-id already exist","driver"=>$ProfileData);
+                    $this->load->view('updateDriver',$respose);                    
+                }
+                elseif($checkMobile>0 && $mobiles != $ProfileData->mobile)
                 {
                     $respose  = array("error"=>1,"message"=>"Mobile number already registered","driver"=>$ProfileData);
                     $this->load->view('updateDriver',$respose);
@@ -233,7 +242,8 @@ class Driver extends CI_Controller {
                             "dob"           =>$dob,
                             "nationality"   =>$nationality,   
                             "city"          =>$city,
-                            "address"       =>$address     
+                            "address"       =>$address,
+                            "booking_limit" =>$bookingLimit     
                             );
 
                     $UpdateData = $this->AuthModel->updateRecord($where,$table_name,$updata);
@@ -311,8 +321,7 @@ class Driver extends CI_Controller {
                         "insurance_expire"=>$insuranceExpiredate,                      
                         /*"fleet_company"=>$fleet_company,
                         "fleet_country"=>$fleet_country,
-                        "fleet_address"=>$fleet_address,*/
-                        "booking_limit"=>$bookingLimit
+                        "fleet_address"=>$fleet_address,*/                        
                         );
                 $UpdateData = $this->AuthModel->updateRecord($where,$table_name,$vechileDetails);
                 if($UpdateData)
@@ -756,14 +765,19 @@ class Driver extends CI_Controller {
                             "nationality"   =>$nationality,
                             "city"          =>$city,
                             "address"       =>$address,
+                            'currency'      =>$currency,
                             "activeStatus"  =>'Active',        //Active, Inactive
                             "device_type"   =>2,         //0=android, 1=ios, 2=web
                             "fleet_id"      =>$fleet_id,
-                            "signup_status" =>'complete'
+                            "signup_status" =>'complete',
+                            "booking_limit"=>$bookingLimit,
+                            "seen_status"   =>1
                             );                    
                         if($this->AuthModel->updateRecord(array('id'=>$id),$table_name,$data))
-                        {                            
-                            $this->AuthModel->user_score($id,1);  //add score
+                        {
+                            $message = "Your driver account has been successfully completed. You can logged in";     
+                            $this->Communication_model->sendToDriver($uid,$message);  //send notification to driver
+                            $this->AuthModel->user_score($uid,0);  //add score
                             $bankDetails = array(
                                 "user_id"=>$uid,
                                 "bankName"=>$bankname,
@@ -776,11 +790,11 @@ class Driver extends CI_Controller {
                                 "driver_id"=>$uid,
                                 "brand"=>$brand,
                                 "sub_brand"=>$subbrand,
+                                "color"=>$color,
                                 "number_plate"=>$vehicle_NoPlate,
                                 "insurance_company"=>$insuranceCompany,
                                 "insurance_no"=>$insuranceNumber,
-                                "insurance_expire"=>$insuranceExpiredate,                                                       
-                                "booking_limit"=>$bookingLimit
+                                "insurance_expire"=>$insuranceExpiredate
                                 );
                             $table_name = "vechile_details";
                             if($vid= $this->AuthModel->singleInsert("vechile_details",$vechileDetails))
@@ -819,15 +833,14 @@ class Driver extends CI_Controller {
                             }
                             else{                                
                                 $this->AuthModel->singleInsert($table_name,$licenseData);  
-                            }
-                            
+                            } 
                             echo '<script>alert("Driver recored has been successfully completed");
                             window.location.href="'.site_url('Driver').'";</script>';
                         }
                         else
                         {
                             $respose['userdata'] = $userdata;                           
-                            $respose["error"] = 1;
+                            $respose["error"] = 1;                            
                             $respose["message"] = "Error occur! Please try again";
                             $this->load->view('complete_driverRegistration',$respose);
                         }

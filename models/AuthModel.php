@@ -133,8 +133,8 @@ class AuthModel extends CI_Model {
     public function checkRows($table_name,$where)
     {
         return $this->db->get_where($table_name,$where)->num_rows();
-    }
-
+    }   
+    
     public function user_score($user_id,$user_type)
     {
         if($this->checkRows('users_score',array('user_id'=>$user_id))==0)
@@ -205,14 +205,51 @@ class AuthModel extends CI_Model {
         $this->db->select_sum($col_name);
         $this->db->where($where);
         $sum = $this->db->get($table_name)->row(); 
-        return $sum;
-    }    
+        //print_r($sum);die();
+        if(!empty($sum->$col_name)){            
+        return $sum->$col_name;
+        }
+        else
+        {            
+            return 0;
+        }
+    } 
+
+    public function betweenDateData($table_name)
+    {
+        $this->db->where('`driver_earning` BETWEEN SYSDATE() - INTERVAL 7 DAY AND SYSDATE()', NULL, FALSE);
+        $query = $this->db->get($table_name);
+        if ($query->num_rows() > 0) {
+        foreach ($query->result() as $row) {
+        }
+        }
+    }   
 
     public function getMultipleRecord($table_name,$where,$orderby)
     {
     	$this->db->order_by($orderby);
         return $this->db->get_where($table_name,$where)->result();
     } 
+
+    public function getOrWhereMultipleRecord($table_name,$where,$or_where,$orderby)
+    {
+        $this->db->select('*');
+        $this->db->from($table_name);
+        $this->db->or_where($or_where);
+        $this->db->where($where);
+        $this->db->order_by($orderby);
+        return $this->db->get()->result();
+        //return $this->db->get_where($table_name,$where)->result();
+    } 
+
+    public function checkRowsWithOr_where($table_name,$where,$or_where)
+    {
+        $this->db->select('*');
+        $this->db->from($table_name);
+        $this->db->or_where($or_where);
+        $this->db->where($where);
+        return $this->db->get()->num_rows();       
+    }
 
     public function driverDetails()
     {
@@ -558,23 +595,18 @@ class AuthModel extends CI_Model {
         $check = $this->checkRows($table_name,$where);
         if($check==0)
         {
-            if($this->singleInsert($table_name,$data))
-            {
+            if($this->singleInsert($table_name,$data)){
                 return true;
             }
-            else
-            {
+            else{
                 return false;
             }
         }
-        else
-        {
-            if($this->updateRecord($where,$table_name,$data))
-            {
+        else{
+            if($this->updateRecord($where,$table_name,$data)){
                 return true;
             }
-            else
-            {
+            else{
                 return false;
             }
         }

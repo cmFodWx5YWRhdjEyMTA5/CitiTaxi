@@ -123,7 +123,6 @@ class Wallet extends CI_Controller {
 								$response  = array("error"=>0,"success"=>1,"message"=>"Sorry! Transaction is unsuccessful. Please try again after few minutes");
 								echo json_encode($response);
 							}
-							
 						}
 						else
 						{
@@ -132,8 +131,7 @@ class Wallet extends CI_Controller {
 							echo json_encode($response);
 						}
 					}
-					else
-					{
+					else{
 						$response  = array("error"=>1,"success"=>0,"message"=>"Oops! Something went wrong");
 						echo json_encode($response);
 					}

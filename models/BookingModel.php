@@ -71,7 +71,7 @@ class BookingModel extends CI_Model {
         $this->db->join('users','driver_live_location.user_id=users.id');
         $this->db->join('vehicle_servicetype','users.id=vehicle_servicetype.driver_id');
         $this->db->where('vehicle_servicetype.service_type_id',$service_type_id);
-        $this->db->where(array('users.user_type'=>1,'online_status'=>'online','power_status'=>'on','activeStatus'=>'Active'));        
+        $this->db->where(array('users.user_type'=>1,'online_status'=>'online','activeStatus'=>'Active'));        
         $this->db->having('distance <= ',$searchRange);  
         $this->db->order_by('distance');
         //print_r($this->db->last_query());
@@ -102,18 +102,19 @@ class BookingModel extends CI_Model {
         //echo json_encode($res);
     }
 
-    public function searchDriver($fromLat,$fromLong,$date,$time,$service_type_id,$driver_id)   //in booking api
+    public function searchDriver($fromLat,$fromLong,$date,$time,$service_type_id,$driver_id,$driver_cancelCharge)   //in booking api
     {
         $searchRange = $this->checkNightTime($date,$time);
         //echo $searchRange;
         $this->db->select("driver_live_location.*,servicetype.*,driver_live_location.address as liveaddress,users.address as hoemAddress,users.*,( 3959 * acos( cos( radians($fromLat) ) * cos( radians(`latitude`) ) * cos( radians( `longitude` ) - radians($fromLong) ) + sin( radians($fromLat) ) * sin( radians( `latitude` ) ) ) ) AS distance");
         $this->db->from('driver_live_location');
         $this->db->join('users','driver_live_location.user_id=users.id');
+        $this->db->join('wallet_balance','wallet_balance.user_id=users.id');
         $this->db->join('vehicle_servicetype','users.id=vehicle_servicetype.driver_id');
         $this->db->join('servicetype','vehicle_servicetype.service_type_id=servicetype.typeid');
         $this->db->where(array('vehicle_servicetype.service_type_id'=>$service_type_id,"servicetype.typeid"=>$service_type_id));
-        $this->db->where(array('users.user_type'=>1,'online_status'=>'online','power_status'=>'on','activeStatus'=>'Active'));
-        $this->db->where(array('users.id'=>$driver_id));        
+        $this->db->where(array('users.user_type'=>1,'online_status'=>'online','activeStatus'=>'Active'));
+        $this->db->where(array('users.id'=>$driver_id,'wallet_balance.balance>='=>$driver_cancelCharge));        
         $this->db->having('distance <= ',$searchRange);  
         $this->db->order_by('distance');
         $res=$this->db->get()->row();
@@ -209,6 +210,16 @@ class BookingModel extends CI_Model {
         $this->db->join('users','booking.driver_id=users.id');
         $this->db->join('servicetype','booking.service_typeid=servicetype.typeid');
         $this->db->join('vechile_details','booking.driver_id=vechile_details.driver_id');
+        $this->db->where(array('booking.booking_id'=>$booking_id));
+        return $this->db->get()->row();
+    }
+
+    public function getEarningInvoice($booking_id)  //driver earning
+    {
+        $this->db->select('booking.*,booking_fare.*,servicetype.*');
+        $this->db->from('booking');
+        $this->db->join('booking_fare','booking.booking_id=booking_fare.booking_id');        
+        $this->db->join('servicetype','booking.service_typeid=servicetype.typeid');        
         $this->db->where(array('booking.booking_id'=>$booking_id));
         return $this->db->get()->row();
     }

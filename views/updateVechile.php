@@ -102,13 +102,7 @@
                                             <input type="text" name="fleet_address" value="<?php echo $vechile->fleet_address; ?>" class="form-control" />
                                         </div>
                                     </div-->                                    
-
-                                    <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Booking Limit Per Day </label>
-                                        <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="bookingLimit" value="<?php echo $vechile->booking_limit; ?>" class="form-control"/>
-                                        </div>
-                                    </div>
+                                    
                                     <div class="panel-footer" style="margin-top:20px;">
                                     <div class="col-md-2"></div>
                                     <div class="row">

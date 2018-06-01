@@ -66,7 +66,8 @@
                                             <th style="min-width:100px;">Stnderd Cancel charge(Customer)</th>
                                             <th style="min-width:100px;">Peak Max Cancel booking(customer)</th>
                                             <th style="min-width:80px;"> Full Details</th>
-                                            <th style="min-width:80px;">Edit</th>
+                                            <th style="min-width:80px;">Edit Fare</th>
+                                            <th style="min-width:80px;">Edit Surcharge</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -90,7 +91,10 @@
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger;?></td>
                                                 <td><?php echo $list->WeeklyCancellationLimit.' Rides';?></td>
                                                 <td><a href="<?php echo site_url('Vehicle/fare_full_details/'.$list->fair_id);?>">Full Details</a></td>
-                                                <td><a href="">Edit</a></td>
+                                                <td><a href="<?php echo site_url('Vehicle/update_fare/'.$list->fair_id);?>">Edit</a>
+                                                </td>
+                                                <td><a href="<?php echo site_url('Vehicle/update_surcharge/'.$list->fair_id);?>">Edit</a>
+                                                </td>
                                         <?php } ?>
                                         </tbody>
                                     </table> 

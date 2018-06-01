@@ -34,7 +34,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Mobile Number</label>
                                         <div class="col-md-6 col-xs-12">                                               
-                                            <input type="text" class="form-control" maxlength="10" value="<?php echo $userdata->mobile;?>" readonly/>
+                                            <input type="text" class="form-control" value="<?php echo $userdata->mobile;?>" readonly/>
                                         </div>                                        
                                     </div>
 
@@ -77,16 +77,33 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Nationality </label>
-                                        <div class="col-md-6 col-xs-12">
-                                            <input type="text" name="nationality" class="form-control"/>
+                                        <label class="col-md-3 control-label">Country</label>
+                                        <div class="col-md-6">
+                                            <select name='country_id' class="form-control select" data-live-search="true" onChange="cities(this)" required>
+                                                <option value="">Select Country</option>
+                                                <?php foreach(countryies() as $country) { ?>
+                                                <option value="<?php print $country->id; ?>">
+                                                    <?php echo $country->name; ?>
+                                                </option>
+                                                <?php } ?> 
+                                            </select>
+                                            <input type="hidden" name="nationality" id="country_name">
                                         </div>
                                     </div>
-
-                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">City </label>
-                                        <div class="col-md-6 col-xs-12"> 
-                                            <input type="text" name="city" class="form-control" />
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">City</label>
+                                        <div class="col-md-6">
+                                            <select name='city_id' id="city" class="form-control city" required onChange="citiname(this)">
+                                                <option value="">Select City</option>
+                                            </select>
+                                            <span id='cityError' style="color:red;"></span>
+                                            <input type="hidden" name="city" id="city_name">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">Currency Unit </label>
+                                        <div class="col-md-6">   
+                                            <input type="text" name="currency" id="currency" class="form-control" readonly>
                                         </div>
                                     </div>
 
@@ -98,7 +115,7 @@
                                     </div>
 
 
-    				                <div class="form-group">
+                                    <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driver's Bank Name</label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="bankname" class="form-control"/>
@@ -126,7 +143,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Driving License Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" id="licensedate" data-provide="datepicker" name="expiredate" class="form-control" placeholder="DD-MM-YYYY"/>
+                                            <input type="text" id="licensedate" data-provide="datepicker"  name="expiredate" class="form-control" placeholder="DD-MM-YYYY"/>
                                         </div>
                                     </div>
                                     
@@ -179,6 +196,14 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Vehicle Color</label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="color" class="form-control" />
+                                        </div>
+                                    </div>
+
+
+                                    <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Vehicle Number Plate </label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="vehicle_NoPlate" class="form-control" />
@@ -202,7 +227,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Insurance Expiry Date </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" id="date" data-provide="datepicker" name="insuranceExpiredate" class="form-control" placeholder="DD-MM-YYYY"/>
+                                            <input type="text" id="date" data-provide="datepicker"  name="insuranceExpiredate" class="form-control" placeholder="DD-MM-YYYY"/>
                                         </div>
                                     </div>
 
@@ -304,7 +329,7 @@
 
 <script>
    $(document).ready(function(){
-    //disable previous date
+
     var date = new Date();
     date.setDate(date.getDate());
     $('#date').datepicker({ 
@@ -384,6 +409,43 @@
 
     
 });
+</script>
+<script>
+    function cities(sel)
+    {   //alert(sel.value);
+        $(".city option:gt(0)").remove(); 
+        var countryid=sel.value;
+        var countryname = sel.options[sel.selectedIndex].text;            
+        $('.city').find("option:eq(0)").html("Please wait....");
+            $.ajax({
+            type: "get",
+            url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
+            dataType: "json",  
+            success:function(data){
+            //console.log(data);
+            if(data!=null)
+            {
+                $('#country_name').val(countryname);
+                $('.city').find("option:eq(0)").html("Please Select city");
+                $('#city').append(data.data);//alert(data);
+                //$('#currency').val('');
+                $('#currency').val(data.currency);
+                $('#cityError').text('');
+                //console.log(data);  
+            }
+            else
+            {
+                $('#cityError').text('City is not found. Please select another country');
+            }
+            }
+        });        
+    }
+    function citiname(city)
+        {
+            var cityid   = city.value;
+            var cityname = city.options[city.selectedIndex].text;             
+            $('#city_name').val(cityname);
+        }
 </script>
 
 

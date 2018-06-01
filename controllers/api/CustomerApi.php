@@ -108,6 +108,7 @@ class CustomerApi extends CI_Controller {
             $later_pickup_date      = $jsonData['later_pickup_date']; 
             $later_pickup_time      = $jsonData['later_pickup_time']; 
             $booking_note           = $jsonData['booking_note'];
+            $passenger              = $jsonData['passenger'];
             $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay           
 
             //=================================================================================================//
@@ -127,12 +128,20 @@ class CustomerApi extends CI_Controller {
                 else{ 
                     $nearbyDriver = '';
                     $allDriverNearBy  = $this->BookingModel->searchNearByDriver($pickupLat,$pickupLong,$date,$time,$service_type_id);
+                    //print_r($this->db->last_query());
                     //print_r($allDriverNearBy);die();
                     if(!empty($allDriverNearBy))
                     {
                         foreach ($allDriverNearBy as $near) {
-                            $driver = $near->user_id;
-                            $nearly  = $this->BookingModel->searchDriver($pickupLat,$pickupLong,$date,$time,$service_type_id,$driver); 
+                            $driver = $near->user_id;        
+                        //To check driver wallet balance if balnce greater then cancel charge then assign request                    
+                            $driver_cancelUnit = $fairDetails->cancelChargeUnitDriver;
+                            $driver_cancelCharge =  $fairDetails->stndCancelChargeDriver;
+                            if($driver_cancelUnit=='Per'){
+                                $driver_cancelCharge = ($total_fair*$driver_cancelCharge)/100;
+                            }
+                            //echo $driver_cancelCharge;die();
+                            $nearly  = $this->BookingModel->searchDriver($pickupLat,$pickupLong,$date,$time,$service_type_id,$driver,$driver_cancelCharge);
                             //echo json_encode($nearbyDriver);die();
                             if(!empty($nearly)){                                                        
                                 $driver_id = $nearly->id;                                
@@ -140,11 +149,9 @@ class CustomerApi extends CI_Controller {
                                 $later_pickup_at ='';
                                 $later_pickup_string = '';
                                 //print_r($this->db->last_query());die();
-                                if($nearly->destination_status=='on')
-                                {   
+                                if($nearly->destination_status=='on'){   
                                     //echo $driver_id;
-                                    if($this->checkDriverDestinations($driver_id,$dropoff))
-                                    { 
+                                    if($this->checkDriverDestinations($driver_id,$dropoff)){ 
                                         $nearbyDriver = $nearly;
                                         goto getfinaldriver;
                                         break;
@@ -154,8 +161,7 @@ class CustomerApi extends CI_Controller {
                                 }
                                 else{
                                     $nearbyDriver = $nearly;
-                                } 
-
+                                }
                             }                            
                         }//echo 'mil gya'.$driver_id;                                                
                     }
@@ -176,6 +182,7 @@ class CustomerApi extends CI_Controller {
                             "pickupLat"=>$pickupLat,
                             "pickupLong"=>$pickupLong,
                             "booking_note"=>$booking_note,
+                            "passenger"=>$passenger,
                             "booking_at" =>$booking_at,
                             "booking_at_string"=>strtotime($booking_at),
                             "booking_type"=>$booking_type,
@@ -425,6 +432,109 @@ class CustomerApi extends CI_Controller {
         if(isset($_POST['booking_id']) && $_POST['booking_id'] && isset($_POST['customer_id']) && $_POST['customer_id']!='')
         {            
             extract($_POST);  //booking_id,customer_id
+            $customer_cancelCharge=0;
+            $booking = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id,'customer_id'=>$customer_id));  //get booking data            
+            if(!empty($booking))
+            {            
+                $typeid = $booking->service_typeid;  $country = $booking->country;
+                $city   = $booking->city;
+                //check cencelation limit
+                $limit = $this->AuthModel->getSingleRecord('fare',array('serviceType_id'=>$typeid,'country'=>$country,'city'=>$city));
+                $cancel_limit = $limit->WeeklyCancellationLimit;
+                //$cancel_limit = 2;
+                $score = $this->AuthModel->getSingleRecord('users_score',array("user_id"=>$customer_id)); //get previous cancel score
+
+                if($booking->booking_status==0)   //cancel before accept
+                { 
+                    $updata = array("booking_status"=>7,"cancel_reason"=>$cancel_reason); 
+                    //$thisWeekCancels = $this->countWeekCanceBooking($customer_id,7);
+                    //$newCancelCount  = $thisWeekCancels+1; //New total canel this week
+                    //$thisWeekCancels = 1;
+                    $newCancelCount  = 0;
+                    $preCancel       = $score->total_cancel_before_accept;
+                    $newCancel       = $preCancel+1;                    
+                    $upscoreData     = array('total_cancel_before_accept'=>$newCancel);
+                }
+                else{  
+                    //Fine cancellation charge to customer if cancel after accept booking                    
+                    $customer_cancelUnit      =  $limit->cancelChargeUnitPassenger;
+                    $customer_cancelCharge    =  $limit->stndCancelChargePassenger;
+                    if($customer_cancelUnit=='Per'){
+                        $customer_cancelCharge = ($booking->total_fare*$customer_cancelCharge)/100;
+                    }                                            
+                    $updata          = array("booking_status"=>3,"cancel_reason"=>$cancel_reason,'cancel_charge'=>$customer_cancelCharge);                    
+                    $thisWeekCancels = $this->countWeekCanceBooking($customer_id,3);
+                    //$thisWeekCancels = 1;
+                    $newCancelCount  = $thisWeekCancels+1;  //New total canel this week
+                    $preCancel       = $score->total_cancel_after_accept;
+                    $newCancel       = $preCancel+1; 
+                    $upscoreData     = array('total_cancel_after_accept'=>$newCancel); 
+                }
+                
+                if($this->AuthModel->updateRecord(array("booking_id"=>$booking_id),'booking',$updata))
+                {       
+                    //Cancellation charge record store and deduct from wallet balance
+                    if($customer_cancelCharge>0){
+                        $wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$customer_id));
+                        if(!empty($wallet)){       
+                            $preBalance = $wallet->balance;
+                            $newBalance = $preBalance-$customer_cancelCharge;  
+                            $this->AuthModel->updateRecord(array('user_id'=>$customer_id),'wallet_balance',array('balance'=>$newBalance,'update_at'=>date('Y-m-d H:i:s')));//update customer balance                   
+                            $transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>0,'sender_id'=>$customer_id,'type'=>'dr','amount'=>$customer_cancelCharge,'description'=>'Cancel charge of booking id '.$booking_id,'transaction_status'=>'Success','reciver_balance'=>0,'sender_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')));   //store transaction record
+                        }
+                    }
+
+                    $message="Your booking has been successfully cancelled";
+                    if($score->banned_count==0 && $cancel_limit==$newCancelCount)  //first time suspend 7days
+                    {
+                        if($msg = $this->AuthModel->Suspend(7,$customer_id))  //store in useraction and user table
+                        { $message = 'Booking has been cancelled. Your account is suspend for 7 days due to exceeded weekly cancellation limit'; } 
+                        $upscoreData['banned_count']=1;
+                        $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',$upscoreData);
+                    }
+                    elseif($score->banned_count==1 && $cancel_limit==$newCancelCount)//2nd time suspend 14days
+                    {
+                        if($this->AuthModel->Suspend(14,$customer_id))  //store in useraction and user table
+                        { $message = 'Booking has been cancelled. Your account is suspend for 14 days due to exceeded 2nd time weekly cancellation limit'; }
+                        $upscoreData['banned_count']=2;
+                        $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',$upscoreData);
+                    }
+                    elseif($score->banned_count==2 && $cancel_limit==$newCancelCount) // balck listed
+                    {
+                        if($this->AuthModel->updateRecord(array('id'=>$customer_id),'users',array('active_status'=>'Banned','blackList_status'=>'yes')));
+                        {
+                            $message = 'Booking has been cancelled. Your account is black listed due to exceeded weekly cancellation limit many times';
+                        }
+                        $upscoreData['banned_count']=3;
+                        $this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',$upscoreData);
+                    }
+                    else{
+                        if($this->AuthModel->updateRecord(array("user_id"=>$customer_id),'users_score',$upscoreData))
+                        { $message="Your booking has been successfully cancelled"; }
+                    }
+                    $respose = array("error"=>0,"success"=>1,"message"=>$message);
+                    echo json_encode($respose);             
+                }
+                else{
+                    $respose = array("error"=>1,"success"=>0,"message"=>"Oops! Something went wrong, Please try again");
+                    echo json_encode($respose);
+                }            
+            }
+            else{
+                $respose = array("error"=>1,"success"=>0,"message"=>"Invalid booking");
+                echo json_encode($respose);
+            }            
+        }
+        else{
+            $this->index();
+        }
+    }
+
+    /*public function BookingRejectByCustomer()
+    {
+        if(isset($_POST['booking_id']) && $_POST['booking_id'] && isset($_POST['customer_id']) && $_POST['customer_id']!='')
+        {            
+            extract($_POST);  //booking_id,customer_id
             $booking = $this->AuthModel->getSingleRecord('booking',array("booking_id"=>$booking_id,'customer_id'=>$customer_id));  //get booking data            
             if(!empty($booking))
             {
@@ -507,7 +617,7 @@ class CustomerApi extends CI_Controller {
         {
             $this->index();
         }
-    } 
+    }*/ 
 
     public function my_points()   //Bonus&Gallery my_point tab
     {
@@ -659,14 +769,12 @@ class CustomerApi extends CI_Controller {
                 $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$favourites);
                 echo json_encode($response);            
             }
-            else
-            {
+            else{
                 $response = array('success'=>0,'error'=>1,'message'=>'No favourite ride found','data'=>$favourite);
                 echo json_encode($response);
             }
         }
-        else
-        {
+        else{
             $this->index();
         }
     }
@@ -727,12 +835,98 @@ class CustomerApi extends CI_Controller {
         }
     }
 
-    public function get_Advancebooking()
-    {
-        if(isset($_POST['customer_id']) && $_POST['customer_id']!='')
+    public function getAdvanceBooking()
+    {      
+        $response=array();
+        $responsedata=array();                
+        $current_time=date('Y-m-d H:i:s',time());
+        $data_val = array('customer_id');
+        $validation = $this->AbhiModel->param_validation($data_val,$_POST);
+        if(isset($validation['status']) && $validation['status']=='0')
         {
-
+            echo json_encode(array('response'=>'false','message'=>$validation['message']));die;
         }
+        else
+        {
+            $customer_id= $_POST['customer_id'];            
+            //$where = '(customer_id='.$customer_id.' AND (booking_status!=2 or booking_status!=3))';
+            $where=array('customer_id'=>$customer_id,'booking_status!='=>'4','booking_type'=>'later');
+            $response1=$this->AuthModel->getMultipleRecord('booking',$where,'');
+            if(!empty($response1)){
+             
+                foreach($response1 as $deliver)
+                {
+                    $driver_detail = '';   
+                    $response ='';
+                    if($deliver->driver_id!=0)
+                    {
+                        $driver = $this->AuthModel->getSingleRecord('users',array('id'=>$deliver->driver_id));
+                        if(!empty($driver))
+                        {
+                            $driver_detail['driver_name'] = $driver->name;
+                            $driver_detail['driver_rating'] = get_rating($deliver->driver_id);
+                            if($driver->image_type==1){
+                                $driver_detail['image'] = $driver->image;
+                            }else{                            
+                                $driver_detail['image'] = base_url().'userimage/'.$driver->image;                            
+                            }
+                            $vehicle = $this->AuthModel->getSingleRecord('vechile_details',array('driver_id'=>$deliver->driver_id));
+                            if(!empty($vehicle)){
+                            $driver_detail['vehicle'] = $vehicle;
+                            }else{$driver_detail['vehicle']='';}                        
+                        }                    
+                    }
+                    $service = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$deliver->service_typeid));
+                    if(!empty($service)){
+                        $response['service_typeid']  = $service->typeid;
+                        $response['servicename']     = $service->servicename;
+                        $response['selected_image']  = base_url().'serviceimage/'.$service->selected_image;                    
+                    }
+                    else{
+                        $response['service_typeid']  = '';
+                        $response['servicename']     = '';
+                        $response['selected_image']  = ''; 
+                    }
+
+                    $response['booking_id']=$deliver->booking_id;                
+                    $response['favourite_status']= $deliver->favourite_status;
+                    $response['booking_status']= $deliver->booking_status;
+                    $response['booking_type']= $deliver->booking_type;
+                    $response['booking_at']=$deliver->booking_at;                    
+                    $response['later_pickup_at'] = $deliver->later_pickup_at;
+                    $response['pickup']=$deliver->pickup;
+                    $response['booking_note']=$deliver->booking_note; 
+                    $response['total_fare']=$deliver->total_fare;     
+                    $response['currency']=$deliver->currency;      
+                    $response['payment_type']=$deliver->payment_type;     
+                    $response['cancel_reason']=$deliver->cancel_reason;            
+                    $booking_dropoffs=booking_dropoffs($deliver->booking_id);
+                    //$response['dropoff']=$booking_dropoffs[0]->dropoff;
+                    $response['dropoff']=$booking_dropoffs;
+                    $response['driver_details'] =$driver_detail; 
+                    $booking_status = $deliver->booking_status;
+                    echo $booking_status;
+                    if($booking_status=='0' or $booking_status=='1' or $booking_status=='5' or $booking_status=='6' or $booking_status=='8' or $booking_status=='9')
+                    {
+                        $responsedata['pending'][]=$response;                         
+                    }
+                    else
+                    {
+                        $responsedata['cancel'][]=$response;
+                    }
+                    if(empty($responsedata['pending'])){$responsedata['pending']=array();}
+                    if(empty($responsedata['cancel'])){$responsedata['cancel']=array();}                    
+                                   
+                }
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$responsedata);
+                echo json_encode($response);                
+            }
+            else
+            {
+                $response = array('success'=>0,'error'=>1,'message'=>'No Advance booking found','data'=>$response1);
+                echo json_encode($response);
+            }     
+        }            
     }
 
     

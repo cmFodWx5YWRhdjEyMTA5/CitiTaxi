@@ -44,7 +44,7 @@
                                      <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">E-mail</label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="email" disabled id="email" value="<?php echo $driver->email;?>" name="email" class="form-control" style="color:black">
+                                            <input type="email"  id="email" value="<?php echo $driver->email;?>" name="emails" class="form-control" required>
                                             <span id="errEmail"></span>
                                         </div>
                                     </div>

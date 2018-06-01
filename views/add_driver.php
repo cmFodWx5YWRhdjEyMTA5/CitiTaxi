@@ -27,7 +27,7 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Name</label>
                                         <div class="col-md-6 col-xs-12">
-                                                <input type="text" name="name" class="form-control" > 
+                                                <input type="text" name="name" class="form-control" id="txtcapital" > 
                                         </div>
                                     </div>
 
@@ -71,8 +71,38 @@
                                             <input type="text" name="dob" class="form-control datepicker" placeholder="DD-MM-YYYY" />
                                         </div>
                                     </div>
-
                                     <div class="form-group">
+                                        <label class="col-md-3 control-label">Country</label>
+                                        <div class="col-md-6">
+                                            <select name='country_id' class="form-control select" data-live-search="true" onChange="cities(this)" required>
+                                                <option value="">Select Country</option>
+                                                <?php foreach(countryies() as $country) { ?>
+                                                <option value="<?php print $country->id; ?>">
+                                                    <?php echo $country->name; ?>
+                                                </option>
+                                                <?php } ?> 
+                                            </select>
+                                            <input type="hidden" name="nationality" id="country_name">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">City</label>
+                                        <div class="col-md-6">
+                                            <select name='city_id' id="city" class="form-control city" required onChange="citiname(this)">
+                                                <option value="">Select City</option>
+                                            </select>
+                                            <span id='cityError' style="color:red;"></span>
+                                            <input type="hidden" name="city" id="city_name">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">Currency Unit </label>
+                                        <div class="col-md-6">   
+                                            <input type="text" name="currency" id="currency" class="form-control" readonly>
+                                        </div>
+                                    </div>
+
+                                    <!--div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Nationality </label>
                                         <div class="col-md-6 col-xs-12">
                                             <input type="text" name="nationality" class="form-control"/>
@@ -84,7 +114,7 @@
                                         <div class="col-md-6 col-xs-12"> 
                                             <input type="text" name="city" class="form-control" />
                                         </div>
-                                    </div>
+                                    </div-->
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Address </label>
@@ -156,14 +186,20 @@
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Vehicle Brand </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="brand" class="form-control" />
+                                            <input type="text" name="brand" class="form-control" placeholder="Honda, Tata, Hundai" />
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Sub brand name </label>
                                         <div class="col-md-6 col-xs-12">                                            
-                                            <input type="text" name="subbrand" class="form-control" />
+                                            <input type="text" name="subbrand" class="form-control" placeholder="Amaze,Tiago, i20" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Vehicle Color</label>
+                                        <div class="col-md-6 col-xs-12">                                            
+                                            <input type="text" name="color" class="form-control" />
                                         </div>
                                     </div>
 
@@ -342,6 +378,15 @@
         } 
     });
 
+        // 2 Capitalize string first character to uppercase
+    $('#txtcapital').keyup(function() {
+        var caps = jQuery('#txtcapital').val(); 
+        caps = caps.charAt(0).toUpperCase() + caps.slice(1);
+        jQuery('#txtcapital').val(caps);
+    });
+
+
+
     /*$("#email").keyup(function(){
         var email = $('#email').val();
         $.ajax({
@@ -379,6 +424,44 @@
 
     
 });
+</script>
+
+<script>
+    function cities(sel)
+    {   //alert(sel.value);
+        $(".city option:gt(0)").remove(); 
+        var countryid=sel.value;
+        var countryname = sel.options[sel.selectedIndex].text;            
+        $('.city').find("option:eq(0)").html("Please wait....");
+            $.ajax({
+            type: "get",
+            url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
+            dataType: "json",  
+            success:function(data){
+            //console.log(data);
+            if(data!=null)
+            {
+                $('#country_name').val(countryname);
+                $('.city').find("option:eq(0)").html("Please Select city");
+                $('#city').append(data.data);//alert(data);
+                //$('#currency').val('');
+                $('#currency').val(data.currency);
+                $('#cityError').text('');
+                //console.log(data);  
+            }
+            else
+            {
+                $('#cityError').text('City is not found. Please select another country');
+            }
+            }
+        });        
+    }
+    function citiname(city)
+        {
+            var cityid   = city.value;
+            var cityname = city.options[city.selectedIndex].text;             
+            $('#city_name').val(cityname);
+        }
 </script>
 
 

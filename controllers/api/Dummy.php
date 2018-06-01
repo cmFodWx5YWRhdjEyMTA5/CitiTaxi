@@ -23,6 +23,200 @@ class Dummy extends CI_Controller {
         echo $password;
     }
 
+    public function getweeklyEarning(){    //for weekly earning 
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!=''){
+            $data_val = array('driver_id','earningDate_start','earningDate_end');            
+            $validation = $this->AbhiModel->param_validation($data_val,$_POST);
+            if(isset($validation['status']) && $validation['status']=='0'){
+                $response = array("success"=>0,"error"=>1,"message"=>$validation['message']); 
+                echo json_encode($response);die();                 
+            }
+            else{
+                extract($_POST);
+                $thisWeekMonday   = date('d-m-Y',strtotime("previous monday").' 00:00');
+                $thisWeekSunday   = date('d-m-Y',strtotime("next sunday").' 11:59 PM');
+                $lastWeekMonday   = date('d-m-Y',strtotime('last monday -7 days').' 00:00');            
+                $lastWeeksunday   = date('d-m-Y',strtotime("last monday -1 days").' 11:59 PM');
+                $last2WeekMonday  = date('d-m-Y',strtotime('last monday -7 days').' 00:00');            
+                $last2Weeksunday  = date('d-m-Y',strtotime("last monday -1 days").' 11:59 PM');
+
+                $earningDatest = strtotime($earningDate_start.' 00:00');            
+                $earningDatend = strtotime($earningDate_end.' 11:59 PM');
+
+                $completeTrip  = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>4));
+                $passengerWhere = '(booking_at_string>='.$earningDatest.' and booking_at_string<='.$earningDatend.' and driver_id='.$driver_id.' and (booking_status=3 or booking_status=7))'; 
+                $passengerCancel = $this->AuthModel->checkRows('booking',$passengerWhere); 
+                $driverCancel = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>2));
+                $bookingCount = array("completedTrip"=>$completeTrip,"passengerCancel"=>$passengerCancel,'driverCancel'=>$driverCancel);
+                    //======================================================================================================//
+               
+                $where = '(booking_at_string>='.$earningDatest.' and booking_at_string<='.$earningDatend.' and driver_id='.$driver_id.' and (booking_status=2 or booking_status=3 or booking_status=4 or booking_status=7))';                 
+                $bookings = $this->AuthModel->getMultipleRecord('booking',$where,'booking_id DESC');
+
+                $earningdata = array();
+                if(!empty($bookings)){
+                    foreach ($bookings as $key => $value){
+                        $booking_id = $value->booking_id;    
+                        $tripEarning = $this->BookingModel->getEarningInvoice($booking_id);
+                       //echo json_encode($tripEarning);die();
+                        if(!empty($tripEarning)){
+                            $companyCommssion             = $this->AuthModel->getSingleRecord('company_booking_commission',array('booking_id'=>$booking_id));
+
+                            $trip_fare = $tripEarning->base_fair+$tripEarning->mini_distance_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
+
+                            //echo $total_fair;die();
+                            //$trip_fare = $tripEarning->base_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
+                            $res['booking_id']            = $booking_id;
+                            $res['booking_at']            = $tripEarning->booking_at;  
+                            $res['customer_id']           = $tripEarning->customer_id;
+                            $res['driver_id']             = $tripEarning->driver_id;                                   
+                            $res['service_id']            = $tripEarning->service_typeid;
+                            $res['service_name']          = $tripEarning->servicename;
+                            $res['service_image']         = base_url().'/serviceimage/'.$tripEarning->selected_image;
+                            $res['payment_type']          = $tripEarning->payment_type;
+                            $res['transaction_id']        = $tripEarning->transaction_id;
+                            $res['trip_fare']             = $trip_fare;
+                            $res['multi_address_charge']  = $tripEarning->multi_address_charge;
+                            $res['total_surcharge']       = $tripEarning->total_surcharge;
+                            $res['total_waiting_charge']  = $tripEarning->total_waiting_charge;
+                            $res['total_fair']            = $tripEarning->total_fare;
+                            $res['currency']              = $tripEarning->currency; 
+                            $res['company_commission']    = '';
+                            if(!empty($companyCommssion)) {
+                                $res['company_commission'] = $companyCommssion->total_commission;
+                            }
+                            $earningdata[] = $res;
+                        }                
+                    }
+                    $response = array('success'=>1,'error'=>0,'message'=>'Success','bookingCount'=>$bookingCount,'data'=>$earningdata);
+                    echo json_encode($response); 
+                }                   
+                else{
+                    $response = array('success'=>0,'error'=>1,'message'=>'No booking found','bookingCount'=>$bookingCount,'data'=>$earningdata);
+                    echo json_encode($response); 
+                }                
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
+    public function getCompleteBooking()
+    { 
+        // 1= today, 2=yesterday, 3=this week 4=last week, 5=this month
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!='' && isset($_POST['status']) && $_POST['status']!=''){
+            extract($_POST);
+            $todayst = strtotime(date('d-m-Y').' 00:00');
+            //echo strtotime($todayst);
+            $todaynd     = strtotime(date('d-m-Y').' 11:59 PM');
+            $yesterdayst = strtotime(date('d-m-Y',strtotime("-1 days")).' 00:00'); 
+            $yesterdaynd = strtotime(date('d-m-Y',strtotime("-1 days")).' 11:59 PM'); 
+            $thisMonday  = strtotime(date('d-m-Y',strtotime("previous monday")).' 00:00');
+            $thisSunday  = strtotime(date('d-m-Y',strtotime("next sunday")).' 11:59 PM');
+            $lastWeekMonday = strtotime(date('d-m-Y',strtotime('last monday -7 days')).' 00:00');            
+            $lastWeeksunday = strtotime(date('d-m-Y',strtotime("last monday -1 days")).' 11:59 PM');
+            $firstDate      =  strtotime(date('01-m-Y').' 00:00');
+            $lastDate       =  strtotime(date('t-m-Y').' 11:59 PM');
+            //echo $firstDate;   
+            $todayBooking = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$todayst,'booking_at_string<='=>$lastDate,'driver_id'=>$driver_id,'booking_status'=>4));          
+            $yesterdayBooking = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$yesterdayst,'booking_at_string<='=>$yesterdaynd,'driver_id'=>$driver_id,'booking_status'=>4)); 
+            $thisweekBooking =  $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$thisMonday,'booking_at_string<='=>$thisSunday,'driver_id'=>$driver_id,'booking_status'=>4));        
+            $lastweekBooking =  $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$lastWeekMonday,'booking_at_string<='=>$lastWeeksunday,'driver_id'=>$driver_id,'booking_status'=>4));        
+            $thisMonthBooking = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$firstDate,'booking_at_string<='=>$lastDate,'driver_id'=>$driver_id,'booking_status'=>4));
+            $bookingcount = array('todaybooking'=>$todayBooking,'yesterdayBooking'=>$yesterdayBooking,'thisweekBooking'=>$thisweekBooking,'lastweekBooking'=>$lastweekBooking,'thisMonthBooking'=>$thisMonthBooking);
+            if($status==1){
+                $where = array('booking_at_string>='=>$todayst,'booking_at_string<='=>$todaynd,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==2){     //2=yesterday 
+                $where = array('booking_at_string>='=>$yesterdayst,'booking_at_string<='=>$yesterdaynd,'driver_id'=>$driver_id,'booking_status'=>4);             
+            }
+            elseif($status==3){     //3=this week    
+                $where = array('booking_at_string>='=>$thisMonday,'booking_at_string<='=>$thisSunday,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==4){      //4=last week 
+                $where = array('booking_at_string>='=>$lastWeekMonday,'booking_at_string<='=>$lastWeeksunday,'driver_id'=>$driver_id,'booking_status'=>4);            
+            }
+            elseif($status==5){      //5=this month  
+                $where = array('booking_at_string>='=>$firstDate,'booking_at_string<='=>$lastDate,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==6){      //6=last 30 days 
+                $last30 = strtotime(date('d-m-Y',strtotime("-30 days")).' 00:00');                 
+                $where = array('booking_at_string>='=>$last30,'booking_at_string<='=>$todaynd,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==7){      //7=last 60 days  
+                $last60 = strtotime(date('d-m-Y',strtotime("-60 days")).' 00:00'); 
+                $where = array('booking_at_string>='=>$last60,'booking_at_string<='=>$todaynd,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==8){      //8=last 90 days  
+                $last90 = strtotime(date('d-m-Y',strtotime("-90 days")).' 00:00'); 
+                $where = array('booking_at_string>='=>$last90,'booking_at_string<='=>$todaynd,'driver_id'=>$driver_id,'booking_status'=>4);
+            }
+            elseif($status==9){      //9=custom  
+                $data_val = array('driver_id','status','from_date','to_date');
+                $validation = $this->AbhiModel->param_validation($data_val,$_POST);
+                if(isset($validation['status']) && $validation['status']=='0'){
+                    $response = array('success'=>0,'error'=>1,'message'=>$validation['message']);
+                    echo json_encode($response);die();                    
+                }
+                else{
+                    $from =  strtotime($from_date.' 00:00');
+                    $to   =  strtotime($to_date.' 11:59 PM');                                       
+                    $where = array('booking_at_string>='=>$from,'booking_at_string<='=>$to,'driver_id'=>$driver_id,'booking_status'=>4);    
+                }                
+            }
+            else{
+                $response = array('success'=>0,'error'=>1,'message'=>'invalid request');
+                echo json_encode($response);die();
+            }            
+            $orderby = 'booking_id DESC';
+            $response1=$this->AuthModel->getMultipleRecord('booking',$where,$orderby);
+            //print($this->db->last_query());die();
+            if(!empty($response1)){
+                foreach($response1 as $deliver){
+                    $service_type = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$deliver->service_typeid));
+                    $response['booking_id']=$deliver->booking_id;
+                    $response['driver_id']  = $deliver->driver_id;
+                    $response['customer_id']  = $deliver->customer_id;
+                    $response['booking_status']=$deliver->booking_status;
+                    $response['ride_complete_at']=$deliver->ride_complete_at;
+                    $response['payment_type']=$deliver->payment_type;
+                    $response['total_fare']=$deliver->total_fare;
+                    $response['currency']=$deliver->currency;
+                    $response['booking_at']=$deliver->booking_at;
+                    $service = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$deliver->service_typeid));
+                    if(!empty($service)){
+                        $response['service_typeid']  = $service->typeid;
+                        $response['servicename']     = $service->servicename;
+                        $response['selected_image']  = base_url().'serviceimage/'.$service->selected_image;                    
+                    }
+                    else{
+                        $response['service_typeid']  = '';
+                        $response['servicename']     = '';
+                        $response['selected_image']  = ''; 
+                    }                    
+                    $response['pickup']=$deliver->pickup;
+                    $dropoffs = $this->AuthModel->getMultipleRecord('booking_dropoffs',array("booking_id"=>$deliver->booking_id),"");
+                    $response['dropoff'] = $dropoffs;
+                    $responsedata[]=$response;
+                }
+                $response = array('error'=>0,'success'=>1,'message'=>'success','bookingcount'=>$bookingcount,'data'=>$responsedata);
+                echo json_encode($response);
+            }
+            else
+            {
+                $response = array('error'=>1,'success'=>0,'message'=>'No booking found','bookingcount'=>$bookingcount,'data'=>$response1);
+                echo json_encode($response);
+            }
+        }   
+        else{
+            $this->index();
+        }         
+    }
+
+
+
+
     public function addvechile()
     {
     	$respose = array("success"=>0,"error"=>0,"message"=>'');
