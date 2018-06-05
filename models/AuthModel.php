@@ -220,16 +220,25 @@ class AuthModel extends CI_Model {
         $this->db->where('`driver_earning` BETWEEN SYSDATE() - INTERVAL 7 DAY AND SYSDATE()', NULL, FALSE);
         $query = $this->db->get($table_name);
         if ($query->num_rows() > 0) {
-        foreach ($query->result() as $row) {
-        }
+            foreach ($query->result() as $row) {
+            }
         }
     }   
 
     public function getMultipleRecord($table_name,$where,$orderby)
     {
-    	$this->db->order_by($orderby);
+        $this->db->order_by($orderby);
         return $this->db->get_where($table_name,$where)->result();
-    } 
+    }    
+
+
+    public function getWhereInRecord($table_name,$col_name,$wherinarray)
+    {        
+        $this->db->where_in($col_name,$wherinarray);
+        $this->db->from($table_name);
+        return $this->db->get()->result();
+        //print_r($this->db->last_query());die();
+    }
 
     public function getOrWhereMultipleRecord($table_name,$where,$or_where,$orderby)
     {

@@ -151,6 +151,24 @@
                         </ul>
                     </li>
 
+                    <li class="xn-openable <?php if(isset($page) && $page=='wallet'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> 
+                        <span class="xn-text">Manage Wallet User</span>
+                        <label class="badge" id="managercount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
+                        <ul>
+                            <li><a href="<?php echo site_url('Driver/addWalletuser');?>">
+                                <span class="fa fa-pencil"></span>Add User</a>
+                            </li>
+                            <li><a href="<?php echo site_url('Driver/walletUsers');?>">
+                                <span class="fa fa-sort-alpha-desc"></span>Wallet User List</a>
+                            </li>                       
+                        </ul>
+                    </li>
+
+
+
+
+
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
                         <ul>

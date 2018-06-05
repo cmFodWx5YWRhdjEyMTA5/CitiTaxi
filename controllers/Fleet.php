@@ -153,14 +153,9 @@ class Fleet extends CI_Controller {
         {
             redirect(site_url('/Fleet'));
         }
-
     }
 
-    public function fleet_tracking()
-    {       
-        $this->load->view('fleetTracking');
-    }
-
+    
     public function checkEmail()          //for ajax use
     {
         $table_name  ="fleets";
@@ -190,6 +185,118 @@ class Fleet extends CI_Controller {
             echo json_encode(true);
         }
     }
+
+    public function fleet_tracking()
+    {       
+        $this->load->view('fleetTracking');
+    }
+
+    public function search_driver(){   //On fleet Tracking page
+        extract($_POST); 
+        //echo json_encode($_POST);die();      
+        if($driverid!=''){
+            //echo '1';die();
+            $ress = $this->AuthModel->getSingleRecord('driver_live_location',array('user_id'=>$driverid));
+            if(!empty($ress)){
+                $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
+                $name = ''; $id='';
+                if(!empty($driver_data)){$name=$driver_data->name; $id=$driver_data->id;}
+                $address = $ress->address;
+                $location[] =array($ress->address,$ress->latitude,$ress->longitude,$name,$id); 
+                //$locations = array($location);              
+                echo json_encode($location);                
+            }            
+        }
+
+        elseif($servicetype!='' && $country=='Select Country'){  //only service type
+            //echo '2';die();
+            $drivers = $this->AuthModel->getMultipleRecord('vehicle_servicetype',array('service_type_id'=>$servicetype),'');
+            //print_r($this->db->last_query());die();
+            if(!empty($drivers)){
+                foreach ($drivers as $k => $d) {
+                    $driver_ids[] = $d->driver_id;                    
+                }
+
+                if(!empty($driver_ids)){
+                    $ress = $this->AuthModel->getWhereInRecord('driver_live_location','user_id',$driver_ids);
+                    if(!empty($ress)){
+                        foreach ($ress as $k => $l) {
+                            $driverid = $l->user_id;
+                            $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
+                            $name = ''; $id='';
+                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id); 
+                        }                                
+                        echo json_encode($location);                
+                    }                    
+                }  
+            }            
+        }
+
+        elseif($servicetype!='' && $country!='Select Country'){  //service type country and city(is or not)
+            //echo '3';die();          
+            if($city=='Please Select city'){                
+                $drivers = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'user_type'=>1),'');
+            }else{
+               $drivers = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'city'=>$city,'user_type'=>1),'');
+            }   
+            if(!empty($drivers)){
+                foreach ($drivers as $k => $d) {
+                    $driverid= $d->id;
+                    $check = $this->AuthModel->checkRows('vehicle_servicetype',array('driver_id'=>$driverid,'service_type_id'=>$servicetype)); 
+                    if($check>0){
+                        $driver_ids[] = $driverid;
+                    }                        
+                }
+                //print_r($driver_ids);die();
+                if(!empty($driver_ids)){ 
+                    $ress = $this->AuthModel->getWhereInRecord('driver_live_location','user_id',$driver_ids);
+                    if(!empty($ress)){
+                        foreach ($ress as $k => $l) {
+                            $driverid = $l->user_id;
+                            $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
+                            $name = '';  $id='';
+                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id);                            
+                        }                                
+                        echo json_encode($location);                
+                    }
+                }
+            }
+        }
+
+        elseif($servicetype=='' && $country!='Select Country'){  //country and city(is or not)
+            //echo '4';die();          
+            if($city=='Please Select city'){                
+                $drivers = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'user_type'=>1),'');
+            }else{
+               $drivers = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'city'=>$city,'user_type'=>1),'');
+            }               
+            //echo json_encode($drivers);die();
+
+            if(!empty($drivers)){
+                foreach ($drivers as $k => $d) {                            
+                   $driver_ids[] = $d->id;
+                }                 
+                if(!empty($driver_ids)){                                                                                            
+                    $ress = $this->AuthModel->getWhereInRecord('driver_live_location','user_id',$driver_ids);
+                    //print_r($this->db->last_query());die();
+                    if(!empty($ress)){
+                        foreach ($ress as $k => $l) {
+                            $driverid = $l->user_id;
+                            $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
+                            $name = ''; $id='';
+                           if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id);  
+                        }                                
+                        echo json_encode($location);                
+                    }
+                }
+                                
+            }
+        }        
+    }
+
         
 
     

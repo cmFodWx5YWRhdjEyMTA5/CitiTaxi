@@ -1256,7 +1256,7 @@ class DriverApi extends CI_Controller {
         }
     }
 
-    public function getDailyEarning(){    //for daily earning and month tab click
+   public function getDailyEarning(){  //for daily earning and month tab click
         if(isset($_POST['driver_id']) && $_POST['driver_id']!=''){
             $data_val = array('driver_id','earningDate_start','earningDate_end');            
             $validation = $this->AbhiModel->param_validation($data_val,$_POST);
@@ -1266,7 +1266,6 @@ class DriverApi extends CI_Controller {
             }
             else{
                 extract($_POST);
-                //echo strtotime('28-05-2018 05:28 PM');die();
                 $earningDatest = strtotime($earningDate_start.' 00:00');            
                 $earningDatend = strtotime($earningDate_end.' 11:59 PM');
                 $completeTrip = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>4));
@@ -1291,35 +1290,49 @@ class DriverApi extends CI_Controller {
 
                             //echo $total_fair;die();
                             //$trip_fare = $tripEarning->base_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
+                            $promotion                    = 0;
                             $res['booking_id']            = $booking_id;
-                            $res['booking_at']            = $tripEarning->booking_at; 
+                            $res['booking_at']            = $tripEarning->booking_at;  
                             $res['booking_status']        = $tripEarning->booking_status;  
                             $res['customer_id']           = $tripEarning->customer_id;
                             $res['driver_id']             = $tripEarning->driver_id;                                   
                             $res['service_id']            = $tripEarning->service_typeid;
                             $res['service_name']          = $tripEarning->servicename;
                             $res['service_image']         = base_url().'/serviceimage/'.$tripEarning->selected_image;
-                            $res['payment_type']          = $tripEarning->payment_type;
-                            $res['transaction_id']        = $tripEarning->transaction_id;
-                            $res['trip_fare']             = $trip_fare;
-                            $res['multi_address_charge']  = $tripEarning->multi_address_charge;
-                            $res['total_surcharge']       = $tripEarning->total_surcharge;
-                            $res['total_waiting_charge']  = $tripEarning->total_waiting_charge;
-                            $res['total_fair']            = $tripEarning->total_fare;
+                            $res['db_total_fair']         = $tripEarning->total_fare;
                             $res['currency']              = $tripEarning->currency; 
-                            $res['company_commission']    = '';
-                            if(!empty($companyCommssion)) {
-                                $res['company_commission'] = $companyCommssion->total_commission;
-                            }
-                            $earningdata[] = $res;
+                            $res['cancel_at']             = $tripEarning->cancel_at;
 
-                            // =================================== Get Total Earning ====================================
-                            $totalearning  = $this->AuthModel->getColumnSum('booking_earning','driver_earning',array('driver_id'=>$driver_id,'status'=>1,'commission_at_string>='=>$earningDatest,'commission_at_string<='=>$earningDatend));
-                            $totalcancelCharge = $this->AuthModel->getColumnSum('booking','cancel_charge',array('driver_id'=>$driver_id,'booking_status'=>2,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,));
-                            $grand_earning = $totalearning-$totalcancelCharge;
-                            // =================================== ***************** ====================================
+                            $res['passenger']['payment_type']          = $tripEarning->payment_type;
+                            $res['passenger']['transaction_id']        = $tripEarning->transaction_id;
+                            $res['passenger']['trip_fare']             = $trip_fare;
+                            $res['passenger']['multi_address_charge']  = $tripEarning->multi_address_charge;
+                            $res['passenger']['total_surcharge']       = $tripEarning->total_surcharge;
+                            $res['passenger']['total_waiting_charge']  = $tripEarning->total_waiting_charge;
+                            $res['passenger']['promotion']             = $promotion;
+                            $res['passenger']['currency']              = $tripEarning->currency;
+                            $passengerTotal               = ($trip_fare+$tripEarning->total_surcharge+$tripEarning->total_waiting_charge+$tripEarning->multi_address_charge)-$promotion;
+                            $res['passenger']['total_fare']   = $passengerTotal;
+                            $res['tripEarning']['payment_type']  = $tripEarning->payment_type;
+                            $res['tripEarning']['earning']       = $passengerTotal;
+                            $res['tripEarning']['promotion']     = $promotion;
+                            $res['tripEarning']['total_earning'] = $passengerTotal+$promotion;
+                            $res['tripEarning']['currency']      = $tripEarning->currency;                            
+                            $res['tripEarning']['cancel_charge']      = $tripEarning->cancel_charge;
+                            $res['tripEarning']['company_commission']    = '';
+                            if(!empty($companyCommssion)) {
+                                $res['tripEarning']['company_commission'] = $companyCommssion->total_commission;
+                            }                           
+                            
+                            $earningdata[] = $res;                            
                         }                
                     }
+                    // =================================== Get Total Earning ====================================
+                    $totalearning  = $this->AuthModel->getColumnSum('booking_earning','driver_earning',array('driver_id'=>$driver_id,'status'=>1,'commission_at_string>='=>$earningDatest,'commission_at_string<='=>$earningDatend));
+                    $totalcancelCharge = $this->AuthModel->getColumnSum('booking','cancel_charge',array('driver_id'=>$driver_id,'booking_status'=>2,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,));
+                    $grand_earning = $totalearning-$totalcancelCharge;
+
+                    // =================================== ***************** ====================================
                     $response = array('success'=>1,'error'=>0,'message'=>'Success','total_earning'=>$grand_earning,'bookingCount'=>$bookingCount,'data'=>$earningdata);
                     echo json_encode($response); 
                 }                   
@@ -1430,8 +1443,18 @@ class DriverApi extends CI_Controller {
                 $lastday          = date('d-m-Y',strtotime('-6 days'));                
             }
             elseif($status==2){  //MonthlyStatment
-                $lastday          = date('1-m-Y');
-                $today            = date("d-m-Y",strtotime("+1 month -1 second",strtotime(date("1-m-Y"))));                
+                $paramarray = array('month_first_date','month_last_date');
+                $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+                if(isset($vResponse['status']) && $vResponse['status']==0)
+                {
+                    $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                    echo json_encode($response);die();
+                }else{
+                    $lastday          = $_POST['month_last_date'];
+                    $today            = $_POST['month_first_date'];    
+                }                
+                //$lastday          = date('1-m-Y');
+                //$today            = date("d-m-Y",strtotime("+1 month -1 second",strtotime(date("1-m-Y"))));                  
             }
             else{
                 $response = array('success'=>0,'error'=>1,'message'=>'Invalid request');

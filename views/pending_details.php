@@ -51,14 +51,14 @@
                                             <tr>
                                               <td style="text-align:center"><?php echo $i++;?></td>  
                                               <td style="text-align:center"><?php echo $list->booking_id;?></td>
-
-
                                               <?php if($list->booking_status=='0'){ ?>
                                               <td style="color:blue">Assigned</td>
                                               <?php }elseif($list->booking_status=='1'){ ?>
                                               <td style="color:orange">Accept</td>                                             
-                                              <?php }elseif($list->booking_status=='2'){ ?>
+                                              <?php }elseif($list->booking_status=='2' && $list->booking_type=='now'){ ?>
                                               <td style="color:red">Reject by driver</td>
+                                              <?php }elseif($list->booking_status=='2' && $list->booking_type=='later'){ ?>
+                                              <td style="color:red">Driver was not found at pickup time</td>
                                               <?php }elseif($list->booking_status=='3'){?>
                                               <td style="color:red">Reject by customer after accept</td>
                                               <?php }elseif($list->booking_status=='4'){ ?>
@@ -79,7 +79,6 @@
                                               $name = $driver->name; $mobile=$driver->mobile;} 
                                               else{ $mobile=''; $name='';}
                                               ?>                                             
-
 
                                               <td style="color:blue;font-weight:600;"><?php echo $name; ?></td>
                                               <td style="color:blue;font-weight:600;"><?php echo $mobile; ?></td>

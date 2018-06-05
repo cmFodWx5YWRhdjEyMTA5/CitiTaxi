@@ -209,11 +209,11 @@ class Driver extends CI_Controller {
             $profileData = $this->AuthModel->getSingleRecord($table_name,$where);
             if(isset($_POST['submit'])){
                 extract($_POST);
-                $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
-                $checkmail   = array("email"=>$emails,'user_type'=>1);
-                $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);              
-                $checkWhere  = array("mobile"=>$mobiles,'user_type'=>1);
-                $checkMobile = $this->AuthModel->checkRows($table_name,$checkWhere);
+                $ProfileData     = $this->AuthModel->getSingleRecord($table_name,$where);
+                $checkmail       = array("email"=>$emails,'user_type'=>1);
+                $checkEmail      = $this->AuthModel->checkRows($table_name,$checkmail);              
+                $checkWhere      = array("mobile"=>$mobiles,'user_type'=>1);
+                $checkMobile     = $this->AuthModel->checkRows($table_name,$checkWhere);
                 if($checkEmail>0 && $emails != $ProfileData->email){
                     $respose  = array("error"=>1,"message"=>"This email-id already exist","driver"=>$ProfileData);
                     $this->load->view('updateDriver',$respose);                    
@@ -575,7 +575,7 @@ class Driver extends CI_Controller {
         $suspend_type = $_POST['type'].' Day';
         $user_id = $_POST['id'];
         $to = date('d-m-Y', strtotime("+".$suspend_type));
-        $todate = $to.' 23:59:59';
+        $todate = $to;
         $fromstring = strtotime(date('d-m-Y H:i:s'));
         //print_r($todate);
         $where = array("user_id"=>$user_id);
@@ -584,20 +584,17 @@ class Driver extends CI_Controller {
         $checkExist = $this->AuthModel->checkRows($table_name,$where);
         if($checkExist>0)
         {
-            $updata = array('suspand_type'=>$suspend_type,'from'=>date('d-m-Y H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
-            if($this->AuthModel->updateRecord($where,$table_name,$updata))
-            {
+            $updata = array('suspand_type'=>$suspend_type,'from'=>date('d-m-Y h:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            if($this->AuthModel->updateRecord($where,$table_name,$updata)){
                 $this->AuthModel->updateRecord($upwhere,'users',$userUpdateData);   
                 echo "Action has successfully saved. User will be suspended to ".$to; 
             }
-            else
-            {
+            else{
                 echo "Oops something went wrong! Please try again";
             }
         }
-        else
-        {
-            $insertData = array("user_id"=>$user_id,'suspand_type'=>$suspend_type,'from'=>date('Y-m-d H:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+        else{
+            $insertData = array("user_id"=>$user_id,'suspand_type'=>$suspend_type,'from'=>date('d-m-Y h:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
             if($this->AuthModel->singleInsert($table_name,$insertData))
             {
                 $this->AuthModel->updateRecord($upwhere,'users',$userUpdateData);
@@ -878,8 +875,239 @@ class Driver extends CI_Controller {
         //echo json_encode($data);
     }
 
+    //-----------------------wallet manager Section-----------------
+
+    public function addWalletuser()
+    {
+        if(isset($_POST['submit'])){
+            extract($_POST);
+            $table_name  = "wallet_manager";
+            $checkmail   = array("email"=>$email);
+            $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);     
+            $checkMobile = array('phone' =>$mobile,'phone!='=>'');
+            $mobileExist = $this->AuthModel->checkRows($table_name,$checkMobile);   
+            if($checkEmail>0)
+            {
+                $respose["error"]=1;
+                $respose["message"]="Email already Exist";
+                $this->load->view('add_wallet_user',$respose);
+            }           
+            elseif($mobileExist>0)
+            {   
+                $respose= array("error"=>1,"message"=>"Mobile number has already registered");
+                $this->load->view('add_wallet_user',$respose);
+            }
+            else
+            {
+                $imagename ='default.jpg';
+                if(isset($_FILES['driverimage'])){
+                    $folder_name = 'managers';
+                    $imagename   = $this->AuthModel->imageUpload($_FILES['driverimage'],$folder_name);
+                }
+                $data= array(
+                    "shop_name"     => $shopname,
+                    "name"          => $name,
+                    "dob"           => $dob,
+                    "gender"        => $gender,
+                    "country"       => $country,
+                    "city"          => $city,
+                    "currency"      => $currency,
+                    "phone"         => $mobile,
+                    "email"         => $email,
+                    "password"      => md5($password),
+                    "pass"          => $password,
+                    "manager_photo" => $imagename,
+                    "address"       => $address,
+                    "activeStatus"  => 'Active'                  
+                );
+                if($uid = $this->AuthModel->singleInsert($table_name,$data)){
+                    $respose["success"] = 1;
+                    $respose["message"] = "User Added successfully";
+                    $this->load->view('add_wallet_user',$respose);   
+                }
+                else{
+                    $respose["error"] = 1;
+                    $respose["message"] = "Error occur! Please try again";
+                    $this->load->view('add_wallet_user',$respose);
+                }
+            }
+        }
+        else{            
+            $this->load->view('add_wallet_user');
+        }
+    }
+
+     public function walletUsers()        //driver details
+    {
+        $table_name = 'wallet_manager';
+        $orderby  = "`wallet_id` DESC";
+        //$where = array('user_type'=>1);
+        $drivers = $this->AbhiModel->select_query($table_name,false);
+       // echo $this->db->last_query();die;
+       // print_r($drivers);die;
+        if(!empty($drivers))
+        {
+            $data['userlist']=$drivers;            
+            $this->load->view('wallet_user_details',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'No Record found';
+            $data["userlist"]=array();
+            $this->load->view('wallet_user_details',$data);
+        }
+    }
+
+    public function update_manager($id)
+    {
+        if($id!='')
+        {
+            $userId  = $id;  $table_name = 'wallet_manager';
+            $where = array('manager_id'=>$userId);
+            $profileData = $this->AuthModel->getSingleRecord($table_name,$where);
+            if(isset($_POST['submit'])){
+                extract($_POST);
+                $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+                $checkmail        = array("email"=>$emails);
+                $checkEmail       = $this->AuthModel->checkRows($table_name,$checkmail);              
+                $checkWhere       = array("phone"=>$mobiles);
+                $checkMobile      = $this->AuthModel->checkRows($table_name,$checkWhere);
+                if($checkEmail>0 && $emails != $ProfileData->email){
+                    $respose  = array("error"=>1,"message"=>"This email-id already exist","driver"=>$ProfileData);
+                    $this->load->view('updateDriver',$respose);                    
+                }
+                elseif($checkMobile>0 && $mobiles != $ProfileData->phone){
+                    $respose  = array("error"=>1,"message"=>"Mobile number already registered","driver"=>$ProfileData);
+                    $this->load->view('updateDriver',$respose);
+                }
+                else{
+                    $imagename        = $ProfileData->manager_photo;
+                  //  $image_type       = $ProfileData->image_type;
+                    if(isset($_FILES['driverimages']) && $_FILES['driverimages']['name']!='')
+                    {
+                        $folder_name = 'managers';
+                        $imagename   = $this->AuthModel->imageUpload($_FILES['driverimages'],$folder_name);
+                        $image_type  = 0;
+                    }
+                    $updata= array( 
+                            "shop_name"      =>$shopname,          
+                            "name"          =>$name,
+                            "email"         =>$emails,
+                            "phone"         =>$mobiles, 
+                            "gender"        =>$gender,
+                            "manager_photo" =>$imagename,                    
+                            "dob"           =>$dob,
+                            "address"       =>$address,                          
+                            );
+
+                    $UpdateData = $this->AuthModel->updateRecord($where,$table_name,$updata);
+                    if($UpdateData){
+                        $ProfileData      = $this->AuthModel->getSingleRecord($table_name,$where);
+                        $response["success"]            = 1;
+                        $response["message"]            = "Record has been successfully updated";
+                        $response["driver"]           = $ProfileData;
+                        $this->load->view('updateWallet',$response);
+                    }
+                    else{
+                        $response["error"]           = 1;    
+                        $response["message"]         = "Oops! Error occur. Please Try again";
+                        $response["driver"]           = $ProfileData;
+                        $this->load->view('updateWallet',$response);
+                    }
+                } 
+            }
+            else{
+                $data['driver'] = $profileData;
+                $this->load->view('updateWallet',$data);
+            }   
+        }
+        else
+        {
+            redirect(base_url());
+        }
+    }
 
 
+    public function manager_delete($id)
+    {
+        if($id!='')
+        { 
+            $table_name = "wallet_manager";
+            $checkWhere = array('manager_id'=>$id);
+            if($this->AuthModel->delete_record($table_name,$checkWhere))
+            {
+                echo '<script>alert("Record has been successfully removed");
+                window.location.href="'.site_url('Driver/walletUsers').'";
+                </script>';
+            }
+            else
+            {
+                echo '<script>alert("Record is not removed, Please try again");
+                window.location.href="'.site_url('Driver/walletUsers').'";
+                </script>';
+            }
+        }
+        else
+        {
+            redirect(site_url('Driver'));
+        }
+    } 
+
+    public function update_managerStatus()       //update status Active or Banned
+    {
+        $table_name = 'wallet_manager';
+        $updata = array('activeStatus'=>$_POST['activeStatus'],'suspend_type'=>'');
+        $checkWhere = array('manager_id'=>$_POST['manager_id']);
+        if($this->AuthModel->updateRecord($checkWhere,$table_name,$updata))
+        {   
+            $this->AuthModel->delete_record('walletmanageraction',$checkWhere);
+            echo 'Action has been successfully saved';
+        }
+        else
+        {
+            echo 'Oops! something went wrong, Action is not update';
+        }
+    }
+
+    public function walletmanager_Suspend()
+    {
+        $table_name = "walletmanageraction";
+        $byStatus = $this->session->userdata('status');
+        $suspend_type = $_POST['type'].' Day';
+        $manager_id = $_POST['manager_id'];
+        $to = date('d-m-Y', strtotime("+".$suspend_type));
+        $todate = $to;
+        $fromstring = strtotime(date('d-m-Y h:i:s'));
+        //print_r($todate);
+        $where = array("manager_id"=>$manager_id);       
+        $userUpdateData = array('activeStatus'=>'Suspended','suspend_type'=>$suspend_type);
+        $checkExist = $this->AuthModel->checkRows($table_name,$where);
+        if($checkExist>0){
+            $updata = array('suspand_type'=>$suspend_type,'from'=>date('d-m-Y h:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            if($this->AuthModel->updateRecord($where,$table_name,$updata)){
+                $this->AuthModel->updateRecord($where,'wallet_manager',$userUpdateData);   
+                echo "Action has successfully saved. User will be suspended to ".$to; 
+            }
+            else{
+                echo "Oops something went wrong! Please try again";
+            }
+        }
+        else
+        {
+            $insertData = array("manager_id"=>$manager_id,'suspand_type'=>$suspend_type,'from'=>date('d-m-Y h:i:s'),'fromstring'=>$fromstring,'to'=>$todate,'tostring'=>strtotime($todate),'suspend_by'=>$byStatus);
+            //print_r($insertData);die();
+            if($this->AuthModel->singleInsert($table_name,$insertData))
+            {
+                $this->AuthModel->updateRecord($where,'wallet_manager',$userUpdateData);
+                echo "Action has successfully saved. User will be suspended to ".$to; 
+            }
+            else
+            {
+                echo "Oops something went wrong! Please try again";
+            }
+        }
+    }  
 
 
 

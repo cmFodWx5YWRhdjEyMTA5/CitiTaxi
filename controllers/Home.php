@@ -22,6 +22,7 @@ class Home extends CI_Controller {
     {
         $this->load->view('analytics');
     }
+
     public function add_customer()
     {
         if(isset($_POST['submit']))

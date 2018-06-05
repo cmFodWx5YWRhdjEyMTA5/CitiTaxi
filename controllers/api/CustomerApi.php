@@ -110,7 +110,7 @@ class CustomerApi extends CI_Controller {
             $booking_note           = $jsonData['booking_note'];
             $passenger              = $jsonData['passenger'];
             $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay           
-
+            print_r($dropoff);die();
             //=================================================================================================//
             
             $fairDetails            = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_type_id,"country"=>$country,"city"=>$city_name));  
@@ -150,7 +150,7 @@ class CustomerApi extends CI_Controller {
                                 $later_pickup_string = '';
                                 //print_r($this->db->last_query());die();
                                 if($nearly->destination_status=='on'){   
-                                    //echo $driver_id;
+                                    //echo $driver_id;                                    
                                     if($this->checkDriverDestinations($driver_id,$dropoff)){ 
                                         $nearbyDriver = $nearly;
                                         goto getfinaldriver;
