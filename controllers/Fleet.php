@@ -223,9 +223,9 @@ class Fleet extends CI_Controller {
                         foreach ($ress as $k => $l) {
                             $driverid = $l->user_id;
                             $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
-                            $name = ''; $id='';
-                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
-                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id); 
+                            $name = ''; $id='';$email='';$mobile='';
+                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;$email=$driver_data->email;$mobile=$driver_data->mobile;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id,$email,$mobile); 
                         }                                
                         echo json_encode($location);                
                     }                    

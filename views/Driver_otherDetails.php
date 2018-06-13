@@ -67,8 +67,7 @@
                                             <th>Sub Brand</th>
                                             <th>Number Plate</th>
                                             <th>Insurance No</th>
-                                            <th>Insurance Company</th>
-                                            <th>Booking Limit</th>
+                                            <th>Insurance Company</th>                                            
                                             <th>Images</th>
                                             <th style="min-width:50px; text-align:center">Edit</th>
                                             <!--th style="min-width:50px; text-align:center">Delete</th-->
@@ -83,8 +82,7 @@
                                                 <td><?php echo $vechile_details->sub_brand; ?></td>
                                                 <td><strong><?php echo $vechile_details->number_plate; ?></strong></td>
                                                 <td><?php echo $vechile_details->insurance_no;?></td>
-                                                <td><?php echo $vechile_details->insurance_company;?></td>
-                                                <td><?php echo $vechile_details->booking_limit;?></td>
+                                                <td><?php echo $vechile_details->insurance_company;?></td>                                              
                                                 <td>
                                                     <a href="<?php echo site_url('Driver/vechileImage/'.$vechile_details->driver_id.'/'.$vechile_details->vechileId);?>"><button class="btn btn-submit">Vechile Image</button></a>
                                                 </td>

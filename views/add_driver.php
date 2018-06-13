@@ -328,11 +328,7 @@
     
 
 <script>
-
-    
-
    $(document).ready(function(){
-
     var date = new Date();
     date.setDate(date.getDate());
     $('#date').datepicker({ 

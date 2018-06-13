@@ -135,7 +135,7 @@
                 </div>                
                 <div class="container-fluid">
                     <div class="panel-body form-group-separated" style="padding:5px !important">
-                        
+                        <div id="button"><button id="trafficToggle">Toggle Traffic Layer</button></div>
                         <div class="panel-body panel-body-table">
                         <div id="map"></div>
                         <div id="mymap"></div>
@@ -186,8 +186,9 @@ function cities(sel)
 
 </script>
 
-  <script src="http://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw&sensor=false" type="text/javascript"></script>
+  <script src="http://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw" type="text/javascript"></script>
   <script type="text/javascript">
+   var trafficLayer;
       document.getElementById('mymap').style.display="none";
       //var locations =fleetlocations();
       var locations =[];
@@ -204,7 +205,11 @@ function cities(sel)
       center: new google.maps.LatLng(22.7239575, 75.7938098),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       gestureHandling: 'greedy'
-    });    
+    });  
+      trafficLayer = new google.maps.TrafficLayer();
+      google.maps.event.addDomListener(document.getElementById('trafficToggle'), 'click', toggleTraffic); 
+
+  
 
     var infowindow = new google.maps.InfoWindow();
 
@@ -224,6 +229,22 @@ function cities(sel)
         }
       })(marker, i));
     }
+
+    function toggleTraffic(){
+        if(trafficLayer.getMap() == null){
+            //traffic layer is disabled.. enable it
+            trafficLayer.setMap(map);
+        } 
+        else {
+            //traffic layer is enabled.. disable it
+            trafficLayer.setMap(null);             
+        }
+    }
+
+
+
+
+
 
     function fleetlocations()
     {      
@@ -275,7 +296,7 @@ function cities(sel)
       center: new google.maps.LatLng(locations[0][1],locations[0][2]),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       gestureHandling: 'greedy'
-      });    
+      });       
 
       var infowindow = new google.maps.InfoWindow();
 
@@ -290,7 +311,9 @@ function cities(sel)
 
         google.maps.event.addListener(marker, 'click', (function(marker, i) {
           return function() {
-            infowindow.setContent('ID : '+locations[i][4]+'\nName: '+locations[i][3]);
+            var content = '<div> ID: '+locations[i][4]+'</div><div> Name: '+locations[i][3]+'</div><div> Email: '+locations[i][5]+'</div><div> Mobile: '+locations[i][6]+'</div>';
+            infowindow.setContent(content);
+            //infowindow.setContent('ID : '+locations[i][4]+'\n Name: '+locations[i][3]);
             infowindow.open(map, marker);
           }
         })(marker, i));

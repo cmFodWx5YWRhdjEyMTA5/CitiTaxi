@@ -252,9 +252,11 @@ class Home extends CI_Controller {
         
         // Search text
         $search_text = "";
+        $search='';
         if($this->input->post('submit') != NULL ){
             $search_text = $this->input->post('search');
             $this->session->set_userdata(array("search"=>$search_text));
+            $search = array('name'=>$search_text);
         }/*else{
             if($this->session->userdata('search') != NULL){
                 $search_text = $this->session->userdata('search');
@@ -271,7 +273,7 @@ class Home extends CI_Controller {
         //$allcount = $this->DummyModel->getrecordCount($search_text,'countries',array());
         //echo $allcount;die();
         // Get  records
-        $users_record = $this->DummyModel->getData($rowno,$rowperpage,$search_text,'users',array()); 
+        $users_record = $this->DummyModel->getData($rowno,$rowperpage,$search,'users',array()); 
         //echo "<pre>";
         //print_r($users_record);die();
         // Pagination Configuration
@@ -990,6 +992,354 @@ class Home extends CI_Controller {
         else
         {
             redirect(site_url('Home/getpoints'));
+        }
+    }
+
+    public function point_history($rowno=0)
+    {     
+        // Search text
+        $search_name = "";
+        $search_email = "";
+        $search ='';        
+        $search2='';
+        if(isset($_POST['submit'])){
+            $search_name = $this->input->post('name');
+            $search_email = $this->input->post('email');
+            if($search_name==''){
+                $search =array('email'=>$search_email);                
+                $search2 = array();
+            }else{
+                $search = array('name'=>$search_name);
+                $search2 =array();                
+            }
+        }
+        //For Table pagaination
+        $rowperpage = 10;        
+        if($rowno != 0){  $rowno = ($rowno-1) * $rowperpage;  } 
+        $allcount  = $this->AuthModel->getrecordCount($search,$search2,'users',array('user_type'=>0));
+        $customers = $this->AuthModel->getData($rowno,$rowperpage,$search,$search2,'users',array('user_type'=>0));
+        //print_r($this->db->last_query());die();
+        $config = $this->AuthModel->tableConfig();
+        $config['base_url'] = site_url().'/Home/point_history';   
+        //$config['use_page_numbers'] = TRUE;     
+        $config['total_rows'] = $allcount;
+        $config['per_page'] = $rowperpage;
+        $this->pagination->initialize($config);
+        $data['pagination'] = $this->pagination->create_links();        
+        $data['row'] = $rowno;
+        $data['search_name'] = $search_name;
+        $data['search_email'] = $search_email;
+        //End Table pagaination            
+        
+        if(!empty($customers))
+        {
+            $data['userlist']=$customers;            
+            $this->load->view('booking_point_history',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'No record found';
+            $data["userlist"]=$customers;
+            $this->load->view('booking_point_history',$data);
+        }
+    }
+    public function customer_point_history($customer_id)
+    {   
+        if($customer_id!=''){
+            $bookings = $this->AuthModel->getMultipleRecord('booking',array('customer_id'=>$customer_id,'booking_status'=>4),'');
+            //print_r($bookings);die();
+            if(!empty($bookings))
+            {
+                $data['customer_id'] =$customer_id;
+                $data['userlist']=$bookings;            
+                $this->load->view('customer_point_history',$data);
+            }
+            else
+            {
+                $data["error"] =1;
+                $data["message"] = 'No record found';
+                $data['customer_id'] =$customer_id;
+                $data["userlist"]=$bookings;
+                $this->load->view('customer_point_history',$data);
+            }
+        } 
+        else{
+            redirect('Home');
+        }
+    }
+
+    public function update_booking_point(){   //ajax use to update booking point of customer
+        if(isset($_POST['booking_id'])){            
+            extract($_POST);
+            //print_r($_POST);die();
+            if($this->AuthModel->updateRecord(array('booking_id'=>$booking_id),'booking',array('customer_trip_score'=>$point))){
+                echo 'Point has been updated successfully.';                
+            }else{
+                echo 'Oops! something went wrong, Please try again';
+            }
+        }
+    }
+
+    public function get_feedback($user_id,$page){
+        if($user_id!=''){
+            $where = '(receiver_id='.$user_id.' or giver_id='.$user_id.')';          
+            $resData = $this->AuthModel->getMultipleRecord('review',$where,'review_id DESC');
+            if(!empty($resData)){                   
+                $response = array("list"=>$resData,'page'=>$page);
+                $this->load->view('rating_feedback',$response);
+            }
+            else{
+                $response = array("error"=>1,"message"=>"No Review found",'page'=>$page,"list"=>$resData);
+                $this->load->view('rating_feedback',$response);
+            }
+        }
+        else{
+            redirect('Home');
+        }        
+    }
+
+    public function referral_setting(){
+        $settings = $this->AuthModel->getMultipleRecord('referral_setting',array(),'');
+        if(!empty($settings)){
+            $response = array('setting'=>$settings);
+            $this->load->view('referral_setting',$response);
+        }
+        else{
+            $response = array("error"=>1,"message"=>"No record found",'setting'=>$settings);
+            $this->load->view('referral_setting',$response);
+        }
+    }
+
+    public function add_referral_setting(){
+        if(isset($_POST['submit'])){
+            extract($_POST);
+            $checkdata     = array("country"=>$country);
+            $checkCity  = $this->AuthModel->checkRows('referral_setting',$checkdata); 
+            if($checkCity>0)
+            {
+                $response = array('error'=>1,"message"=>'Setting has already exist for '.$country);
+                $this->load->view('add_referral_setting',$response);
+            }
+            else{
+                 //print_r($_POST);die();
+                $data = array(
+                        "country_id" =>$country_id,
+                        "country"    =>$country,
+                        "currency"   =>$currency,
+                        "time_zone"  =>$time_zone,
+                        "amount_to_frnd" =>$amount_to_frnd,
+                        "bonus_to_referral" =>$bonus_to_referral,
+                        "min_ride" =>$min_ride,
+                        "within_days" =>$within_days,
+                        "description"=>$description
+
+                    );
+                if($this->AuthModel->singleInsert('referral_setting',$data)){
+                    $response = array("success"=>1,"message"=>"Record has been saved successfully");
+                    $this->load->view('add_referral_setting',$response);
+                }
+                else{
+                    $response = array("error"=>1,"message"=>"Oops! Error occur,Record is not saved");
+                    $this->load->view('add_referral_setting',$response);
+                }
+            }           
+        }else{            
+            $this->load->view('add_referral_setting');
+        }
+    }
+
+    public function update_referral($id){
+        if(!empty($id)){
+            $setting = $this->AuthModel->getSingleRecord('referral_setting',array('referral_setting_id'=>$id));
+            if(isset($_POST['submit'])){
+                extract($_POST);
+                //print_r($_POST);die();
+                $checkdata     = array("country"=>$country);
+                $checkCountry     = $this->AuthModel->checkRows('referral_setting',$checkdata); 
+                if($checkCountry>0 && $country!=$setting->country)
+                {
+                    $response = array('error'=>1,"message"=>'Setting has already exist for '.$country,"setting"=>$setting);
+                    $this->load->view('add_referral_setting',$response);
+                }
+                else{
+                    $data = array(
+                            "country_id" =>$country_id,
+                            "country"    =>$country,
+                            "currency"   =>$currency,
+                            "time_zone"  =>$time_zone,
+                            "amount_to_frnd" =>$amount_to_frnd,
+                            "bonus_to_referral" =>$bonus_to_referral,
+                            "min_ride"    =>$min_ride,
+                            "within_days" =>$within_days,
+                            "description" =>$description
+                        );
+                    if($this->AuthModel->updateRecord(array('referral_setting_id'=>$id),'referral_setting',$data)){
+                        $setting = $this->AuthModel->getSingleRecord('referral_setting',array('referral_setting_id'=>$id));
+                        $response = array("success"=>1,"message"=>"Record has been updateed successful","setting"=>$setting);
+                        $this->load->view('update_referral_setting',$response);
+                    }
+                    else{
+                        $response = array("error"=>1,"message"=>"Oops! Error occur,Record is not update","setting"=>$setting);
+                        $this->load->view('update_referral_setting',$response);
+                    }
+                }
+            }
+            else{      
+                $response = array("setting"=>$setting);      
+                $this->load->view('update_referral_setting',$response);
+            }
+        }
+        else{
+            redirect('Home/');
+        }
+    }
+    public function delete_referral($id)
+    {
+        if($id!='')
+        {             
+            if($this->AuthModel->delete_record('referral_setting',array('referral_setting_id'=>$id)))
+            {
+                echo '<script>alert("Record has been successfully removed");
+                window.location.href="'.site_url('Home/referral_setting').'";
+                </script>';
+            }
+            else
+            {
+                echo '<script>alert("Record is not removed, Please try again");
+                window.location.href="'.site_url('Home/referral_setting').'";
+                </script>';
+            }
+        }
+        else
+        {
+            redirect(site_url('Home/referral_setting'));
+        }
+    }
+
+    public function ride_promocode(){
+        $promocode = $this->AuthModel->getMultipleRecord('ride_promocode',array(),'promo_id DESC');
+        if(!empty($promocode)){
+            $response = array('code'=>$promocode);
+            $this->load->view('ride_promocode',$response);
+        }
+        else{
+            $response = array("error"=>1,"message"=>"No record found",'code'=>$promocode);
+            $this->load->view('ride_promocode',$response);
+        }
+    }
+
+    public function add_ride_promocode(){
+        if(isset($_POST['submit'])){
+            extract($_POST);
+            $imagename        = 'default.png';            
+            if(isset($_FILES['image']) && $_FILES['image']['name']!='')
+            {
+                $folder_name = 'promo_images';
+                $imagename   = $this->AuthModel->imageUpload($_FILES['image'],$folder_name);               
+            }
+            $data = array(
+                "heading"       =>$heading,
+                "description"   =>$description,
+                "promocode"     =>$promocode,
+                "rate_type"     =>$rate_type,
+                "rate"          =>$rate,
+                "start_date"    =>$stdate,
+                "start_string"  =>strtotime($stdate),
+                "end_date"      =>$endate,
+                "end_string"    =>strtotime($endate),
+                "promo_image"   =>$imagename
+                );
+            if($this->AuthModel->singleInsert('ride_promocode',$data)){
+                $response = array('success'=>1,"message"=>"Record has been successfully saved");
+                $this->load->view('add_ride_promocode',$response);
+            }else{
+                $response = array('error'=>1,"message"=>"Opps! Record is not saved. Please try again.");
+                $this->load->view('add_ride_promocode',$response);
+            }
+        }
+        else{            
+            $this->load->view('add_ride_promocode');
+        }
+    }
+
+    public function changePromoStatus()   //Ajax use to Active or Deactive promocode
+    {
+        $promo_id = $_POST['promo_id'];
+        $status   = $_POST['status'];
+        if($this->AuthModel->updateRecord(array('promo_id'=>$promo_id),'ride_promocode',array('status'=>$status)))
+        {
+            echo 'Status has been successfully changed';
+        }
+        else
+        {
+            echo 'Oops! Something went wrong, Please try again';
+        }
+    }
+
+    public function update_promocode($id){
+        if(!empty($id)){
+            $code = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$id));
+            if(isset($_POST['submit'])){
+                extract($_POST); 
+                $imagename = $code->promo_image;                            
+                if(isset($_FILES['image']) && $_FILES['image']['name']!='')
+                {
+                    $folder_name = 'promo_images';
+                    $imagename   = $this->AuthModel->imageUpload($_FILES['image'],$folder_name);               
+                }              
+                $data = array(
+                    "heading"       =>$heading,
+                    "description"   =>$description,
+                    "promocode"     =>$promocode,
+                    "rate_type"     =>$rate_type,
+                    "rate"          =>$rate,
+                    "start_date"    =>$stdate,
+                    "start_string"  =>strtotime($stdate),
+                    "end_date"      =>$endate,
+                    "end_string"    =>strtotime($endate),
+                    "promo_image"   =>$imagename
+                );
+                if($this->AuthModel->updateRecord(array('promo_id'=>$id),'ride_promocode',$data)){
+                    $code = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$id));
+                    $response = array("success"=>1,"message"=>"Record has been updateed successful","code"=>$code);
+                    $this->load->view('update_ride_promocode',$response);
+                }
+                else{
+                    $response = array("error"=>1,"message"=>"Oops! Error occur, Record is not update","code"=>$code);
+                    $this->load->view('update_ride_promocode',$response);
+                }
+            }
+            else{      
+                $response = array("code"=>$code);      
+                $this->load->view('update_ride_promocode',$response);
+            }
+        }
+        else{
+            redirect('Home/');
+        }
+    }
+
+    public function delete_promo($id)
+    {
+        if($id!='')
+        {             
+            if($this->AuthModel->delete_record('ride_promocode',array('promo_id'=>$id)))
+            {
+                echo '<script>alert("Record has been successfully removed");
+                window.location.href="'.site_url('Home/ride_promocode').'";
+                </script>';
+            }
+            else
+            {
+                echo '<script>alert("Record is not removed, Please try again");
+                window.location.href="'.site_url('Home/ride_promocode').'";
+                </script>';
+            }
+        }
+        else
+        {
+            redirect(site_url('Home/referral_setting'));
         }
     }
 

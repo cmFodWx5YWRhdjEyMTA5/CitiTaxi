@@ -126,7 +126,7 @@
                                     <div class="col-md-1"></div>
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <a href="<?php echo site_url('Home/service_type'); ?>">
+                                            <a href="<?php echo site_url('Home/servie_type'); ?>">
                                             <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
                                             </a>
                                         </div>

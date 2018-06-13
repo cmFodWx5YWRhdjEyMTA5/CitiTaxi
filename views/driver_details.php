@@ -44,7 +44,7 @@
 
                                 <div class="panel-body">
                                     <div class="table-responsive">
-                                     <div style="overflow:scroll; max-height:600px;">
+                                     <div id='list_table' style="overflow:scroll;">
                                      <table id="example" class="table display">
                                         <thead>
                                             <tr>
@@ -66,7 +66,8 @@
                                             <th>Services</th>
                                             <th>Update Services</th>
                                             <th>Reset Password</th>
-                                            <th>Other Details</th>                                           
+                                            <th>Other Details</th> 
+                                            <th style="min-width:80px;text-align:center">Feedback</th>
                                             <th style="min-width:130px;">Action</th>
                                             <th style="min-width:50px; text-align:center">Edit</th>
                                             <th style="min-width:50px; text-align:center">Delete</th>
@@ -134,6 +135,7 @@
 
                                                 <td><a href="<?php echo site_url('Driver/other_details/'.$list->id);?>"><button class="btn btn-submit">Other Details</button></a>
                                                 </td>
+                                                <td style="text-align:center"><a href="<?php echo site_url('Home/get_feedback/'.$list->id.'/driver'); ?>">View</a></td>
                                                 <td>
                                                     <div class="form-group">                                         
                                                         <select class="form-control" id="<?php echo $list->id;?>">
@@ -234,9 +236,6 @@
                 <!-- END PAGE CONTENT WRAPPER -->
 
 <?php $this->load->view('layout/second_footer');?> 
-
-
-
 <script>
     function updatePassword()
     {

@@ -85,6 +85,7 @@
        ]
    } );
    $(".buttons-html5").children(":first").text("Export in Excel");
+   $('#list_table').height($(window).height() -140);
    } );
 </script>
 </html>

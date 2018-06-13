@@ -1,13 +1,15 @@
-<?php $data['page']='booking'; $data['title']='Booking'; $this->load->view('layout/header',$data);?>
-          
+<?php $data['page']='revenue'; $data['title']='Trip Earning'; $this->load->view('layout/header',$data);?>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.8/angular.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-route.js"></script>        
+
             <!-- PAGE CONTENT WRAPPER -->
 
-                <div class="page-content-wrap">
+                <div class="page-content-wrap" ng-app="myApp" ng-controller="myController">
                   <div class="row">
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Booking</strong></h3>
+                                    <h3 class="panel-title"><strong>Trip Earning</strong></h3>
                                     <?php if(isset($success)==1){ ?>
                                     <div class="alert alert-success">
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -27,27 +29,26 @@
                                         <thead>
                                             <tr>
                                             <th>Sr.No</th>
-                                            <th>Status</th>
-                                            <th>Booking Time</th>
-                                            <th>Booking Pickup Time</th>
-                                            <th>Actual Pickup Time</th>
-                                            <th>Booking Type</th>
                                             <th>TripID</th>
-                                            <th>Passenger</th>
-                                            <th>Comany Name</th>
-                                            <th>Driver</th>
-                                            <th>Vechile</th>
+                                            <th>Status</th>
+                                            <th>Passenger ID</th>
+                                            <th>Passenger Name</th>
+                                            <th>Passenger Email</th>
+                                            <th>Passenger Phone</th>
                                             <th>Pick Up Location</th>
                                             <th>Dropoff Location</th>
-                                            <th>Distance</th>
-                                            <th>Fare</th>
-                                            
-                                         <!--<th style="min-width:50px; text-align:center">Edit</th>
-                                            <th style="min-width:50px; text-align:center">Delete</th> -->
+                                            <th>Driver ID</th>
+                                            <th>Driver Name</th>
+                                            <th>Driver Email</th>
+                                            <th>Driver Phone</th>
+                                            <th>Driver Trip Earnign</th>
+                                            <th>Promocode Apply</th>
+                                            <th>Company Commission</th>
+                                            <th>Pay To Driver</th>                                            
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <?php
+                                        <!--?php                                        
                                           $i=1;  
                                         foreach($userlist as $list) {
                                         $dropof=array();
@@ -91,8 +92,8 @@
                                               <td><?php echo $list->total_distance." ".$list->distance_unit;?></td>
                                               <td><?php echo $list->total_fare." ".$list->currency;?></td>
                                             </tr>
-                                        <?php } ?>
-                                        </tbody>
+                                        
+                                        </tbody>-->
                                     </table> 
                                     </div>                                   
                                     </div>
@@ -156,6 +157,16 @@
       }
     });
   }
+</script>
+
+<script>
+  var dbPost = angular.module('myApp',[]);
+  dbPost.controller('myController', function($scope,$http){
+    $http.post(site_url+'/api/Auth/get_profile',{"userid":1})
+    .success(function(data){        
+      console.log(data);     
+      });
+  });
 </script>
 
 

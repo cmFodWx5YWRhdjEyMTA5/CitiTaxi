@@ -388,4 +388,97 @@ class Vehicle extends CI_Controller {
             echo 'Oops! Something went wrong, Please try again';
         }
     }
+
+    public function trip_earning(){
+        $bookings = $this->AuthModel->getMultipleRecord('booking',array('booking_status'=>4),'booking_id DESC');
+        if(!empty($bookings)){  
+            $response = array('datalist'=>$bookings);          
+            $this->load->view('trip_earning',$response);
+        }else{
+            $response = array('error'=>1,'message'=>'No record found','datalist'=>$bookings); 
+            $this->load->view('trip_earning',$response);
+        }        
+    }
+
+    public function daily_earning(){
+        if(isset($_POST['search'])){
+            extract($_POST);
+            $earningDate_start = $_POST['date'];
+            $earningDate_end   = $_POST['date'];
+            $earningDatest = strtotime($earningDate_start.' 00:00');            
+            $earningDatend = strtotime($earningDate_end.' 11:59 PM');
+            $where = array("driver_id"=>$driver_id,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'booking_status'=>4);
+            $bookings = $this->AuthModel->getMultipleRecord('booking',$where,'booking_id DESC');
+            //print_r($this->db->last_query());die();
+            if(!empty($bookings)){
+                $response = array('datalist'=>$bookings,"driver_id"=>$driver_id,'earningDatest'=>$earningDatest,'earningDatend'=>$earningDatend);
+                //print_r($response);die();
+                $this->load->view('daily_earning',$response); 
+            }
+            else{      
+                $response = array('error'=>1,'message'=>'No record found');          
+                $this->load->view('daily_earning',$response); 
+            }
+        }                   
+        else{                         
+            $this->load->view('daily_earning'); 
+        }
+        
+    }
+    public function weekly_earning(){
+        if(isset($_POST['search'])){
+            extract($_POST);           
+            $earningDate_start = date('d-m-Y',strtotime($date));
+            $earningDate_end   = date('d-m-Y',strtotime('+7 days',strtotime($date)));
+            //echo $earningDate_start;
+            //echo $earningDate_end;die();
+            
+            $earningDatest = strtotime($earningDate_start.' 00:00');            
+            $earningDatend = strtotime($earningDate_end.' 11:59 PM');
+            $where = array("driver_id"=>$driver_id,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'booking_status'=>4);
+            $bookings = $this->AuthModel->getMultipleRecord('booking',$where,'booking_id DESC');
+            //print_r($this->db->last_query());die();
+            if(!empty($bookings)){
+                $response = array('datalist'=>$bookings,"driver_id"=>$driver_id,'earningDatest'=>$earningDatest,'earningDatend'=>$earningDatend);
+                //print_r($response);die();
+                $this->load->view('weekly_earning',$response); 
+            }
+            else{      
+                $response = array('error'=>1,'message'=>'No record found');          
+                $this->load->view('weekly_earning',$response); 
+            }
+        }                   
+        else{                         
+            $this->load->view('weekly_earning'); 
+        }        
+    }
+
+    public function monthly_earning(){
+        if(isset($_POST['search'])){
+            extract($_POST);           
+            $earningDate_start = date('d-m-Y',strtotime($date));
+            $first_date        = date('1-m-Y',strtotime($date));
+            $earningDate_end   = date("d-m-Y",strtotime("+1 month -1 second",strtotime($first_date)));
+            //$earningDate_end   = date('d-m-Y',strtotime('+7 days',strtotime($date)));
+            //echo $earningDate_start;
+            //echo $earningDate_end;die();            
+            $earningDatest = strtotime($earningDate_start.' 00:00');            
+            $earningDatend = strtotime($earningDate_end.' 11:59 PM');
+            $where = array("driver_id"=>$driver_id,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'booking_status'=>4);
+            $bookings = $this->AuthModel->getMultipleRecord('booking',$where,'booking_id DESC');
+            //print_r($this->db->last_query());die();
+            if(!empty($bookings)){
+                $response = array('datalist'=>$bookings,"driver_id"=>$driver_id,'earningDatest'=>$earningDatest,'earningDatend'=>$earningDatend);
+                //print_r($response);die();
+                $this->load->view('monthly_earning',$response); 
+            }
+            else{      
+                $response = array('error'=>1,'message'=>'No record found');          
+                $this->load->view('monthly_earning',$response); 
+            }
+        }                   
+        else{                         
+            $this->load->view('monthly_earning'); 
+        }        
+    }
 }

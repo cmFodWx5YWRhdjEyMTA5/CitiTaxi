@@ -260,6 +260,10 @@ class Auth extends CI_Controller {
 
   	public function get_profile()
   	{
+  		/*$data = json_decode(file_get_contents("php://input"));
+		$method = $_SERVER['REQUEST_METHOD'];
+		$id = $data->userid;
+  		echo $id;die();*/
   		if(isset($_POST['userid']) && $_POST['userid']!='')
   		{
   			extract($_POST);
@@ -609,7 +613,8 @@ class Auth extends CI_Controller {
 	  						$image = base_url('/userimage/'.$giver_data->image);	  					
 	  					}
 	  					else{
-	  							$image = $giver_data->image;}
+	  							$image = $giver_data->image;
+	  						}
 	  					$resData[$rating]->image = $image;
 	  					$resData[$rating]->name  = $giver_data->name;
 	  				}	  				
@@ -622,6 +627,24 @@ class Auth extends CI_Controller {
 	  			$response = array("success"=>0, "error"=>1, "message"=>"No rating","data"=>'');
 	            echo json_encode($response);
 	  		}
+    	}
+    }
+
+    public function get_referral_setting(){
+    	if(isset($_POST['country']) && $_POST['country']!=''){
+    		extract($_POST);
+    		$setting = $this->AuthModel->getSingleRecord('referral_setting',array('country'=>$country));
+    		if(!empty($setting)){
+    			$response = array("success"=>1, "error"=>0, "message"=>"success","data"=>$setting);
+	            echo json_encode($response);
+    		}
+    		else{
+    			$response = array("success"=>0, "error"=>1, "message"=>"No invitation bouns for your country","data"=>'');
+	            echo json_encode($response);
+    		}
+    	}
+    	else{
+    		$this->index();
     	}
     }
 

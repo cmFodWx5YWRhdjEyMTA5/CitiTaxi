@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<style>
+table, th , td  {
+  border: 1px solid grey;
+  border-collapse: collapse;
+  padding: 5px;
+}
+table tr:nth-child(odd) {
+  background-color: #f1f1f1;
+}
+table tr:nth-child(even) {
+  background-color: #ffffff;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.8/angular.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-route.js"></script>
+ <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="postMethodScript.js"></script>
+
+<body ng-app="myApp" >
+	<div ng-controller="myController"  id='parent'>
+		    {{ message }}
+	<div class="bar">
+		<!-- Create a binding between the searchString model and the text field -->
+		<input type="text" ng-model="searchString" placeholder="Enter your search terms" />
+		</div>
+		<table width="550px">
+			<thead>
+				<tr>
+					<th>Id</th>
+					<th>Name</th>
+					<th>Email</th>
+					<th>Edit</th>
+					<th>Delete</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="record in DataRecord | filter: searchString">
+					<th>{{record.id}}</th>
+					<th>{{record.name}}</th>
+					<th>{{record.email}}</th>
+					<th><button ng-click="editData(record.id,record.name,record.email)">Edit</button></th>
+					<th><button ng-click="deleteData(record.id)">Delete</button></th>
+				</tr>
+			</tbody>
+		</table>
+
+		<button ng-click="refresh()">Refresh</button>
+	</div>
+
+</body>
+</html>
+
+

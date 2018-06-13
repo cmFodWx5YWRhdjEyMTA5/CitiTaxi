@@ -474,44 +474,7 @@ class AuthModel extends CI_Model {
         {
             return false;
         }
-    }
-
-    public function searchFromAddress($searchtype,$fromAddLat,$fromAddLng,$date,$time)
-    {
-        $this->db->select("ride.*,users.*,( 3959 * acos( cos( radians($fromAddLat) ) * cos( radians(`fromLat`) ) * cos( radians( `fromLng` ) - radians($fromAddLng) ) + sin( radians($fromAddLat) ) * sin( radians( `fromLat` ) ) ) ) AS distance");
-        $this->db->from('ride');
-        $this->db->join('users','ride.user_id=users.id');
-        $this->db->where(array('ridetype'=>$searchtype,'date'=>$date,'ride.status'=>0));
-        $this->db->having('distance <= ',10);  
-        $this->db->order_by('distance');
-        //print_r($this->db->last_query());die();
-        return $res=$this->db->get()->result();
-    }
-
-    public function searchToAddress($rideId,$toAddLat,$toAddLng)
-    {
-        $this->db->select("ride.*,users.*,( 3959 * acos( cos( radians($toAddLat) ) * cos( radians(`toLat`) ) * cos( radians( `toLng` ) - radians($toAddLng) ) + sin( radians($toAddLat) ) * sin( radians( `toLat` ) ) ) ) AS distance");
-        $this->db->from('ride');
-        $this->db->join('users','ride.user_id=users.id');
-        //$this->db->join('workarea','workarea.user_id=registration.id');
-        $this->db->where(array('ride_id'=>$rideId));
-        $this->db->having('distance <= ',10);  
-        $this->db->order_by('distance');
-        return $this->db->get()->row();
-    }
-
-    public function searchToAddressWithCar($rideId,$toAddLat,$toAddLng)
-    {
-        $this->db->select("ride.*,users.*,vehicle.*,( 3959 * acos( cos( radians($toAddLat) ) * cos( radians(`toLat`) ) * cos( radians( `toLng` ) - radians($toAddLng) ) + sin( radians($toAddLat) ) * sin( radians( `toLat` ) ) ) ) AS distance");
-        $this->db->from('ride');
-        $this->db->join('users','ride.user_id=users.id');
-        $this->db->join('vehicle','ride.vehicleid=vehicle.vehicle_id');
-        //$this->db->join('workarea','workarea.user_id=registration.id');
-        $this->db->where(array('ride_id'=>$rideId));
-        $this->db->having('distance <= ',10);  
-        $this->db->order_by('distance');
-        return $this->db->get()->row();
-    }
+    }   
 
     public function Suspend($suspend_days,$user_id)  //when cancel limit exceded
     {
@@ -637,8 +600,44 @@ class AuthModel extends CI_Model {
         $config['first_tagl_close'] = "</li>";
         $config['last_tag_open'] = "<li>";
         $config['last_tagl_close'] = "</li>";
+        $config['use_page_numbers'] = TRUE; 
         // Initialize
         return $config;       
+    }
+
+    // Fetch records
+    public function getData($rowno,$rowperpage,$search,$search2,$table_name,$where) {                
+        $this->db->select('*');
+        $this->db->from($table_name);        
+        $this->db->where($where);        
+        if(!empty($search)){
+            $this->db->like($search);
+            if(!empty($search2)){
+                $this->db->or_like($search2);
+            }
+            //$this->db->like($search);
+        }
+        $this->db->limit($rowperpage, $rowno);  
+        $query = $this->db->get();  
+        //print_r($this->db->last_query());die();      
+        return $query->result();
+    }
+
+    // Select total records
+    public function getrecordCount($search,$search2,$table_name,$where) {
+        $this->db->select('count(*) as allcount');
+        $this->db->from($table_name);            
+        $this->db->where($where);            
+        if(!empty($search)){
+            $this->db->like($search);
+            if(!empty($search2)){
+                $this->db->or_like($search2);
+            }
+            //$this->db->like($search);
+        }
+        $query = $this->db->get();
+        $result = $query->result_array();
+        return $result[0]['allcount'];
     }
 
     

@@ -133,6 +133,22 @@ if ( ! function_exists('get_rating')){
     }
   }
 
+  function getSum($table_name,$col_name,$where)
+  {
+    $ci =& get_instance(); 
+    $ci->load->database(); 
+    $ci->db->select_sum($col_name);
+    $ci->db->where($where);
+    $sum = $ci->db->get($table_name)->row(); 
+    //print_r($sum);die();
+    if(!empty($sum->$col_name)){            
+    return $sum->$col_name;
+    }
+    else{            
+        return 0;
+    }
+  } 
+
 
 
 /*if ( ! function_exists('get_userPharmacy')){

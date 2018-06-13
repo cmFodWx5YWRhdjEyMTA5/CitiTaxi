@@ -15,8 +15,9 @@
 
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.4.2/css/buttons.dataTables.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">     
         <!-- EOF CSS INCLUDE -->  
-        <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/jquery/jquery.min.js"></script>       
+        <script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/jquery/jquery.min.js"></script>  
     </head>
 
         <style>
@@ -133,7 +134,23 @@
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
-                    </li>  
+                    </li> 
+                    <li class="xn-openable <?php if(isset($page) && $page=='point'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/points');?>"><span class="fa fa-dollar"></span> <span class="xn-text">Point System</span></a>
+                        <ul>
+                            <li><a href="<?php echo site_url('Home/add_point');?>"><span class="fa fa-pencil"></span>Add Point</a></li>
+                            <li><a href="<?php echo site_url('Home/getpoints');?>"><span class="fa fa-sort-alpha-desc"></span>Points</a></li>
+                            <li><a href="<?php echo site_url('Home/point_history');?>"><span class="fa fa-sort-alpha-desc"></span>Point History</a></li>
+                        </ul>
+                    </li> 
+                    <li class="xn-openable <?php if(isset($page) && $page=='coupon'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/points');?>"><span class="fa fa-gift"></span> <span class="xn-text">Manage Coupon</span></a>
+                        <ul>
+                            <li><a href="<?php echo site_url('Home/ride_promocode');?>"><span class="fa fa-pencil"></span>Ride Promo Code</a></li>
+                            <li><a href="<?php echo site_url('Home/getpoints');?>"><span class="fa fa-sort-alpha-desc"></span>Redeem Post</a></li>
+                            <li><a href="<?php echo site_url('Home/point_history');?>"><span class="fa fa-sort-alpha-desc"></span>Redeem History</a></li>
+                        </ul>
+                    </li> 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='booking'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Home/userlist');?>"><span class="fa fa-car"></span> <span class="xn-text">Manage Booking</span><label class="badge" id="bookingcount" style="background-color:green !important; margin-left: 10px; border-radius:90% !important"></label></a>
@@ -141,15 +158,18 @@
                             <li><a href="<?php echo site_url('Home/booking');?>"><span class="fa fa-sort-alpha-desc"></span>Booking List</a></li>
                             <li><a href="<?php echo site_url('Home/pendingbooking');?>"><span class="fa fa-sort-alpha-desc"></span>Pending Booking</a></li>
                         </ul>
-                    </li>  
-
-                    <li class="xn-openable <?php if(isset($page) && $page=='point'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Home/points');?>"><span class="fa fa-dollar"></span> <span class="xn-text">Point System</span></a>
-                        <ul>
-                            <li><a href="<?php echo site_url('Home/add_point');?>"><span class="fa fa-pencil"></span>Add Point</a></li>
-                            <li><a href="<?php echo site_url('Home/getpoints');?>"><span class="fa fa-sort-alpha-desc"></span>Points</a></li>
-                        </ul>
                     </li>
+                    <li class="xn-openable <?php if(isset($page) && $page=='revenue'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Vehicle/trip_earning');?>"><span class="fa fa-bar-chart"></span> <span class="xn-text">Revenue</span></a>
+                        <ul>
+                            <li><a href="<?php echo site_url('Vehicle/trip_earning');?>"><span class="fa fa-sort-alpha-desc"></span>Trip Earning</a></li>
+                            <li><a href="<?php echo site_url('Vehicle/daily_earning');?>"><span class="fa fa-sort-alpha-desc"></span>Daily Earning</a></li>
+                            <li><a href="<?php echo site_url('Vehicle/weekly_earning');?>"><span class="fa fa-sort-alpha-desc"></span>Weekly Earning</a></li>
+                            <li><a href="<?php echo site_url('Vehicle/monthly_earning');?>"><span class="fa fa-sort-alpha-desc"></span>Monthly Earning</a></li>
+                        </ul>
+                    </li>   
+
+                    
 
                     <li class="xn-openable <?php if(isset($page) && $page=='wallet'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Driver');?>"><span class="fa fa-table"></span> 
@@ -172,6 +192,8 @@
                     <li class="xn-openable <?php if(isset($page) && $page=='six'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
                         <ul>
+                            <li><a href="<?php echo site_url('Home/referral_setting');?>"><span class="fa fa-gift"></span><span class="xn-text">Referral Setting</span></a></li> 
+                        
                              <li><a href="<?php echo site_url('Home/range_setting');?>"><span class="fa fa-image"></span><span class="xn-text">Range Setting</span></a></li>                        	
                             <li><a href="<?php echo site_url('Home/apptemplate');?>"><span class="fa fa-image"></span><span class="xn-text">App Template Setting</span></a></li>
                            <li><a href="<?php echo site_url('Home/profile');?>"><span class="fa fa-user"></span><span class="xn-text">Admin Profile</span></a></li>
@@ -179,9 +201,9 @@
                            <li><a href="<?php echo site_url('Home/changePassword');?>"><span class="fa fa-unlock-alt"></span><span class="xn-text">Change Password</span></a></li>
                         </ul>
                     </li> 
-                    <li class="<?php if(isset($page) && $page=='website'){ echo 'active';}?>">
+                    <!--li class="<?php if(isset($page) && $page=='website'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Home/websitepages');?>"><span class="fa fa-pencil"></span><span class="xn-text">Website Content setting</span></a>
-                    </li>                   
+                    </li-->                   
                 </ul>
                 <!-- END X-NAVIGATION -->
             </div>
