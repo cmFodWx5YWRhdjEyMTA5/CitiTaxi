@@ -22,7 +22,19 @@
                             </div>
                             <?php }?>
                             <form method="post" action="<?php echo site_url('Home/update_referral/'.$setting->referral_setting_id);?>" class="form-horizontal" enctype="multipart/form-data" id="jvalidate" name="frm">
-                                <div class="panel-body form-group-separated">
+                                <div class="panel-body form-group-separated">                                
+                                    <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Select User Type</label>
+                                        <div class="col-md-6">              
+                                            <select name='user_type' class="form-control select" required>
+                                                <option value="<?php echo $setting->user_type;?>">
+                                                    <?php if($setting->user_type==0){ echo 'Passenger';}else{ echo 'Driver';}  ?>
+                                                </option>      
+                                                <option value="0">Customer</option>
+                                                <option value="1">Driver</option>                                                
+                                            </select>                                            
+                                        </div>
+                                    </div>
                                     <div class="form-group">                                       
                                         <label class="col-md-3 control-label">Country</label>
                                         <div class="col-md-6">              

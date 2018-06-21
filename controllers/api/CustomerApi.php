@@ -78,6 +78,16 @@ class CustomerApi extends CI_Controller {
         if(!empty($jsonData) && !empty($jsonData['dropoff']))
         {
             //customer_id,address_type(single,multiple),fromaddress,fromLat,fromLong,toaddress,toLat,toLong,service_type_id, date,time,booking_type(now,later),country,city
+            if($jsonData['booking_type']=='now')
+            {
+                $paramarray = array('customer_id','booking_address_type','pickup','pickupLat','pickupLong','service_type_id','date','time','country','city_name','payment_type','total_ride_distance','total_fair','promocode_status');
+                $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$jsonData);
+                if(isset($vResponse['status']) && $vResponse['status']==0)
+                {
+                    $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                    echo json_encode($response);die();
+                }
+            }
             if($jsonData['booking_type']=='later')
             {
                 $paramarray = array('later_pickup_date','later_pickup_time');
@@ -87,7 +97,16 @@ class CustomerApi extends CI_Controller {
                     $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
                     echo json_encode($response);die();
                 }
-            }                      
+            }   
+            if($jsonData['promocode_status']=='Yes'){
+                $paramarray = array('promo_id');
+                $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$jsonData);
+                if(isset($vResponse['status']) && $vResponse['status']==0)
+                {
+                    $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                    echo json_encode($response);die();
+                }
+            }                   
             $customer_id            = $jsonData['customer_id'];
             $country                = $jsonData['country'];
             $city_name              = $jsonData['city_name'];
@@ -105,12 +124,14 @@ class CustomerApi extends CI_Controller {
             $total_perminute_charge = $jsonData['total_perminute_charge'];
             $total_fair             = $jsonData['total_fair'];
             $booking_type           = $jsonData['booking_type'];     //(now,later)
+            $promo_status           = $jsonData['promocode_status'];  //(Yes, No)
+            $promo_id               = $jsonData['promo_id'];
             $later_pickup_date      = $jsonData['later_pickup_date']; 
             $later_pickup_time      = $jsonData['later_pickup_time']; 
             $booking_note           = $jsonData['booking_note'];
             $passenger              = $jsonData['passenger'];
             $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay           
-            print_r($dropoff);die();
+           
             //=================================================================================================//
             
             $fairDetails            = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_type_id,"country"=>$country,"city"=>$city_name));  
@@ -193,6 +214,8 @@ class CustomerApi extends CI_Controller {
                             "distance_unit"=>$fairDetails->distanceUnit,
                             "total_fare"=>$total_fair,
                             "currency"=>$fairDetails->currency,
+                            "promo_status"=>$promo_status,
+                            "promo_id"=>$promo_id,
                             "payment_type"=>$payment_type, 
                             "booking_status"=>$booking_status,                          
                         );                   
@@ -211,6 +234,9 @@ class CustomerApi extends CI_Controller {
                         if($this->AuthModel->batchInsert('booking_dropoffs',$dropoffs))
                         {                            
                             $this->saveFairDetails($fairDetails,$booking_id,$date,$time,$booking_address_type,$total_regular_charge,$total_perminute_charge);   //save fair details
+                            if($promo_status=='Yes'){                                
+                                $this->savePromoHistory($customer_id,$booking_id,$promo_id); 
+                            }
 
                             if($jsonData['booking_type']=='now') // when current booking
                             {                                 
@@ -231,7 +257,7 @@ class CustomerApi extends CI_Controller {
                                                     "vehicle_name"=>$vehicle->brand.' '.$vehicle->sub_brand,
                                                     "vehicle_no"=>$vehicle->number_plate,                 
                                                     "liveaddress"=>$resdata->liveaddress,                                 
-                                                    "livelatitude"=>$resdata->latitude,                                               
+                                                    "livelatitude"=>$resdata->latitude,        
                                                     "livelongitude"=>$resdata->longitude,
                                                     "pickup"=>$pickup,
                                                     "pickupLat"=>$pickupLat,
@@ -274,6 +300,20 @@ class CustomerApi extends CI_Controller {
         }
         else{
             $this->index();
+        }
+    }
+    public function savePromoHistory($customer_id,$booking_id,$promo_id){
+        $promo = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$promo_id));
+        if(!empty($promo)){
+            $data = array(
+                "booking_id"=>$booking_id,
+                "user_id"=>$customer_id,
+                "promo_id"=>$promo_id,
+                "promocode"=>$promo->promocode,
+                "rate_type"=>$promo->rate_type,
+                "rate"     =>$promo->rate,                
+                );            
+            $this->AuthModel->checkThenInsertorUpdate('promocode_history',$data,array('user_id'=>$customer_id,'promocode'=>$promo->promocode));
         }
     }
 
@@ -388,6 +428,32 @@ class CustomerApi extends CI_Controller {
                 }
             }
         $this->AuthModel->singleInsert('booking_fare',$fairdata);
+    }
+
+    public function check_promocode(){        
+        if(isset($_POST['customer_id']) && $_POST['customer_id']!='' && $_POST['promocode'] && $_POST['promocode']!=''){
+            extract($_POST);
+            $datestring = strtotime(date('m/d/Y'));            
+            $checkpromo = $this->AuthModel->checkRows('ride_promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring,'status'=>'Active'));           
+            if($checkpromo>0){
+                //Check this promocode will not used before by this customer
+                $checkUsed = $this->AuthModel->checkRows('promocode_history',array('promocode'=>$promocode,'user_id'=>$customer_id,'status'=>1));
+                if($checkUsed>0){
+                    $response = array('success'=>0, 'error'=>1,'message'=>'You have already used this code');
+                    echo json_encode($response);
+                }else{
+                    $promo = $this->AuthModel->getSingleRecord('ride_promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring));
+                    $response = array('success'=>1, 'error'=>0,'message'=>'success','data'=>$promo);
+                    echo json_encode($response);
+                }                
+            }else{
+                $response = array('success'=>0, 'error'=>1,'message'=>'This promotion code is incorrect or expired. Try again with correct code.','data'=>'');
+                echo json_encode($response);
+            }
+        }
+        else{
+            $this->index();
+        }
     }
 
     public function getTripInvoice()

@@ -239,6 +239,14 @@ class AuthModel extends CI_Model {
         return $this->db->get()->result();
         //print_r($this->db->last_query());die();
     }
+    public function getnotWhereInRecord($table_name,$col_name,$wherinarray,$where)
+    {        
+        $this->db->from($table_name);
+        $this->db->where_not_in($col_name,$wherinarray);
+        $this->db->where($where);        
+        return $this->db->get()->result();
+        //print_r($this->db->last_query());die();
+    }
 
     public function getOrWhereMultipleRecord($table_name,$where,$or_where,$orderby)
     {

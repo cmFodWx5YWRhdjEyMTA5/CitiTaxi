@@ -631,7 +631,12 @@ class DriverApi extends CI_Controller {
                             
                             $commissionData = array("booking_id"=>$booking_id,"driver_id"=>$driver_id,"currency"=>$booking_detail->currency,"commission_type"=>$fairDetails->company_comission_type,"commission_rate"=>$fairDetails->company_comission_rate,"commission_at"=>$date.' '.$time);
                             $this->AuthModel->checkThenInsertorUpdate('booking_earning',$commissionData,array('booking_id'=>$booking_id)); // save company commission
-                            $total_waiting  = date('i',strtotime($action_at)-strtotime($booking_detail->driver_arrived_at));
+                            $datetime1 = new DateTime($action_at);
+                            $datetime2 = new DateTime($booking_detail->driver_arrived_at);
+                            $interval = $datetime2->diff($datetime1);
+                            $total_waiting= $interval->format('%i');
+                            // $total_waiting  = date('i',strtotime($action_at)-strtotime($booking_detail->driver_arrived_at));
+
                            $updata = array("ride_start_at"=>$action_at,"waiting_time"=>$total_waiting,"booking_status"=>$booking_status);
                         }
                         else{
@@ -709,7 +714,7 @@ class DriverApi extends CI_Controller {
                 else{
                     $total_commission = $companyComm->commission_rate;
                 }
-            //========================================= Driver Score Section ======================================//
+             //========================================= Driver Score Section ======================================//
                 $score = $this->AuthModel->getSingleRecord('users_score',array("user_id"=>$driver_id)); //get previous score
                 if($score->total_score<=0){
                     $newScore = $score->total_score+10;                    
@@ -722,7 +727,7 @@ class DriverApi extends CI_Controller {
                 }
                 // echo $newScore;die();   
                 //========================================= Customer point Section =================================//
-                //Customer will got point if total fair will greater then 100. If total fair 300 then got 300%100=3
+                //Customer will got point if total fare will greater then 100. If total fair 300 then got 300%100=3
                 $bookingUpdata['customer_trip_score'] =0;
                 $country = $finalFair['country']; $city= $finalFair['city'];
                 $pointdata = $this->AuthModel->getSingleRecord('point_system',array('country'=>$country,'city'=>$city));
@@ -746,6 +751,11 @@ class DriverApi extends CI_Controller {
                         $commission_data = array('booking_id'=>$booking_id,'driver_id'=>$driver_id,'total_commission'=>$total_commission,"driver_earning"=>$driver_earning,"total_fare"=>$finalFair["total_fair"],"status"=>1,"commission_at"=>$action_at,"commission_at_string"=>strtotime($action_at));
 
                         $this->AuthModel->checkThenInsertorUpdate('booking_earning',$commission_data,array("booking_id"=>$booking_id));
+                        //Update promo history status if promocode has applied
+                        if($finalFair['promo_status']=='Yes'){
+                            $this->updatePromoHistory($booking_id,$customer_id,$finalFair["total_fair"]);
+                        }
+
                         //update driver online_Status
                         $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
 
@@ -769,6 +779,40 @@ class DriverApi extends CI_Controller {
         }
         else{
             $this->index();
+        }
+    }
+
+    public function updatePromoHistory($booking_id,$customer_id,$total_fare){ //update promo history after complete booking
+        $promo = $this->AuthModel->getSingleRecord('promocode_history',array('booking_id'=>$booking_id,'user_id'=>$customer_id));
+        if(!empty($promo)){
+            $history_id = $promo->history_id;
+            $rate_type = $promo->rate_type;
+            $rate      = $promo->rate;
+            if($rate_type=='Percentage'){
+                $user_earn = ($total_fare*$rate)/100;
+            }else{
+                $user_earn = $rate;
+            }
+            if($this->AuthModel->updateRecord(array('history_id'=>$history_id),'promocode_history',array('promo_earn'=>$user_earn,'status'=>1))){
+                $this->AuthModel->updateRecord(array('booking_id'=>$booking_id),'booking',array('promo_earn'=>$user_earn));
+                //Update promo bonus amount in CitiPay wallet
+                $receiver_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$customer_id));
+                if(!empty($receiver_wallet)){
+                    $receiver_prebalance = $receiver_wallet->balance;
+                    $receiver_newBalance = $receiver_prebalance+$user_earn;                    
+
+                    if($transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$customer_id,'sender_id'=>'','type'=>'cr','amount'=>$user_earn,'description'=>'Promo Code Bonus of Trip id '.$booking_id,'transaction_status'=>'Success','reciver_balance'=>$receiver_newBalance,'sender_balance'=>'','transaction_at'=>date('Y-m-d H:i:s'))))              //store transaction record
+                    {
+                        $this->AuthModel->updateRecord(array('user_id'=>$customer_id),'wallet_balance',array('balance'=>$receiver_newBalance,'update_at'=>date('Y-m-d H:i:s')));//update receiver balance 
+                        $message = "Promotional bonus ".$user_earn." MMK of booking_id ".$booking_id." has been credited to your CitiPay Wallet"; //for customer notification.
+                        $this->AuthModel->singleInsert('notifications',array('user_id'=>$customer_id,'subject'=>"Promotional Bonus","message"=>$message,'notification_at'=>date('d-m-Y h:i A')));
+                    }  
+                    else{
+                        $transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$customer_id,'amount'=>$user_earn,'description'=>'Promo Code Bonus for Trip id '.$booking_id,'transaction_status'=>'Failure','reciver_balance'=>$receiver_prebalance,'transaction_at'=>date('Y-m-d H:i:s')));
+                        $message = "Sorry! Promotional bonus ".$user_earn." MMK of booking_id ".$booking_id." has been failed. Please contact with support";                        
+                    }
+                }
+            }
         }
     }
 
@@ -841,10 +885,11 @@ class DriverApi extends CI_Controller {
             $data['total_per_minute_charge']= $total_perMinute_charge;
             $data['total_waiting_charge']=$total_waitingCharge;
             $data['total_surcharge']= $total_surcharge;
-            $data['total_fair'] = $total_fair;
-            $data['currency']   = $booking_detail->currency;
+            $data['total_fair'] =  $total_fair;
+            $data['currency']   =  $booking_detail->currency;
             $data['country']    =  $booking_detail->country;
             $data['city']       =  $booking_detail->city;
+            $data['promo_status'] = $booking_detail->promo_status;
             return $data;
         }
     }
@@ -1257,6 +1302,7 @@ class DriverApi extends CI_Controller {
     }
 
    public function getDailyEarning(){  //for daily earning and month tab click
+
         if(isset($_POST['driver_id']) && $_POST['driver_id']!=''){
             $data_val = array('driver_id','earningDate_start','earningDate_end');            
             $validation = $this->AbhiModel->param_validation($data_val,$_POST);
@@ -1265,7 +1311,7 @@ class DriverApi extends CI_Controller {
                 echo json_encode($response);die();                 
             }
             else{
-                extract($_POST);
+                extract($_POST);                
                 $earningDatest = strtotime($earningDate_start.' 00:00');            
                 $earningDatend = strtotime($earningDate_end.' 11:59 PM');
                 $completeTrip = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>4));
@@ -1428,6 +1474,106 @@ class DriverApi extends CI_Controller {
         }
     }
 
+    public function getWeeklyEarningList(){  //for week earning tab click
+        if(isset($_POST['driver_id']) && $_POST['driver_id']!=''){
+            $data_val = array('driver_id','earningDate_start','earningDate_end');            
+            $validation = $this->AbhiModel->param_validation($data_val,$_POST);
+            if(isset($validation['status']) && $validation['status']=='0'){
+                $response = array("success"=>0,"error"=>1,"message"=>$validation['message']); 
+                echo json_encode($response);die();                 
+            }
+            else{
+                $booking_dates=[];
+                extract($_POST);                              
+                $earningDatest = strtotime($earningDate_start.' 00:00');            
+                $earningDatend = strtotime($earningDate_end.' 11:59 PM');
+                $completeTrip = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>4));
+                $passengerWhere = '(booking_at_string>='.$earningDatest.' and booking_at_string<='.$earningDatend.' and driver_id='.$driver_id.' and (booking_status=3 or booking_status=7))'; 
+                $passengerCancel = $this->AuthModel->checkRows('booking',$passengerWhere); 
+                $driverCancel = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>2));
+                $bookingCount = array("completedTrip"=>$completeTrip,"passengerCancel"=>$passengerCancel,'driverCancel'=>$driverCancel);
+                    //======================================================================================================//
+                $where = '(booking_at_string>='.$earningDatest.' and booking_at_string<='.$earningDatend.' and driver_id='.$driver_id.' and (booking_status=2 or booking_status=3 or booking_status=4 or booking_status=7))';                 
+                $bookings = $this->AuthModel->getMultipleRecord('booking',$where,'booking_id DESC');
+
+                $earningdata = array(); $dateArray=[];
+                if(!empty($bookings)){                    
+                    foreach ($bookings as $key => $value){
+                        $booking_id = $value->booking_id;    
+                        $tripEarning = $this->BookingModel->getEarningInvoice($booking_id);
+                       //echo json_encode($tripEarning);die();
+                        if(!empty($tripEarning)){
+                            $companyCommssion             = $this->AuthModel->getSingleRecord('booking_earning',array('booking_id'=>$booking_id));
+
+                            $trip_fare = $tripEarning->base_fair+$tripEarning->mini_distance_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
+
+                            //echo $total_fair;die();
+                            //$trip_fare = $tripEarning->base_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
+                            $booking_date = date('d-M-Y',strtotime($tripEarning->booking_at));
+                            if(!in_array($booking_date, $dateArray)){
+                                $dateArray[]=$booking_date;
+                            }
+                            $promotion                    = 0;
+                            $res['booking_id']            = $booking_id;
+                            $res['booking_at']            = $tripEarning->booking_at;  
+                            $res['booking_status']        = $tripEarning->booking_status;  
+                            $res['customer_id']           = $tripEarning->customer_id;
+                            $res['driver_id']             = $tripEarning->driver_id;                                   
+                            $res['service_id']            = $tripEarning->service_typeid;
+                            $res['service_name']          = $tripEarning->servicename;
+                            $res['service_image']         = base_url().'/serviceimage/'.$tripEarning->selected_image;
+                            $res['db_total_fair']         = $tripEarning->total_fare;
+                            $res['currency']              = $tripEarning->currency; 
+                            $res['cancel_at']             = $tripEarning->cancel_at;
+
+                            $res['passenger']['payment_type']          = $tripEarning->payment_type;
+                            $res['passenger']['transaction_id']        = $tripEarning->transaction_id;
+                            $res['passenger']['trip_fare']             = $trip_fare;
+                            $res['passenger']['multi_address_charge']  = $tripEarning->multi_address_charge;
+                            $res['passenger']['total_surcharge']       = $tripEarning->total_surcharge;
+                            $res['passenger']['total_waiting_charge']  = $tripEarning->total_waiting_charge;
+                            $res['passenger']['promotion']             = $promotion;
+                            $res['passenger']['currency']              = $tripEarning->currency;
+                            //********===========================================************//
+                            $passengerTotal               = ($trip_fare+$tripEarning->total_surcharge+$tripEarning->total_waiting_charge+$tripEarning->multi_address_charge)-$promotion;
+                            //********===========================================************//
+                            $res['passenger']['total_fare']   = $passengerTotal;
+                            $res['tripEarning']['payment_type']  = $tripEarning->payment_type;
+                            $res['tripEarning']['earning']       = $passengerTotal;
+                            $res['tripEarning']['promotion']     = $promotion;
+                            $res['tripEarning']['total_earning'] = $passengerTotal+$promotion;
+                            $res['tripEarning']['currency']      = $tripEarning->currency;                            
+                            $res['tripEarning']['cancel_charge']      = $tripEarning->cancel_charge;
+                            $res['tripEarning']['company_commission']    = '';
+                            if(!empty($companyCommssion)) {
+                                $res['tripEarning']['company_commission'] = $companyCommssion->total_commission;
+                            }
+                            $earningdata[$booking_date][] = $res;                            
+                        }                
+                    }
+                    // =================================== Get Total Earning ====================================
+                    $totalearning  = $this->AuthModel->getColumnSum('booking_earning','driver_earning',array('driver_id'=>$driver_id,'status'=>1,'commission_at_string>='=>$earningDatest,'commission_at_string<='=>$earningDatend));
+                    $totalcancelCharge = $this->AuthModel->getColumnSum('booking','cancel_charge',array('driver_id'=>$driver_id,'booking_status'=>2,'booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,));
+                    $grand_earning = $totalearning-$totalcancelCharge;
+
+                    // =================================== ***************** ====================================
+                    $response = array('success'=>1,'error'=>0,'message'=>'Success','total_earning'=>$grand_earning,'bookingCount'=>$bookingCount,'data'=>$earningdata,'booking_date'=>$dateArray);
+                    echo json_encode($response); 
+
+                }                   
+                else{
+                    $response = array('success'=>0,'error'=>1,'message'=>'No booking found','bookingCount'=>$bookingCount,'data'=>$earningdata,'booking_date'=>$dateArray);
+                    echo json_encode($response); 
+                }                
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
+        //================================================================================================================//
+
     public function getStatment(){
         if(isset($_POST['driver_id']) && $_POST['driver_id']!='' && isset($_POST['status']) && $_POST['status']!=''){
             extract($_POST);
@@ -1438,9 +1584,9 @@ class DriverApi extends CI_Controller {
             $driver_otherearning = 0;
             $cancel_charge  = 0;
             $commission=0;
-            if($status==1){   //weeklyStatment
-                $today            = date('d-m-Y');
-                $lastday          = date('d-m-Y',strtotime('-6 days'));                
+            if($status==1){   //This week week Statment
+                $today            = date('d-m-Y',strtotime('monday this week'));
+                $lastday          = date('d-m-Y',strtotime('sunday this week'));                
             }
             elseif($status==2){  //MonthlyStatment
                 $paramarray = array('month_first_date','month_last_date');
@@ -1465,7 +1611,7 @@ class DriverApi extends CI_Controller {
 
             $where = '(driver_id='.$driver_id.' and booking_at_string>='.$earningDatest.' and booking_at_string<='.$earningDatend.' and (booking_status=4 or booking_status=2))';
             $cashPaymentBooking = $this->AuthModel->getMultipleRecord('booking',$where,'');
-            $total_trip = count($cashPaymentBooking);
+            $total_trip = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id));
             foreach ($cashPaymentBooking as $cash => $p) {
                 if($p->booking_status==4 && $p->payment_type=="Cash"){
                     $booking_id = $p->booking_id;

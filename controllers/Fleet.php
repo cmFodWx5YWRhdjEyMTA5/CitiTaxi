@@ -297,6 +297,26 @@ class Fleet extends CI_Controller {
         }        
     }
 
+    public function last_hour_booking(){       
+        //$current  =  date('d-m-Y h:i A');
+        //$current  =  date('d-m-Y h:i A',strtotime('02-06-2018 11:50 AM'));
+        //$start    =  date('d-m-Y h:i A',strtotime('-3 hour',strtotime($current)));
+        $current  =  strtotime('14-06-2018 05:50 PM');
+        $start    =  strtotime('-3 hour',strtotime($current));
+        //echo $start;die();
+        $booking  =  $this->AuthModel->getMultipleRecord('booking',array('booking_at_string>='=>$start,'booking_at_string<='=>$current),'booking_id DESC');
+        if(!empty($booking)){  
+            foreach ($booking as $key => $l) {
+                $latlng[] = array('lat'=>$l->pickupLat,'lng'=>$l->pickupLong);              
+            }          
+            $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$latlng);            
+            echo json_encode($response);
+        }else{
+            $response = array('success'=>0,'error'=>1,'message'=>'Booking is not found','data'=>$booking);
+            echo json_encode($response);
+       }        
+    }
+
         
 
     

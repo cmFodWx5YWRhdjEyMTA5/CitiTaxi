@@ -9,10 +9,6 @@
         height: 500px;
         width: 100%;   
        }
-       #heatmap {
-        height: 500px;
-        width: 100%;   
-       }
     </style>
 <div class="page-content-wrap">
     <div class="row">
@@ -139,14 +135,10 @@
                 </div>                
                 <div class="container-fluid">
                     <div class="panel-body form-group-separated" style="padding:5px !important">
-                        <div id="button"><button id="trafficToggle">Toggle Traffic Layer</button>
-                        <button onclick="toggleHeatmap()">Toggle Heatmap</button>
-                        <button id='HeatMap'>HeatMap</button>
-                        </div>
+                        <div id="button"><button id="trafficToggle">Toggle Traffic Layer</button></div>
                         <div class="panel-body panel-body-table">
                         <div id="map"></div>
                         <div id="mymap"></div>
-                        <div id="heatmap"></div>
                           <!-- <?php echo $map['js']; ?> -->
                           <!-- <?php echo $map['html']; ?> -->
                         </div>
@@ -186,63 +178,50 @@ function cities(sel)
         }
 
 </script>
-  <script src="http://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw&libraries=visualization" type="text/javascript"></script>
+
+  <script src="http://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw" type="text/javascript"></script>
   <script type="text/javascript">
-      var trafficLayer; var heatmap;
+   var trafficLayer;
       document.getElementById('mymap').style.display="none";
       //var locations =fleetlocations();
       var locations =[];
-      
-      var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 13,
-        center: new google.maps.LatLng(22.718991,75.855698),
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: 'greedy'
-      });  
-     //heat Map  
-     heatmap = new google.maps.visualization.HeatmapLayer();
-     google.maps.event.addDomListener(document.getElementById('HeatMap'), 'click', HeatMap);
-
+      //console.log(locations.length);
+    /*var locations = [
+      ['Bondi Beach', -33.890542, 151.274856, 4],
+      ['Coogee Beach', -33.923036, 151.259052, 5],
+      ['Cronulla Beach', -34.028249, 151.157507, 3],
+      ['Manly Beach', -33.80010128657071, 151.28747820854187, 2],
+      ['Maroubra Beach', -33.950198, 151.259302, 1]
+    ];*/
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 10,
+      center: new google.maps.LatLng(22.7239575, 75.7938098),
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      gestureHandling: 'greedy'
+    });  
       trafficLayer = new google.maps.TrafficLayer();
-      google.maps.event.addDomListener(document.getElementById('trafficToggle'), 'click', toggleTraffic);
+      google.maps.event.addDomListener(document.getElementById('trafficToggle'), 'click', toggleTraffic); 
 
-    function HeatMap() {   
-    if(heatmap.getMap() == null){
-          $.ajax({
-            type: "POST",
-            url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
-            dataType:'json',         
-            success:function(booking_data){              
-              if(booking_data.success==1){                               
-                $.each(booking_data.data, function(k, v) {                                                     
-                    arr.push(new google.maps.LatLng(v.lat,v.lng));                   
-                })
-                 heatmap = new google.maps.visualization.HeatmapLayer({
-                  data: arr,
-                  map: map
-                });
+  
 
-                 /*var gradient = [
-                    'rgba(0, 255, 255, 0)',
-                    'rgba(0, 4, 255,1)',  
-                    'rgba(0, 4, 255,2)',                  
-                    'rgba(63, 0, 91, 1)',
-                    'rgba(127, 0, 63, 1)',
-                    'rgba(191, 0, 31, 1)',
-                    'rgba(255, 0, 0, 3)'
-                  ]
-                  heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);*/
-                                                         
-              }                          
-            }
-          });
-          //trafficLayer.setMap(map);
-        }    
-        else{
-          heatmap.setMap(null);
+    var infowindow = new google.maps.InfoWindow();
+
+    var marker, i;
+
+    for (i = 0; i < locations.length; i++) {  
+        marker     = new google.maps.Marker({
+        position: new google.maps.LatLng(locations[i][1], locations[i][2]),        
+        map: map,
+        icon: 'http://localhost/projects/cititaxi/mapmarker/car.png'
+      });
+
+      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        return function() {
+          infowindow.setContent(locations[i][0]);
+          infowindow.open(map, marker);
         }
-      //heatmap.setMap(heatmap.getMap() ? null : map);      
-    }    
+      })(marker, i));
+    }
 
     function toggleTraffic(){
         if(trafficLayer.getMap() == null){
@@ -255,16 +234,25 @@ function cities(sel)
         }
     }
 
+
+
+
+
+
     function fleetlocations()
     {      
        var locations = [
-        ['Madhumillan',22.714066, 75.874868,6],        
+        ['Madhumillan',22.714066, 75.874868,6],
+        /*['Bondi Beach', 22.714066, 75.868868, 5],
+        ['Coogee Beach', -33.923036, 151.259052, 4],
+        ['Cronulla Beach', -34.028249, 151.157507, 3],
+        ['Manly Beach', -33.80010128657071, 151.28747820854187, 2],
+        ['Maroubra Beach', -33.950198, 151.259302, 1]*/
       ];
       //console.log(locations);
 
       return locations;
     }
-    //=========================================== Initial Map finish====================================
 
     function search_driver()
     {
@@ -291,7 +279,7 @@ function cities(sel)
             location.reload(true);
           }
         });
-    }
+      }
 
     function search_result(locations){      
       document.getElementById('map').style.display="none";
@@ -325,93 +313,8 @@ function cities(sel)
     }
   }
 
-  //==============================Search Result Map finish=======================================================
-
-
-
-    function toggleHeatmap() {
-      //alert('heat');
-      initMap();
-      heatmap.setMap(heatmap.getMap() ? null : map);
-    }
-
-    var map, heatmap; var arr=[];
-    function initMap() {
-      document.getElementById('map').style.display="none";
-      document.getElementById('mymap').style.display="none";
-      document.getElementById('heatmap').style.display="block";
-
-      map = new google.maps.Map(document.getElementById('heatmap'), {
-        zoom: 13,
-        center: {lat: 22.714066, lng: 75.874868},
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: 'greedy'             
-      });
-
-      $.ajax({
-            type: "POST",
-            url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
-            dataType:'json',         
-            success:function(booking_data){              
-              if(booking_data.success==1){                               
-                $.each(booking_data.data, function(k, v) {                                                     
-                    arr.push(new google.maps.LatLng(v.lat,v.lng));                   
-                })
-                 heatmap = new google.maps.visualization.HeatmapLayer({
-                  data: arr,
-                  map: map
-                });
-                                                         
-              }                          
-            }
-          });     
-    }
-
-    //==============================HeatMap finish=======================================================      
-
-
-    function getMostlyBookingArea1(){  
-    var lat; h; var ltlg; var arr1 =[];   var arr=[]; 
-        $.ajax({
-            type: "POST",
-            url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
-            dataType:'json',         
-            success:function(booking_data){              
-              if(booking_data.success==1){                               
-                $.each(booking_data.data, function(k, v) {                                                     
-                    arr.push(new google.maps.LatLng(v.lat,v.lng));                   
-                })
-                console.log('he1'+arr1);                                         
-              }                          
-            }
-          });
-        //return h['ltlng'];
-      }
-
-    function getmarkers(){
-      // return [new google.maps.LatLng(22.714195, 75.873585),(22.714076, 75.873768),(22.714848, 75.874733),(22.713403, 75.877405)];
-
-      //return
-      var heat = [new google.maps.LatLng(22.714195, 75.873585),
-          new google.maps.LatLng(22.714076, 75.873768),
-          new google.maps.LatLng(22.714848, 75.874733),
-          new google.maps.LatLng(22.713403, 75.877405),
-          new google.maps.LatLng(22.713405, 75.877455),
-          ];
-          //console.log(heat);
-          /*var heat = [
-            [22.714195,75.873585],
-            [22.714076,75.873768],
-            [22.714848,75.874733],
-            [22.713403,75.877405],
-            [22.713405,75.877455],
-          ];*/
-          console.log('hee'+heat);
-          return heat;
-          //return ["22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621"];
-    }
-
   </script>
+
 
 
 

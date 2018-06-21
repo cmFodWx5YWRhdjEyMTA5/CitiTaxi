@@ -22,7 +22,20 @@
                             </div>
                             <?php }?>
                             <form method="post" action="<?php echo site_url('Home/update_promocode/'.$code->promo_id);?>" class="form-horizontal" enctype="multipart/form-data" id="jvalidate" name="frm">
-                                <div class="panel-body form-group-separated">                                    
+                                <div class="panel-body form-group-separated">  
+                                    <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Country</label>
+                                        <div class="col-md-6">              
+                                            <select name='country' id="country" class="form-control select" data-live-search="true" required>
+                                                <option value="<?php echo $code->country;?>"><?php echo $code->country;?></option>
+                                                <?php foreach(countryies() as $country) { ?>
+                                                  <option value="<?php print $country->name; ?>">
+                                                    <?php echo $country->name; ?>
+                                                  </option>
+                                                    <?php } ?> 
+                                            </select>                                            
+                                        </div>
+                                    </div>                                   
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Promo Heading</label>
                                         <div class="col-md-6 col-xs-12">                                               
@@ -57,6 +70,18 @@
                                             <input type="text" name="rate" class="form-control" value="<?php echo $code->rate; ?>"/>
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Set maximum amount</label>
+                                        <div class="col-md-6 col-xs-12">  
+                                            <input type="text" name="max_amount" class="form-control" value="<?php echo $code->max_amount; ?>" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Set minimum trip amount</label>
+                                        <div class="col-md-6 col-xs-12">  
+                                            <input type="text" name="min_trip_amount" class="form-control" value="<?php echo $code->min_trip_amount; ?>"  />
+                                        </div>
+                                    </div>
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Promocode Start Date</label>
@@ -68,6 +93,45 @@
                                         <label class="col-md-3 col-xs-12 control-label">Promocode End Date</label>
                                         <div class="col-md-6 col-xs-12">                                            
                                             <input type="text" name="endate" id="endate" data-provide="datepicker" class="form-control" placeholder="Select End Date" value="<?php echo $code->end_date; ?>" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Set Users Limit</label>
+                                        <div class="col-md-6 col-xs-12">  
+                                            <input type="text" name="user_limit" class="form-control" value="<?php echo $code->user_limit; ?>" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Number of times use limit</label>
+                                        <div class="col-md-6 col-xs-12">  
+                                            <input type="text" name="max_time_use" class="form-control" value="<?php echo $code->max_time_use; ?>" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">Select Attention Person</label>
+                                        <div class="col-md-6">
+                                            <select name='attention' class="form-control" required >
+                                                <option value="<?php echo $code->attention;?>"><?php echo $code->attention.' Passenger';?></option>
+                                                <option value="All">All Passenger</option>
+                                                <option value="Selected">Selected Passenger</option>      
+                                            </select>
+                                        </div>
+                                    </div>                                    
+                                    <div class="form-group">
+                                        <label class="col-md-3 control-label">Select Promotion type</label>
+                                        <div class="col-md-6">
+                                            <select name='promo_type' class="form-control" required >
+                                            <?php if($code->promo_type==0){ ?>
+                                                <option value="0">Immediate</option>
+                                                <option value="1">Compete Trip</option>      
+                                            <?php  } else{ ?>
+                                                <option value="1">Compete Trip</option>  
+                                                <option value="0">Immediate</option>
+                                            <?php  } ?>    
+                                            </select>
+                                            <div style="color:red"><u>Immediate</u>: Bonous deduct from total trip fare.<br>
+                                                 <u>Complete Trip</u>: Bonous will transferred to CitiPay wallet.
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="form-group">

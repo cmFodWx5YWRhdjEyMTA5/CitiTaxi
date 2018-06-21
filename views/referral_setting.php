@@ -36,6 +36,7 @@
                                         <thead>
                                             <tr>
                                                 <th style="min-width:50px;">#</th>
+                                                <th style="min-width:80px;">User type</th>
                                                 <th style="min-width:80px;">Country</th>
                                                 <th style="min-width:80px;"">Currency</th>
                                                 <th>Time Zone</th>
@@ -52,9 +53,10 @@
                                         <tbody>
                                         <?php
                                           $i=1;  
-                                        foreach($setting as $list) {?>
+                                        foreach($setting as $list) { if($list->user_type==0){$type ='Passenger';}else{$type='Driver';}?>
                                             <tr>
                                                 <td style="text-align:center"><?php echo $i++;?></td>
+                                                <td style="color:red;"><?php echo $type; ?></td>
                                                 <td><?php echo $list->country;?></td>
                                                 <td><?php echo $list->currency; ?></td> 
                                                 <td><?php echo $list->time_zone;?></td>      

@@ -110,7 +110,7 @@ class Wallet extends CI_Controller {
 							$this->AuthModel->updateRecord(array('user_id'=>$receiver_id),'wallet_balance',array('balance'=>$receiver_newBalance,'update_at'=>date('Y-m-d H:i:s')));//update receiver balance					
 							if($transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'cr','amount'=>$amount,'description'=>'internal transfer','transaction_status'=>'Success','reciver_balance'=>$receiver_newBalance,'sender_balance'=>$sender_newBalance,'transaction_at'=>date('Y-m-d H:i:s'))))              //store transaction record
 							{
-								$response  = array("error"=>0,"success"=>1,"message"=>"CityPay ".$amount. " has been transfer to ".$receiver_login);
+								$response  = array("error"=>0,"success"=>1,"message"=>"CityPay ".$amount. " MMK has been transfer to ".$receiver_login,'transaction_id'=>$transaction_id);
 								echo json_encode($response);
 							} 
 							else{  //when transaction failed

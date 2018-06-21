@@ -49,6 +49,9 @@ class Auth extends CI_Controller {
 			    {
 			    	$imagename =  $media_image;
 			    }
+			    $currency = '';
+			    $cur = $this->AuthModel->getSingleRecord('countries',array('name'=>$country));			    
+			    if(!empty($cur)){ $currency = $cur->currency_symbol; }			    
 				$data= array(
 					"ref_code"      =>$this->AuthModel->radomno(6),
 					"fb_id"         =>$fb_id,
@@ -64,7 +67,9 @@ class Auth extends CI_Controller {
 					"image"			=>$imagename,
 					"image_type"	=>$image_type, 			//0=normal, 1=media
 					"activeStatus"  =>$activeStatus,        //Active, Inactive
-					"device_type"	=>$device_type         //0=android, 1=ios
+					"device_type"	=>$device_type,         //0=android, 1=ios
+					"nationality"   =>$country,
+					"currency"      =>$currency,
 					);
 				
 				if($uid = $this->AuthModel->singleInsert($table_name,$data))
@@ -631,9 +636,9 @@ class Auth extends CI_Controller {
     }
 
     public function get_referral_setting(){
-    	if(isset($_POST['country']) && $_POST['country']!=''){
+    	if(isset($_POST['country']) && $_POST['country']!='' && isset($_POST['user_type']) && $_POST['user_type']!=''){
     		extract($_POST);
-    		$setting = $this->AuthModel->getSingleRecord('referral_setting',array('country'=>$country));
+    		$setting = $this->AuthModel->getSingleRecord('referral_setting',array('country'=>$country,'user_type'=>$user_type));
     		if(!empty($setting)){
     			$response = array("success"=>1, "error"=>0, "message"=>"success","data"=>$setting);
 	            echo json_encode($response);
@@ -645,6 +650,59 @@ class Auth extends CI_Controller {
     	}
     	else{
     		$this->index();
+    	}
+    }
+
+    public function get_notifications($user_id){
+    	if(isset($_GET['user_id']) && $_GET['user_id']!=''){
+    		$user_id = $_GET['user_id'];
+    		$notification = $this->AuthModel->getMultipleRecord('notifications',array('user_id'=>$user_id),'');
+    		if(!empty($notification)){
+    			$response = array("success"=>1,"error"=>0,"message"=>"success","data"=>$notification);
+	            echo json_encode($response);
+    		}else{
+    			$response = array("success"=>0,"error"=>1,"message"=>"No notification found","data"=>array());
+	            echo json_encode($response);
+    		}
+    	}
+    	else{
+    		$this->index();
+    	}
+    }
+
+    public function remove_notification(){
+    	if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+    		$paramarray = array('type','notification_id');
+            $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+            if(isset($vResponse['status']) && $vResponse['status']==0)
+            {
+                $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                echo json_encode($response);die();
+            }
+            else{            	
+            	extract($_POST);
+            	if($type==1){
+            		$checkWhere= array('notification_id'=>$notification_id);
+            	}else{
+            		$checkWhere= array('user_id'=>$user_id);
+            	}
+    			if($this->AuthModel->delete_record('notifications',$checkWhere))
+    			{
+    				$notification = $this->AuthModel->getMultipleRecord('notifications',array('user_id'=>$user_id),'');
+		    		if(!empty($notification)){
+		    			$response = array("success"=>1,"error"=>0,"message"=>"Notification has been removed","data"=>$notification);
+			            echo json_encode($response);
+		    		}else{
+		    			$response = array("success"=>0,"error"=>1,"message"=>"All notification has been removed","data"=>array());
+			            echo json_encode($response);
+		    		}
+    			}
+    			else{
+    				$notification = $this->AuthModel->getMultipleRecord('notifications',array('user_id'=>$user_id),'');
+		    		$response = array("success"=>0,"error"=>1,"message"=>"Oops! Something went wrong, Please try again.","data"=>$notification);
+			        echo json_encode($response);
+    			}
+            }
     	}
     }
 

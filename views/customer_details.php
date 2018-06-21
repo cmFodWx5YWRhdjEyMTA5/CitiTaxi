@@ -38,8 +38,8 @@
                                             <th>Referral Code</th>
                                             <th>Wallet Amount</th>
                                             <th>Registerd</th>
-                                            <th>Status</th>
                                             <th style="min-width:80px;text-align:center">Feedback</th>
+                                            <th>Status</th>
                                             <th>Action</th>
                                             <th style="min-width:50px; text-align:center">Edit</th>
                                             <th style="min-width:50px; text-align:center">Delete</th>

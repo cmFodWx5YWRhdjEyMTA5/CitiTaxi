@@ -24,6 +24,17 @@
                             <form method="post" action="<?php echo site_url('Home/add_referral_setting');?>" class="form-horizontal" enctype="multipart/form-data" id="jvalidate" name="frm">
                                 <div class="panel-body form-group-separated">
                                     <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Select User Type</label>
+                                        <div class="col-md-6">              
+                                            <select name='user_type' class="form-control select" required>
+                                                <option value="">Select user type</option>      
+                                                <option value="0">Customer</option>
+                                                <option value="1">Driver</option>                                                
+                                            </select>                                            
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">                                       
                                         <label class="col-md-3 control-label">Country</label>
                                         <div class="col-md-6">              
                                             <select name='country_id' class="form-control select" data-live-search="true" onChange="get_currency(this)" required>
@@ -138,6 +149,7 @@
             }
         });
     }
+    
 
 
     /*function cities(sel)
