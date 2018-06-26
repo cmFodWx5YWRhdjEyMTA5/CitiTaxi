@@ -26,7 +26,7 @@ class Welcome extends CI_Controller {
 				$user_data = array('id'=>$res->id, "email" =>$res->email,"name" =>$res->name, 'image'=>$res->image, 'status'=>$res->status );
 	            $this->session->set_userdata($user_data);
 	            
-	            redirect('Home/customers');
+	            redirect('Home/analytics');
 			}
 			else
 			{
@@ -39,7 +39,7 @@ class Welcome extends CI_Controller {
 		{
 			if($this->session->userdata('email') != '')
 			{
-				redirect('Home');
+				redirect('Home/analytics');
 			}
 			else
 			{				

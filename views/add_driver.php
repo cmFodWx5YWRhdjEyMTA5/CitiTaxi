@@ -276,7 +276,6 @@
                                         <label class="col-md-3 control-label">Service Type Vehicle</label>
                                         <div class="col-md-6">              
                                             <select name='service_type[]' id="myDropdown" multiple class="form-control select" required>
-
                                             <?php foreach(servicetypes() as $t) { ?>
                                               <option value="<?php print $t->typeid; ?>">
                                                 <?php echo $t->servicename; ?>

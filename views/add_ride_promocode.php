@@ -26,20 +26,23 @@
                                     <div class="form-group">                                       
                                         <label class="col-md-3 control-label">Country</label>
                                         <div class="col-md-6">              
-                                            <select name='country' id="country" class="form-control select" data-live-search="true" required>
+                                            <select name='country_id' class="form-control select" data-live-search="true" onChange="get_currency(this)" required>
                                                 <option value="">Select Country</option>
                                                 <?php foreach(countryies() as $country) { ?>
-                                                  <option value="<?php print $country->name; ?>">
+                                                  <option value="<?php print $country->id; ?>">
                                                     <?php echo $country->name; ?>
                                                   </option>
                                                     <?php } ?> 
-                                            </select>                                            
+                                            </select> 
+                                            <input type="hidden" name="country" id="country_name">
+                                            <input type="hidden" name="currency" id="currency" class="form-control">
                                         </div>
                                     </div>                                   
 
                                     <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Promo Heading</label>
-                                        <div class="col-md-6 col-xs-12">                                               
+                                        <div class="col-md-6 col-xs-12"> 
+                                            
                                             <input type="text" name="heading" id='heading' class="form-control"/>
                                         </div>                                        
                                     </div>
@@ -197,12 +200,30 @@
         var country = $('#country').val();    
         console.log('ds'+country);
     });
-    
-
-
 
   }); 
+
+    function get_currency(sel){
+        var countryid=sel.value;
+        //alert(countryid);
+        var countryname = sel.options[sel.selectedIndex].text;
+        $.ajax({
+            type: "get",
+            url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
+            dataType: "json",  
+            success:function(data){
+                //console.log(data);
+                if(data!=null)
+                {
+                    $('#country_name').val(countryname);                
+                    $('#currency').val(data.currency);                
+                    //console.log(data);  
+                }           
+            }
+        });
+    }
 </script>
+
 
 
 

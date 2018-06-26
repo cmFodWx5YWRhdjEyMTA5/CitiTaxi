@@ -1220,7 +1220,7 @@ class Home extends CI_Controller {
     }
 
     public function ride_promocode(){
-        $promocode = $this->AuthModel->getMultipleRecord('ride_promocode',array(),'promo_id DESC');
+        $promocode = $this->AuthModel->getMultipleRecord('promocode',array(),'promo_id DESC');
         if(!empty($promocode)){
             $response = array('code'=>$promocode);
             $this->load->view('ride_promocode',$response);
@@ -1236,7 +1236,7 @@ class Home extends CI_Controller {
             extract($_POST);
             //print_r($_POST);die;
             $checkdata  = array("country"=>$country,"promocode"=>$promocode);
-            $checkCity  = $this->AuthModel->checkRows('ride_promocode',$checkdata); 
+            $checkCity  = $this->AuthModel->checkRows('promocode',$checkdata); 
             if($checkCity>0)
             {
                 $response = array('error'=>1,"message"=>'This promocode has already in used');
@@ -1251,6 +1251,7 @@ class Home extends CI_Controller {
                 }
                 $data = array(
                     "country"       =>$country,
+                    "currency"      =>$currency,
                     "heading"       =>$heading,
                     "description"   =>$description,
                     "promocode"     =>$promocode,
@@ -1269,7 +1270,7 @@ class Home extends CI_Controller {
                     "promo_type"    =>$promo_type,
                     );
                 //print_r($data);die();
-                if($this->AuthModel->singleInsert('ride_promocode',$data)){
+                if($this->AuthModel->singleInsert('promocode',$data)){
                     if($attention=='All'){
                         $users = $this->AuthModel->getMultipleRecord('users',array('user_type'=>0,'nationality'=>$country),'');
                         if(!empty($users)){
@@ -1296,7 +1297,7 @@ class Home extends CI_Controller {
     {
         $promo_id = $_POST['promo_id'];
         $status   = $_POST['status'];
-        if($this->AuthModel->updateRecord(array('promo_id'=>$promo_id),'ride_promocode',array('status'=>$status)))
+        if($this->AuthModel->updateRecord(array('promo_id'=>$promo_id),'promocode',array('status'=>$status)))
         {
             echo 'Status has been successfully changed';
         }
@@ -1308,11 +1309,11 @@ class Home extends CI_Controller {
 
     public function update_promocode($id){
         if(!empty($id)){
-            $code = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$id));
+            $code = $this->AuthModel->getSingleRecord('promocode',array('promo_id'=>$id));
             if(isset($_POST['submit'])){
                 extract($_POST); 
                 $checkdata  = array("country"=>$country,"promocode"=>$promocode);
-                $checkCity  = $this->AuthModel->checkRows('ride_promocode',$checkdata); 
+                $checkCity  = $this->AuthModel->checkRows('promocode',$checkdata); 
                 if($checkCity>0 && $code->country!=$country && $code->prmocode!=$promocode)
                 {
                     $response = array('error'=>1,"message"=>'This promocode has already in used');
@@ -1334,9 +1335,9 @@ class Home extends CI_Controller {
                         "rate"          =>$rate,
                         "max_amount"    =>$max_amount,
                         "min_trip_amount"=>$min_trip_amount,
-                        "start_date"    =>$stdate,
+                        "start_date"    =>date('d-m-Y',strtotime($stdate)),
                         "start_string"  =>strtotime($stdate),
-                        "end_date"      =>$endate,
+                        "end_date"      =>date('d-m-Y',strtotime($endate)),
                         "end_string"    =>strtotime($endate),
                         "promo_image"   =>$imagename,
                         "user_limit"    =>$user_limit,
@@ -1344,7 +1345,7 @@ class Home extends CI_Controller {
                         "attention"     =>$attention,
                         "promo_type"    =>$promo_type,
                     );
-                    if($this->AuthModel->updateRecord(array('promo_id'=>$id),'ride_promocode',$data)){
+                    if($this->AuthModel->updateRecord(array('promo_id'=>$id),'promocode',$data)){
                         if($attention=='All' && $code->attention!=$attention){
                             $users = $this->AuthModel->getMultipleRecord('users',array('user_type'=>0,'nationality'=>$country),'');
                             if(!empty($users)){
@@ -1354,7 +1355,7 @@ class Home extends CI_Controller {
                                 }
                             }
                         }
-                        $code = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$id));
+                        $code = $this->AuthModel->getSingleRecord('promocode',array('promo_id'=>$id));
                         $response = array("success"=>1,"message"=>"Record has been updateed successful","code"=>$code);
                         $this->load->view('update_ride_promocode',$response);
                     }
@@ -1378,7 +1379,7 @@ class Home extends CI_Controller {
     {
         if($id!='')
         {             
-            if($this->AuthModel->delete_record('ride_promocode',array('promo_id'=>$id)))
+            if($this->AuthModel->delete_record('promocode',array('promo_id'=>$id)))
             {
                 echo '<script>alert("Record has been successfully removed");
                 window.location.href="'.site_url('Home/ride_promocode').'";
@@ -1417,11 +1418,12 @@ class Home extends CI_Controller {
         }
     }
 
-    public function promo_users_list($promo_id,$country){
+    /*public function promo_users_list($promo_id,$country){
         $pre_ids = array(); $users ='';
         if(isset($_POST['submit']))
         {
-            extract($_POST);            
+            extract($_POST); 
+            print_r($_POST);die();
             $data =''; $tusers = count($users);
             foreach ($users as $v) {
                 $data[] = array(
@@ -1460,17 +1462,29 @@ class Home extends CI_Controller {
                 $this->load->view('promo_users',$response);
             }
         }
-    }
+    }*/
 
-    public function save_promo_notification($users,$promo_id){
-        $promo = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$promo_id),'');               
-        foreach ($users as $v) {
-            $data = array('user_id'=>$v,'subject'=>'Promotion Offer','message'=>$promo->heading,'notification_at'=>date('d-m-Y h:i:s'));
-            $this->AuthModel->singleInsert('notifications',$data);                    
+    public function promo_users_list($promo_id,$country){
+        $pre_ids = array(); $users ='';
+        $promouser = $this->AuthModel->getMultipleRecord('promo_users',array('promo_id'=>$promo_id),'');
+        if(!empty($promouser)){
+            foreach ($promouser as $p => $l) {
+                $pre_ids[]=$l->user_id;
+            }
+            $users = $this->AuthModel->getnotWhereInRecord('users','id',$pre_ids,array('nationality'=>$country,'user_type'=>0,'blackList_status'=>'no'));                  
+        }else{
+            $users = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'user_type'=>0,'blackList_status'=>'no'),'');
         }
+        if(!empty($users)){            
+            $response = array('page'=>'add','promo_id'=>$promo_id,'country'=>$country,'userlist'=>$users);
+            $this->load->view('promo_users',$response);
+        }else{
+            $response = array('page'=>'add','promo_id'=>$promo_id,'country'=>$country,'error'=>1,'message'=>'No passengers available or remain to share','userlist'=>$users);
+            $this->load->view('promo_users',$response);
+        }        
     }
-
-    public function add_promo_users(){
+    
+    public function add_promo_users(){       
         if(isset($_POST['submit'])){
             extract($_POST);
             $data =''; $tusers = count($users);
@@ -1479,44 +1493,53 @@ class Home extends CI_Controller {
                     "promo_id"=>$promo_id,
                     "user_id"=>$v,
                     );
-            }
+            }                  
             if($this->AuthModel->batchInsert('promo_users',$data))
             {   
-                $this->save_promo_notification($users,$promo_id);
-                echo '<script>alert("Promotion has been successfully shared with passengers."'.$tusers.');
-                    window.location.href="'.site_url('Home/promo_users/'.$promo_id.'/'.$country).'";
-                    </script>';                
+                $this->save_promo_notification($users,$promo_id);                
+                $response = array("success"=>1,"error"=>0,"message"=>"Promotion has been successfully shared");
+                echo json_encode($response);
             }
             else{
-                echo '<script>alert("Promotion has been successfully shared with passengers.");
-                    window.location.href="'.site_url('Home/promo_users_list/'.$promo_id.'/'.$country).'";
-                    </script>';
-            }        
-        }        
+                $response = array("success"=>0,"error"=>1,"message"=>"Opps! Something went wrong. Please try again");
+                echo json_encode($response);   
+            }
+        }      
     }
 
+    public function save_promo_notification($users,$promo_id){
+        $promo = $this->AuthModel->getSingleRecord('promocode',array('promo_id'=>$promo_id),'');               
+        foreach ($users as $v) {            
+            $data = array('user_id'=>$v,'subject'=>'Promotion Offer','message'=>$promo->heading,'notification_at'=>date('d-m-Y h:i:s'));
+            $this->AuthModel->singleInsert('notifications',$data);                    
+        }
+    }
+
+
     
-    public function delete_promo_user($promo_id,$country,$user_id)
+    public function remove_promo_user()
     {
-        if($promo_id!='' && $user_id!='')
-        {             
+        if(isset($_POST['submit']))
+        {
+            extract($_POST);     
+            $response = array("success"=>1,"error"=>0,"message"=>"Record has been successfully removed");               
+            echo json_encode($response);die();
+            //echo json_encode($_POST);
             if($this->AuthModel->delete_record('promo_users',array('promo_id'=>$promo_id,'user_id'=>$user_id)))
             {
-                echo '<script>alert("Record has been successfully removed");
-                window.location.href="'.site_url('Home/promo_users/'.$promo_id.'/'.$country).'";
-                </script>';
+                $response = array("success"=>1,"error"=>0,"message"=>"Record has been successfully removed");               
+                echo json_encode($response);
             }
             else
             {
-                echo '<script>alert("Record is not removed, Please try again");
-                window.location.href="'.site_url('Home/promo_users/'.$promo_id.'/'.$country).'";
-                </script>';
+                $response = array("success"=>0,"error"=>1,"message"=>"Record is not removed, Please try again");               
+                echo json_encode($response);                
             }
         }
-        else
-        {
-            redirect(site_url('Home/referral_setting'));
-        }
+        else{
+            $response = array("success"=>0,"error"=>1,"message"=>"access denied");               
+                echo json_encode($response);
+        }        
     }
 
 

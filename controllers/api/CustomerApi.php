@@ -234,6 +234,8 @@ class CustomerApi extends CI_Controller {
                         if($this->AuthModel->batchInsert('booking_dropoffs',$dropoffs))
                         {                            
                             $this->saveFairDetails($fairDetails,$booking_id,$date,$time,$booking_address_type,$total_regular_charge,$total_perminute_charge);   //save fair details
+
+                            /*********************** Save promo details if apply ************************/
                             if($promo_status=='Yes'){                                
                                 $this->savePromoHistory($customer_id,$booking_id,$promo_id); 
                             }
@@ -303,7 +305,9 @@ class CustomerApi extends CI_Controller {
         }
     }
     public function savePromoHistory($customer_id,$booking_id,$promo_id){
-        $promo = $this->AuthModel->getSingleRecord('ride_promocode',array('promo_id'=>$promo_id));
+        $promo = $this->AuthModel->getSingleRecord('promocode',array('promo_id'=>$promo_id));
+        //print_r($promo);
+        
         if(!empty($promo)){
             $data = array(
                 "booking_id"=>$booking_id,
@@ -311,9 +315,11 @@ class CustomerApi extends CI_Controller {
                 "promo_id"=>$promo_id,
                 "promocode"=>$promo->promocode,
                 "rate_type"=>$promo->rate_type,
-                "rate"     =>$promo->rate,                
-                );            
-            $this->AuthModel->checkThenInsertorUpdate('promocode_history',$data,array('user_id'=>$customer_id,'promocode'=>$promo->promocode));
+                "rate"     =>$promo->rate,  
+                "promo_type"=>$promo->promo_type,              
+                );    
+                //echo json_encode($data);die();        
+            $this->AuthModel->singleInsert('promocode_history',$data,array('user_id'=>$customer_id,'promocode'=>$promo->promocode));
         }
     }
 
@@ -430,11 +436,55 @@ class CustomerApi extends CI_Controller {
         $this->AuthModel->singleInsert('booking_fare',$fairdata);
     }
 
-    public function check_promocode(){        
+    public function check_promocode(){   //Done and test complete        
         if(isset($_POST['customer_id']) && $_POST['customer_id']!='' && $_POST['promocode'] && $_POST['promocode']!=''){
             extract($_POST);
-            $datestring = strtotime(date('m/d/Y'));            
-            $checkpromo = $this->AuthModel->checkRows('ride_promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring,'status'=>'Active'));           
+            $datestring = strtotime(date('d-m-Y'));            
+            $checkpromo = $this->AuthModel->checkRows('promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring,'status'=>'Active'));           
+            if($checkpromo>0){                    
+                $promo = $this->AuthModel->getSingleRecord('promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring));
+                if($promo->user_limit>$promo->user_used)
+                {
+                    $promo_id=$promo->promo_id;
+                    //if promo type is for selected user then check this promo is share with user or not.
+                    if($promo->attention=='Selected'){
+                        $check = $this->AuthModel->checkRows('promo_users',array('promo_id'=>$promo_id,'user_id'=>$customer_id));
+                        if($check==0){
+                            $response = array('success'=>0, 'error'=>1,'message'=>'Please enter valid promocode');
+                            echo json_encode($response);die();
+                        }
+                    }
+                    //Check this promocode will not exceeded used limit before by this customer
+                    $checkUsed = $this->AuthModel->checkRows('promocode_history',array('promocode'=>$promocode,'user_id'=>$customer_id,'status'=>1));
+                    $no_of_times_used = $promo->max_time_use;                
+                    if($checkUsed>=$no_of_times_used){
+                        $response = array('success'=>0, 'error'=>1,'message'=>'You have already used this code');
+                        echo json_encode($response);
+                    }else{
+                        $promo = $this->AuthModel->getSingleRecord('promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring));
+                        $response = array('success'=>1, 'error'=>0,'message'=>'success','data'=>$promo);
+                        echo json_encode($response);
+                    }                
+                }else{
+                    $response = array('success'=>0, 'error'=>1,'message'=>'This promo code has exceeded used limit.','data'=>'');
+                    echo json_encode($response);
+                }
+            }
+            else{
+                $response = array('success'=>0, 'error'=>1,'message'=>'This promotion code is incorrect or expired. Try again with correct code.','data'=>'');
+                echo json_encode($response);
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
+    public function old_check_promocode(){        
+        if(isset($_POST['customer_id']) && $_POST['customer_id']!='' && $_POST['promocode'] && $_POST['promocode']!=''){
+            extract($_POST);
+            $datestring = strtotime(date('d-m-Y'));            
+            $checkpromo = $this->AuthModel->checkRows('promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring,'status'=>'Active'));           
             if($checkpromo>0){
                 //Check this promocode will not used before by this customer
                 $checkUsed = $this->AuthModel->checkRows('promocode_history',array('promocode'=>$promocode,'user_id'=>$customer_id,'status'=>1));
@@ -442,7 +492,7 @@ class CustomerApi extends CI_Controller {
                     $response = array('success'=>0, 'error'=>1,'message'=>'You have already used this code');
                     echo json_encode($response);
                 }else{
-                    $promo = $this->AuthModel->getSingleRecord('ride_promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring));
+                    $promo = $this->AuthModel->getSingleRecord('promocode',array('promocode'=>$promocode,'start_string<='=>$datestring,'end_string>='=>$datestring));
                     $response = array('success'=>1, 'error'=>0,'message'=>'success','data'=>$promo);
                     echo json_encode($response);
                 }                

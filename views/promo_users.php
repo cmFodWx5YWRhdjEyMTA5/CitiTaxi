@@ -4,6 +4,15 @@
         font-size:13px !important;
         font-weight: 600;
     }
+    .sp-pre-con {
+        position: fixed;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;        
+        background: url(<?php echo base_url('assest/images/lo2.gif'); ?>) center no-repeat #00000070;
+    }
     </style> 
             <!-- PAGE CONTENT WRAPPER -->
            
@@ -47,6 +56,9 @@
                                 </div>   
             <!--  ============SAME PAGE IS USED TO SHOW SHARED USER AND TO SHOW PASSENGERS TO ASSIGN THIS PROMOTION=======  -->                  
                                 <div class="panel-body">
+                                <!-- Show loader -->                               
+                                <div class="sp-pre-con" style="display: none;"></div>
+                                 <!-- Show loader -->
                                     <div class="table-responsive">
                                      <div id="list_table" style="overflow:scroll;">
                                     
@@ -73,27 +85,52 @@
                                                 foreach($userlist as $list) { ?>
                                                 <tr>
                                                     <?php if($page!='list'){?>
-                                                    <td style="text-align:center"><input data-error="#err" class="ids" type='checkbox' name='users[]' value="<?php echo $list->id; ?>"></td>
+                                                    <td style="text-align:center"><input data-error="#err" id="chek<?php echo $list->id ?>" type='checkbox' name='users[]' value="<?php echo $list->id; ?>"></td>
                                                     <?php } ?>
                                                     <td style="text-align:center"><?php echo $i++;?></td>
                                                     <td><?php echo $list->id; ?></td>            
                                                     <td><?php echo $list->name; ?></td>                                               
                                                     <td><?php echo $list->email; ?></td>
                                                     <td><?php echo $list->mobile;?></td>
-                                                    <?php  if($page=='list'){ ?> 
-                                                    <td><a href="<?php echo site_url('Home/delete_promo_user/'.$promo_id.'/'.$country.'/'.$list->id);?>">
-                                                          <i class="fa fa-trash-o fa-fw">
-                                                          <strong>Delete</strong></i>
-                                                         </a>
-                                                    </td>
+                                                    <?php  if($page=='list'){ ?>
+                                                    <td>
+                                                        <input type="button" value="Delete" class="btn btn-reset" onclick="remove(<?php echo $list->id.','.$promo_id;?>)">
+                                                    </td>                                                    
                                                     <?php } ?>
-                                                </tr>                                           
+                                                </tr> 
+
+                                    <!--==================Script to add or remove user id in array===========--> 
+                                                <script>
+                                                   var favorite=[]; 
+                                                   $(document).ready(function(){
+                                                        $('#chek<?php echo $list->id; ?>').on('change', function(e){
+                                                            if(e.target.checked){
+                                                                if(!favorite.includes(<?php echo $list->id; ?>)){
+                                                                    favorite.push($(this).val());
+                                                                }                
+                                                            }
+                                                            else
+                                                            {
+                                                                for(var g=0; g<favorite.length; g++)
+                                                                {
+                                                                    if(favorite[g]==<?php echo $list->id;?>)
+                                                                    {
+                                                                        favorite.splice(g, 1);
+                                                                        break;
+                                                                    }
+                                                                } 
+                                                            }
+                                                          console.log(favorite)
+                                                        });
+                                                   });
+                                                </script>
+                                    <!--==================Script to add or remove user id in array End===========--> 
                                             <?php } ?>
                                         </tbody>
                                     </table>
                                      <?php if($page!='list'){?>    
                                     <div class=" col-md-2 pull-right">
-                                        <input type="hidden" name="promo_id" value="<?php echo $promo_id; ?>">
+                                        <input type="hidden" id="promo_id" name="promo_id" value="<?php echo $promo_id; ?>">
                                         <input type="hidden" name="country" value="<?php echo $country; ?>">
                                         <input type="button" name="submit" value="Share" class="btn btn-submit" id="subm" style="max-width:300px; margin-top:15%; width:100%;">                                        
                                     </div>                                    
@@ -114,41 +151,96 @@
 <script type='text/javascript' src='<?php echo base_url('assest/js/plugins/jquery-validation/jquery.validate.js');?>'></script> 
 <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
 <script type='text/javascript' src='<?php echo base_url('assest/js/formValidationScript.js');?>'></script> 
-    <script>
-    var share = $("#share").validate({
-        rules: {
-            "users[]": {
-                required: true,                        
-                }
-            },
-            messages: {                
-             "users[]": {
-                required: "*Please select atleast 1 checkbox"
-                },                        
-            },
-            errorPlacement: function(error, element) 
-            {
-              var placement = $(element).data('error');
-              if (placement) 
-              {
-                $(placement).append(error)
-              }
-              else 
-              {
-                error.insertAfter(element);
-              }
-            }
-        });    
-    </script>
 
-    <script type="text/javascript">
-    $(document).ready(function() {
-        $("#subm").click(function(){
-            var favorite = [];
-            $.each($("input[name='users[]']:checked"), function(){            
-                favorite.push($(this).val());
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">       
+        <h4 class="modal-title" id="myModalLabel">Message</h4>
+      </div>
+      <div class="modal-body" style="text-align:center !important;">
+        <span id="message" ></span>
+        <hr>
+        <div style="text-align:center;margin-top:5%">
+        <button type="button" class="btn btn-back" onclick="reload()" data-dismiss="modal">Close</button>
+        </div>
+      </div>     
+    </div>
+  </div>
+</div>
+
+
+
+  
+
+    <script type="text/javascript">    
+    $(document).ready(function() {       
+        $("#subm").click(function(){ 
+            var promo_id = $('#promo_id').val();
+            if(favorite.length>0){
+            $(".sp-pre-con").css("display", "block");
+                $.ajax({
+                    type:"POST",
+                    dataType:"json",
+                    data:{"users":favorite,"promo_id":promo_id,"submit":'submit'},
+                    url:'<?php echo site_url("Home/add_promo_users");?>',
+                    success:function(res){
+                        //console.log(res.message);
+                        if(res.success==1){                            
+                            $(".sp-pre-con").css("display", "none");
+                            $('#myModal').modal({'show' : true});
+                            $('#message').text(res.message);    
+                        }
+                        else{
+                            $(".sp-pre-con").css("display", "none");
+                            $('#myModal').modal({'show' : true});
+                            $('#message').text(res.message);    
+                            
+                        }
+                        //console.log(res);
+                    }
+                });
+                //console.log(favorite);
+            }else{
+                alert('Please select atleast 1 Passenger');
+            }            
+        });  
+                //alert("My favourite Passengers are: " + favorite.join(", "));            
+        });                      
+</script>
+<script>
+    function remove(user_id,promo_id)
+    {
+        //console.log(promo_id);
+        var r = confirm("Are you realy want to remove this record");
+        if(r==true)
+        {
+            $(".sp-pre-con").css("display", "block");
+                $.ajax({
+                type:'POST',
+                dataType:"json",
+                data:{'promo_id':promo_id,'user_id':user_id,'submit':'submit'},
+                url:"<?php echo site_url('Home/remove_promo_user');?>",
+                success:function(res){   
+                console.log(res);                     
+                if(res.success==1){
+                    //$(".sp-pre-con").css("display", "none");
+                    //$('#myModal').modal({'show' : true});
+                    $('#message').text(res.message);                                                         
+                }
+                else{
+                    $(".sp-pre-con").css("display", "none");
+                    $('#myModal').modal({'show' : true});
+                    $('#message').text(res.message);                    
+                    /*$(".sp-pre-con").css("display", "none");
+                    alert(res.message);*/
+                }                        
+                },
             });
-            alert("My favourite Passengers are: " + favorite.join(", "));
-        });
-    });
+        }      
+    }
+
+    function reload(){
+        location.reload(true);  
+    }
 </script>

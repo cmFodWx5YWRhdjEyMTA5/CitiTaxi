@@ -782,7 +782,75 @@ class DriverApi extends CI_Controller {
         }
     }
 
-    public function updatePromoHistory($booking_id,$customer_id,$total_fare){ //update promo history after complete booking
+    //update promo history after complete booking
+    public function updatePromoHistory($booking_id,$customer_id,$total_fare){ 
+        $promo = $this->AuthModel->getSingleRecord('promocode_history',array('booking_id'=>$booking_id,'user_id'=>$customer_id));
+        if(!empty($promo)){            
+            $promoRec = $this->AuthModel->getSingleRecord('promocode',array('promo_id'=>$promo->promo_id));
+            if(!empty($promoRec)){
+                $min_trip_amount = $promoRec->min_trip_amount;                 
+                //Check if trip fare greater then set promotional minimum fare then promotion bouns applied
+                if($total_fare>$min_trip_amount)
+                {
+                    $history_id = $promo->history_id;
+                    $rate_type  = $promo->rate_type;
+                    $rate       = $promo->rate;
+                    $promo_type = $promo->promo_type;
+                    if($rate_type=='Percentage'){
+                        $user_earn = ($total_fare*$rate)/100;
+                        if($user_earn>$promoRec->max_amount){  //if promotion earning grater then max bonus amount
+                            $user_earn=$promoRec->max_amount;
+                        }
+                    }else{
+                        $user_earn = $rate;
+                    }
+                    if($this->AuthModel->updateRecord(array('history_id'=>$history_id),'promocode_history',array('promo_earn'=>$user_earn,'status'=>1))){
+                        $this->AuthModel->updateRecord(array('booking_id'=>$booking_id),'booking',array('promo_earn'=>$user_earn));
+                        //**************** Update promotion used ********************************//
+                        $pre_used = $promoRec->user_used;
+                        $new_used = $pre_used+1;
+                        if($new_used==$promoRec->user_used){                            
+                            $this->AuthModel->updateRecord(array('promo_id'=>$promo->promo_id),'promocode',array('user_used'=>$new_used,'status'=>'Deactive'));
+                        }
+                        else{
+                            $this->AuthModel->updateRecord(array('promo_id'=>$promo->promo_id),'promocode',array('user_used'=>$new_used));
+                        }
+                        //**************** If promotion type is 1(after complete type) ********************************//
+                        if($promo_type==1){  
+                            //Update promo bonus amount in CitiPay wallet
+                            $receiver_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$customer_id));
+                            if(!empty($receiver_wallet)){
+                                $receiver_prebalance = $receiver_wallet->balance;
+                                $receiver_newBalance = $receiver_prebalance+$user_earn;                    
+
+                                if($transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$customer_id,'sender_id'=>'','type'=>'cr','amount'=>$user_earn,'description'=>'Promo Code Bonus of Trip id '.$booking_id,'transaction_status'=>'Success','reciver_balance'=>$receiver_newBalance,'sender_balance'=>'','transaction_at'=>date('Y-m-d H:i:s'))))              //store transaction record
+                                {
+                                    $this->AuthModel->updateRecord(array('user_id'=>$customer_id),'wallet_balance',array('balance'=>$receiver_newBalance,'update_at'=>date('Y-m-d H:i:s')));//update receiver balance 
+                                    $message = "Promotional bonus ".$user_earn.' '.$promoRec->currency." of booking_id ".$booking_id." has been credited to your CitiPay Wallet"; //for customer notification.
+                                    $this->AuthModel->singleInsert('notifications',array('user_id'=>$customer_id,'subject'=>"Promotional Bonus","message"=>$message,'notification_at'=>date('d-m-Y h:i A')));
+                                }  
+                                else{
+                                    $transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$customer_id,'amount'=>$user_earn,'description'=>'Promo Code Bonus for Trip id '.$booking_id,'transaction_status'=>'Failure','reciver_balance'=>$receiver_prebalance,'transaction_at'=>date('Y-m-d H:i:s')));
+                                    $message = "Sorry! Promotional bonus ".$user_earn.' '.$promoRec->currency." of booking_id ".$booking_id." has been failed. Please contact with support";                        
+                                }
+                            }
+                        }
+                        else{
+                            $message = "Hey! You got ".$user_earn.' '.$promoRec->currency." promotion bonus of booking_id ".$booking_id;
+                            //echo $message;
+                             //for customer notification.
+                        }                        
+                    }
+                }
+                else{
+                    $message = "Sorry Promotion is not applied! Your trip fare is less then promotional minimum trip fare.";
+                    //echo $message;
+                }
+            }   
+        }
+    }
+
+    public function oldupdatePromoHistory($booking_id,$customer_id,$total_fare){ //update promo history after complete booking
         $promo = $this->AuthModel->getSingleRecord('promocode_history',array('booking_id'=>$booking_id,'user_id'=>$customer_id));
         if(!empty($promo)){
             $history_id = $promo->history_id;
