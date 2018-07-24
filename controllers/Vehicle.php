@@ -267,12 +267,27 @@ class Vehicle extends CI_Controller {
 
     public function  checkTargetTrip()  //ajax use
     {
-        $targetTrip =$_POST['targetTrip'];        
-        $checkexist = $this->AuthModel->checkRows('driverweeklyreward',array('reward_type'=>'min','weeklyTargetTrip'=>$targetTrip));
-        if($checkexist>0)
-        {
-            echo $targetTrip.' target trip already exist for driver reward';
+        if(isset($_POST['reward_type']) && isset($_POST['country'])){
+            $reward_type = $_POST['reward_type'];        
+            $country     = $_POST['country'];   
+            $city        = $_POST['city'];
+            //$response = array('error'=>1,'reward'=>$reward_type,'country'=>$country);
+            //echo json_encode($response);die(); 
+            $checkexist = $this->AuthModel->checkRows('driverweeklyreward',array('reward_type'=>$reward_type,'country'=>$country,'city'=>$city));
+            if($checkexist>0)
+            {
+                $response = array('error'=>1,'message'=>'Target trip already exist for this county');
+                echo json_encode($response);                
+            }
+            else{
+                $response = array('error'=>0,'message'=>'success');
+                echo json_encode($response); 
+            }
         }
+        else{
+            $response = array('error'=>1,'message'=>'Something went wrong, Please try again');
+            echo json_encode($response);                            
+        }        
     }
 
     public function changeRewardStatus()  //ajax use

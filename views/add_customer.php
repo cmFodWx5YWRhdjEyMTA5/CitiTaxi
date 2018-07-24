@@ -9,7 +9,7 @@
                                 <div class="panel-heading">
                                     <h3 class="panel-title"><strong>Add</strong>&nbsp;Customer</h3>                            
                                 </div>
-                        <div class="container">  
+                                <div class="container">  
                                     
                             <?php if(isset($error)&& $error==1) { ?>
                             <div class="alert alert-danger">
@@ -37,16 +37,13 @@
                                             <input type="email" id="email" name="email" class="form-control">
                                             <span id="errEmail"></span>
                                         </div>
-                                    </div>                                   
-
+                                    </div> 
                                     <div class="form-group">                                        
                                         <label class="col-md-3 col-xs-12 control-label">Password</label>
                                         <div class="col-md-6 col-xs-12">
                                             <input type="password" id="password1" name="password" class="form-control" minlength="5" />
                                         </div>
                                     </div>
-
-
                                     <div class="form-group">            
                                         <label class="col-md-3 col-xs-12 control-label">Confirm Password</label>
                                         <div class="col-md-6 col-xs-12">                                            
@@ -73,7 +70,7 @@
                                         </div>                                            
                                     </div>
 
-                                     <div class="form-group">
+                                    <div class="form-group">
                                         <label class="col-md-3 col-xs-12 control-label">Image</label>
                                         <div class="col-md-6 col-xs-12">                      
                                             <input type="file" class="fileinput btn-submit" name="image" id="filename" />

@@ -13,14 +13,23 @@
         height: 500px;
         width: 100%;   
        }
+        .sp-pre-con {
+          position: fixed;
+          left: 0px;
+          top: 0px;
+          width: 100%;
+          height: 100%;
+          z-index: 9999;        
+          background: url(<?php echo base_url('assest/images/myloading.gif'); ?>) center no-repeat #00000070;
+        }
     </style>
 <div class="page-content-wrap">
+  <div class="sp-pre-con" style="display: none;"></div>
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title"><strong>Fleet tracking</strong></h3>
-              
+                    <h3 class="panel-title"><strong>Fleet tracking</strong></h3>              
                 </div>
                 <div class="container-fluid">
                     <div class="panel-body form-group-separated" style="min-height: 50px;">
@@ -77,7 +86,6 @@
                 <div class="panel-heading">
                     <h3 class="panel-title"><strong>Manage Fleet</strong></h3>              
                 </div>
-
                 <div class="container-fluid">
                     <div class="panel-body form-group-separated" style="min-height: 75px;">
                         <div class="panel-body panel-body-table">                       
@@ -89,7 +97,7 @@
                               <?php foreach(servicetypes() as $t) { ?>
                                 <option value="<?php print $t->typeid; ?>">
                                   <?php echo $t->servicename; ?>
-                              </option>
+                                </option>
                               <?php } ?>                                                                                             
                             </select> 
                           </div>
@@ -114,7 +122,7 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">                       
+                        <div class="col-md-2">                       
                             <div class="col-md-12" style="margin-bottom: 2%;">City</div>
                             <div class="col-md-12">
                                 <select name='city_id' id="city" class="form-control city">
@@ -122,10 +130,13 @@
                                 </select>   
                             </div>
                         </div>
-                        <div class="col-md-1" style="margin-top: 1.3%;">                       
-                            <div class="col-md-12">                              
+                        <div class="col-md-2" style="margin-top: 1.3%;">                       
+                            <div class="col-md-6">                              
                               <input type="button" onclick="search_driver()" name="" value="search" class="btn btn-submit">
-                            </div>                            
+                            </div>           
+                            <div class="col-md-6">                              
+                              <input type="button" id='HeatMap' value="HeatMap" class="btn btn-submit">
+                            </div>                                           
                         </div>
                     </div>
                 </div>                
@@ -139,106 +150,121 @@
                 </div>                
                 <div class="container-fluid">
                     <div class="panel-body form-group-separated" style="padding:5px !important">
-                        <div id="button"><button id="trafficToggle">Toggle Traffic Layer</button>
-                        <button onclick="toggleHeatmap()">Toggle Heatmap</button>
-                        <button id='HeatMap'>HeatMap</button>
+                        <div id="button">
+                          <button id="trafficToggle">Toggle Traffic Layer</button>                                            
                         </div>
                         <div class="panel-body panel-body-table">
-                        <div id="map"></div>
-                        <div id="mymap"></div>
-                        <div id="heatmap"></div>
-                          <!-- <?php echo $map['js']; ?> -->
-                          <!-- <?php echo $map['html']; ?> -->
+                          <!--div id="map"></div-->
+                          <div id="mymap"></div>
+                          <div id="heatmap" style="display:none;"></div>                          
                         </div>
                     </div>
                 </div>                
             </div>                    
         </div>
+  <?php $this->load->view('layout/footer');?> 
 
+  <script>
+    function cities(sel){
+       $(".sp-pre-con").css("display", "block");
+      //alert(sel.value);
+      $(".city option:gt(0)").remove(); 
+      var countryid=sel.value;
+      var countryname = sel.options[sel.selectedIndex].text;            
+      $('.city').find("option:eq(0)").html("Please wait....");
+      $('#HeatMap').prop('disabled', true);
+          $.ajax({
+          type: "get",
+          url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
+          dataType: "json",  
+          success:function(data){
+          console.log(data);
+          if(data!=null)
+          {
+              $(".sp-pre-con").css("display", "none"); 
+              $('#country_name').val(countryname);
+              $('.city').find("option:eq(0)").html("Please Select city");
+              $('.city').append(data.data);//alert(data);
+              $('#HeatMap').prop('disabled', false);
+              //console.log(data);  
+          }
+          else
+          {
+            $(".sp-pre-con").css("display", "none"); 
+            $('#cityError').text('City is not found. Please select another country');
+          }
+          }
+      });        
+    }
+  </script>
 
-<?php $this->load->view('layout/footer');?> 
-<script>
-function cities(sel)
-        {   //alert(sel.value);
-            $(".city option:gt(0)").remove(); 
-            var countryid=sel.value;
-            var countryname = sel.options[sel.selectedIndex].text;            
-            $('.city').find("option:eq(0)").html("Please wait....");
-                $.ajax({
-                type: "get",
-                url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
-                dataType: "json",  
-                success:function(data){
-                console.log(data);
-                if(data!=null)
-                {
-                    $('#country_name').val(countryname);
-                    $('.city').find("option:eq(0)").html("Please Select city");
-                    $('.city').append(data.data);//alert(data);
-                    //console.log(data);  
-                }
-                else
-                {
-                    $('#cityError').text('City is not found. Please select another country');
-                }
-                }
-            });        
-        }
+        <!--===================================== Map functionality start ==========================================-->
 
-</script>
-  <script src="http://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw&libraries=visualization" type="text/javascript"></script>
-  <script type="text/javascript">
-      var trafficLayer; var heatmap;
+  
+
+    <script type="text/javascript">
+
+    var map, heatmap; var arr=[];
+    function initMap() {
+      // document.getElementById('map').style.display="none";
       document.getElementById('mymap').style.display="none";
-      //var locations =fleetlocations();
-      var locations =[];
-      
-      var map = new google.maps.Map(document.getElementById('map'), {
+      document.getElementById('heatmap').style.display="block";
+
+      map = new google.maps.Map(document.getElementById('heatmap'), {
         zoom: 13,
-        center: new google.maps.LatLng(22.718991,75.855698),
+        center: {lat: 22.714066, lng: 75.874868},
         mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: 'greedy'
-      });  
-     //heat Map  
-     heatmap = new google.maps.visualization.HeatmapLayer();
-     google.maps.event.addDomListener(document.getElementById('HeatMap'), 'click', HeatMap);
+        gestureHandling: 'greedy'             
+      });
+       /*heat Map  */
+      heatmap = new google.maps.visualization.HeatmapLayer();
+      google.maps.event.addDomListener(document.getElementById('HeatMap'), 'click', HeatMap);
 
       trafficLayer = new google.maps.TrafficLayer();
       google.maps.event.addDomListener(document.getElementById('trafficToggle'), 'click', toggleTraffic);
+    }
 
-    function HeatMap() {   
-    if(heatmap.getMap() == null){
-          $.ajax({
+
+    function HeatMap() { 
+      var ctry = document.getElementById('country_id');
+      var country = ctry[ctry.selectedIndex].text;
+      var cty = document.getElementById('city');
+      var city = cty[cty.selectedIndex].text;      
+      // alert(city);
+        if(heatmap.getMap() == null){          
+          if(country=='Select Country' || city=='Please Select city' || city=='Please Select city'){
+            alert('Please select country and city');
+          }
+          else{ 
+            $(".sp-pre-con").css("display", "block");           
+            $.ajax({
             type: "POST",
-            url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
+            data:{'country':country,'city':city},
+            url: "<?php echo site_url('api/Auth/get_heatmap_Data');?>",                        
             dataType:'json',         
-            success:function(booking_data){              
-              if(booking_data.success==1){                               
+            success:function(booking_data){ 
+            console.log(booking_data);             
+              if(booking_data.success==1){   
+                $(".sp-pre-con").css("display", "none");
+                initMap();                                       
                 $.each(booking_data.data, function(k, v) {                                                     
                     arr.push(new google.maps.LatLng(v.lat,v.lng));                   
                 })
-                 heatmap = new google.maps.visualization.HeatmapLayer({
-                  data: arr,
-                  map: map
-                });
-
-                 /*var gradient = [
-                    'rgba(0, 255, 255, 0)',
-                    'rgba(0, 4, 255,1)',  
-                    'rgba(0, 4, 255,2)',                  
-                    'rgba(63, 0, 91, 1)',
-                    'rgba(127, 0, 63, 1)',
-                    'rgba(191, 0, 31, 1)',
-                    'rgba(255, 0, 0, 3)'
-                  ]
+                 heatmap = new google.maps.visualization.HeatmapLayer({data: arr,map: map});
+                 /*var gradient = ['rgba(0, 255, 255, 0)']
                   heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);*/
-                                                         
+              }
+              else{
+                $(".sp-pre-con").css("display", "none");
+                alert(booking_data.message);
+                location.reload(true);
               }                          
             }
           });
           //trafficLayer.setMap(map);
-        }    
-        else{
+        }          
+      }
+      else{
           heatmap.setMap(null);
         }
       //heatmap.setMap(heatmap.getMap() ? null : map);      
@@ -254,20 +280,12 @@ function cities(sel)
             trafficLayer.setMap(null);             
         }
     }
-
-    function fleetlocations()
-    {      
-       var locations = [
-        ['Madhumillan',22.714066, 75.874868,6],        
-      ];
-      //console.log(locations);
-
-      return locations;
-    }
+    
     //=========================================== Initial Map finish====================================
 
     function search_driver()
     {
+        $(".sp-pre-con").css("display", "block");
         var vtype = document.getElementById('service_type');
         var servicetype = vtype[vtype.selectedIndex].value;
         var driverid = document.getElementById('driver_id').value;
@@ -283,10 +301,12 @@ function cities(sel)
             success:function(locationdata){
               console.log(locationdata);
               if(locationdata[0]!=''){
+                $(".sp-pre-con").css("display", "none");
                 search_result(locationdata);  
               }              
           },
           error: function(){
+            $(".sp-pre-con").css("display", "none");
             alert('Search result is not found');
             location.reload(true);
           }
@@ -294,15 +314,14 @@ function cities(sel)
     }
 
     function search_result(locations){      
-      document.getElementById('map').style.display="none";
+      // document.getElementById('map').style.display="none";
       document.getElementById('mymap').style.display="block";
       var map = new google.maps.Map(document.getElementById('mymap'), {
       zoom: 13,
       center: new google.maps.LatLng(locations[0][1],locations[0][2]),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       gestureHandling: 'greedy'
-      });       
-
+      });    
       var infowindow = new google.maps.InfoWindow();
 
       var marker, i;
@@ -311,7 +330,8 @@ function cities(sel)
           marker     = new google.maps.Marker({
           position: new google.maps.LatLng(locations[i][1], locations[i][2]),        
           map: map,
-          icon: 'http://localhost/projects/cititaxi/mapmarker/car.png'
+          icon:'<?php echo base_url("mapmarker/car.png");?>'
+          // icon: 'http://localhost/projects/cititaxi/mapmarker/car.png'
         });
 
         google.maps.event.addListener(marker, 'click', (function(marker, i) {
@@ -325,53 +345,18 @@ function cities(sel)
     }
   }
 
-  //==============================Search Result Map finish=======================================================
+  //==============================Search Result Map finish=======================================================  
 
+    
+    </script>
 
+  <script src="https://maps.google.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw&libraries=visualization&callback=initMap" type="text/javascript"></script>
+  
+    <!--==============================HeatMap finish=======================================================-->      
 
-    function toggleHeatmap() {
-      //alert('heat');
-      initMap();
-      heatmap.setMap(heatmap.getMap() ? null : map);
-    }
-
-    var map, heatmap; var arr=[];
-    function initMap() {
-      document.getElementById('map').style.display="none";
-      document.getElementById('mymap').style.display="none";
-      document.getElementById('heatmap').style.display="block";
-
-      map = new google.maps.Map(document.getElementById('heatmap'), {
-        zoom: 13,
-        center: {lat: 22.714066, lng: 75.874868},
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: 'greedy'             
-      });
-
-      $.ajax({
-            type: "POST",
-            url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
-            dataType:'json',         
-            success:function(booking_data){              
-              if(booking_data.success==1){                               
-                $.each(booking_data.data, function(k, v) {                                                     
-                    arr.push(new google.maps.LatLng(v.lat,v.lng));                   
-                })
-                 heatmap = new google.maps.visualization.HeatmapLayer({
-                  data: arr,
-                  map: map
-                });
-                                                         
-              }                          
-            }
-          });     
-    }
-
-    //==============================HeatMap finish=======================================================      
-
-
-    function getMostlyBookingArea1(){  
-    var lat; h; var ltlg; var arr1 =[];   var arr=[]; 
+    <script>
+      function getMostlyBookingArea1(){  
+        var lat; h; var ltlg; var arr1 =[];   var arr=[]; 
         $.ajax({
             type: "POST",
             url: "<?php echo site_url('Fleet/last_hour_booking');?>",                        
@@ -387,56 +372,4 @@ function cities(sel)
           });
         //return h['ltlng'];
       }
-
-    function getmarkers(){
-      // return [new google.maps.LatLng(22.714195, 75.873585),(22.714076, 75.873768),(22.714848, 75.874733),(22.713403, 75.877405)];
-
-      //return
-      var heat = [new google.maps.LatLng(22.714195, 75.873585),
-          new google.maps.LatLng(22.714076, 75.873768),
-          new google.maps.LatLng(22.714848, 75.874733),
-          new google.maps.LatLng(22.713403, 75.877405),
-          new google.maps.LatLng(22.713405, 75.877455),
-          ];
-          //console.log(heat);
-          /*var heat = [
-            [22.714195,75.873585],
-            [22.714076,75.873768],
-            [22.714848,75.874733],
-            [22.713403,75.877405],
-            [22.713405,75.877455],
-          ];*/
-          console.log('hee'+heat);
-          return heat;
-          //return ["22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621", "22.713969,75.874621"];
-    }
-
-  </script>
-
-
-
-
-<!--script>
-      function initMap() {
-        var contentString = 'indore';
-         var infowindow = new google.maps.InfoWindow({
-            content: contentString
-          });
-
-        var indore = {lat: 22.7239575, lng: 75.7938098};
-        var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 12,
-          center: indore,
-          gestureHandling: 'greedy'
-        });
-        var marker = new google.maps.Marker({
-          position: indore,
-          map: map,         
-        });
-
-        marker.addListener('click', function() {
-          infowindow.open(map, marker);
-        });
-      }
     </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCDXXQzlm8TXhlOKaxWEmxoky8JRBODFgw&callback=initMap"></script-->

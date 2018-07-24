@@ -373,7 +373,7 @@
         } 
     });
 
-        // 2 Capitalize string first character to uppercase
+    // 2 Capitalize string first character to uppercase
     $('#txtcapital').keyup(function() {
         var caps = jQuery('#txtcapital').val(); 
         caps = caps.charAt(0).toUpperCase() + caps.slice(1);

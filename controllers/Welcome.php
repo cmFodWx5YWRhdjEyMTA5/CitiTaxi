@@ -200,6 +200,13 @@ class Welcome extends CI_Controller {
 
     }
 
+    public function checkNewMessage()  //to check later booking request
+    {        
+        $newdrivercount = $this->AuthModel->checkRows('support',array('seen_status'=>0));
+        print_r($newdrivercount);
+
+    }
+
 	public function unauthrised()
 	{
 		$data['heading']='404 Page Not Found';
@@ -217,6 +224,57 @@ class Welcome extends CI_Controller {
           }
         });
     });*/
+
+    public function dispatch_login()
+	{
+		//$data = new stdclass();
+		if(isset($_POST['login']))
+		{
+			extract($_POST);
+			$table_name ="dispatch";
+			$where=array('email'=>$loginemail,'password'=>md5($loginpassword));
+			//echo $loginpassword;
+			$check=$this->AuthModel->checkRows($table_name,$where);
+			//print_r($this->db->last_query());die();
+			if($check>0)
+			{
+				$res  = $this->AuthModel->getSingleRecord($table_name,$where);
+				//print_r($res);die();
+				$user_data = array('dis_id'=>$res->dispatcher_id,"dis_email"=>$res->email,"dis_name"=>$res->name,'dis_image'=>$res->image,'dis_country'=>$res->country,'dis_city'=>$res->city);
+	            $this->session->set_userdata($user_data);	            
+	            redirect('Dispatch');
+			}
+			else
+			{
+				$data['error']='1';
+				$data['message']='Please enter correct Email and Password';
+				$this->load->view('dispatch/login',$data);
+			}
+		}	
+		else
+		{
+			if($this->session->userdata('dis_email') != '')
+			{
+				redirect('Dispatch');
+			}
+			else
+			{				
+				$this->load->view('dispatch/login');
+			}
+		}
+	}
+	public function dispatch_logout()
+	{		
+		$keys = array('dis_id','dis_email','dis_name','dis_image','dis_country','dis_city');
+		$this->session->unset_userdata($keys);
+		/*$this->session->unset_userdata('dis_id');
+        $this->session->unset_userdata('dis_email');
+        $this->session->unset_userdata('dis_name');*/
+
+        // Set Message
+        $this->session->set_flashdata('logged_out','You have been Logged Out');        
+		redirect('Welcome/dispatch_login');	
+	}
 
 	
 	

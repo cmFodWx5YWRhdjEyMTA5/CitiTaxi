@@ -17,6 +17,124 @@ class Dummy extends CI_Controller {
 		echo json_encode($respose);
 	}
 
+    public function calculateFair()
+    {        
+        //$total_distance,$total_rideMinute        
+        extract($_POST);
+        $total_distance= str_replace(" km","",$_POST['distance']);
+        $total_rideMinute= str_replace(" mins","",$_POST['time']);   
+        $now = strtotime(date('h:i A')); 
+        //echo $total_distance;
+        // $fair_detail = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_id,'country'=>$this->country,'city'=>$this->city));
+        $fair_detail = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_id,'country'=>$_POST['country'],'city'=>$_POST['city']));
+        //print_r($fair_detail);die();       
+        
+        if(!empty($fair_detail))
+        {
+            //$fair_detail = $this->AuthModel->getSingleRecord('booking_fare',array('booking_id'=>$booking_id));
+            //echo json_encode($fair_detail);
+            $Extra_waitingMinute  = 0;  
+            $total_waitingCharge  = 0;
+            $total_perMinute_charge = 0;
+            $total_regularCharge    = 0;
+            if($Extra_waitingMinute>0)
+            {
+                $total_waitingCharge = $Extra_waitingMinute*($fair_detail->every_waiting_minute_charge/$fair_detail->paid_every_waiting_minute);
+            }   
+            if($total_distance>$fair_detail->min_distance)  //To calculate regularchage, Total distance must be grater then minimum distance other wise total regular charge will equal to minimum base fare
+            {
+                $t =  intval($total_distance);
+                if($t==$total_distance){
+                    $total_distance =$t;
+                }
+                $extra_distance = $total_distance-$fair_detail->min_distance;                               
+                $rightExtra = $this->BookingModel->rightMultiple($extra_distance,$fair_detail->regularChargeEveryDistance); 
+                //echo $rightExtra;die();               
+                $total_regularCharge = ($rightExtra/$fair_detail->regularChargeEveryDistance)*$fair_detail->regularChargeForDistance;
+
+                // $ntotal_regularCharge = ($total_distance-$fair_detail->min_distance/$fair_detail->regularChargeEveryDistance)*$fair_detail->regularChargeForDistance;            
+            }                     
+            if($fair_detail->perMinChargeStatus=='on')
+            {                
+                $minuteForCharge = $this->BookingModel->rightMultiple($total_rideMinute,$fair_detail->unitPerMinuteforCharge);
+                //echo $minuteForCharge;die();
+                $total_perMinute_charge = ($minuteForCharge/$fair_detail->unitPerMinuteforCharge)*$fair_detail->unitPerMinutecharge;    
+                //echo $total_perMinute_charge;die();    
+            }
+            $total_fair = $fair_detail->minbase_fair+$fair_detail->mini_distancefair+$total_waitingCharge+ $total_regularCharge+$total_perMinute_charge;
+            $total_surcharge = 0;
+            if($fair_detail->morningChargeStatus=='on' && $now>strtotime($fair_detail->morningSurchargeTimeStart) && $now<strtotime($fair_detail->morningSurchargeTimeEnd))
+            {
+                if($fair_detail->morningSurchargeUnit=='Per')
+                {
+                    $total_surcharge = ($total_fair*$fair_detail->morning_surcharge)/100;
+                    $total_fair = $total_fair+$total_surcharge;
+                }
+                else
+                {
+                    $total_surcharge = $fair_detail->morning_surcharge;
+                    $total_fair = $total_fair+$fair_detail->morning_surcharge;
+                }
+            }
+            elseif($fair_detail->eveningChargeStatus=='on' && $now>strtotime($fair_detail->eveningSurchargeTimeStart) && $now<strtotime($fair_detail->eveningSurchargeTimeEnd))
+            {
+                if($fair_detail->eveningSurchargeUnit=='Per')
+                {
+                    $total_surcharge = ($total_fair*$fair_detail->evening_surcharge)/100;
+                    $total_fair = $total_fair+$total_surcharge;
+                }
+                else
+                {
+                    $total_surcharge =$fair_detail->evening_surcharge;
+                    $total_fair = $total_fair+$fair_detail->evening_surcharge;
+                }
+            }
+            elseif($fair_detail->midNightChargeStatus=='on' && $now>strtotime($fair_detail->midNightSurchargeTimeStart) && $now<strtotime($fair_detail->midNightSurchargeTimeEnd))
+            {
+                if($fair_detail->midNightSurchargeUnit=='Per')
+                {
+                    $total_surcharge = ($total_fair*$fair_detail->midNightSurchargePrice)/100;
+                    $total_fair = $total_fair+(($total_fair*$fair_detail->midNightSurchargePrice)/100);
+                }
+                else
+                {
+                    $total_surcharge = $fair_detail->midNightSurchargePrice;
+                    $total_fair = $total_fair+$fair_detail->midNightSurchargePrice;
+                }
+            }
+            $data['total_regular_charge']=$total_regularCharge;
+            $data['total_per_minute_charge']= $total_perMinute_charge;
+            $data['total_waiting_charge']=$total_waitingCharge;
+            $data['total_surcharge']= $total_surcharge;
+            $data['total_fair'] =  ceil($total_fair);
+            $data['currency']   =  $fair_detail->currency;    
+            echo json_encode($data);                   
+            //print_r($data);
+        }
+    }
+
+
+
+    public function rightFactor(){
+        $minDistance = 2;
+        $minDistanceCharge = 50;
+        $total_distance = 45;
+        $everyDistance = 7;
+        $everyDistanceCharge = 10;
+        $extra_distance =  $total_distance-$minDistance;  //48-5 = 43km;  laana h 48
+        $extra = $extra_distance/$everyDistance;
+        if(is_float($extra_distance/$everyDistance)){
+           $x = floor($extra_distance/$everyDistance);              
+           $new = ($x+1)*$everyDistance;
+           //echo $new;
+        }
+        else{
+            $new = $extra_distance;
+        }
+        echo $new;
+    }
+
+
     public function genratePassword()
     {
         $password = $this->encrypt->encode($this->input->post('password'));
@@ -542,6 +660,12 @@ class Dummy extends CI_Controller {
             $user_id = $value->id;
             $this->DummyModel->singleInsert('wallet_balance',array('user_id'=>$user_id,'update_at'=>date('Y-m-d H:i:s')));
         }
+    }
+
+    public function checkEmailTemplate(){
+        $res = $this->AuthModel->getSingleRecord('users',array('email'=>'shubhamj@gmail.com','user_type'=>0));
+        $data = array('email'=>$res->email,'name'=>$res->name,'user_type'=>$res->user_type);        
+        $this->load->view('forget_passwordTemp',$data);
     }
 }
 

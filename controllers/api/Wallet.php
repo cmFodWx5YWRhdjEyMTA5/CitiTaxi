@@ -96,44 +96,51 @@ class Wallet extends CI_Controller {
 				$checkCrediantial = $this->AuthModel->checkRows('users',array("id"=>$sender_id,'citipay_pin'=>md5($pin)));
 				if($checkCrediantial)
 				{
-					$sender_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$sender_id));
-					$receiver_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$receiver_id));
-					if(!empty($sender_wallet))
+					if($sender_id==$receiver_id){
+						$response = array('success'=>0,'error'=>1,'message'=>'Invalid Transaction! Receiver and sender account must be different');
+						echo json_encode($response);die();
+					}
+					else
 					{
-						$sender_balance = $sender_wallet->balance;
-						$receiver_balance = $receiver_wallet->balance;
-						if($sender_balance>$amount)
+						$sender_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$sender_id));
+						$receiver_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$receiver_id));
+						if(!empty($sender_wallet))
 						{
-							$sender_newBalance = $sender_balance-$amount;
-							$receiver_newBalance = $receiver_balance+$amount;
-							$this->AuthModel->updateRecord(array('user_id'=>$sender_id),'wallet_balance',array('balance'=>$sender_newBalance,'update_at'=>date('Y-m-d H:i:s'))); //update sender balance
-							$this->AuthModel->updateRecord(array('user_id'=>$receiver_id),'wallet_balance',array('balance'=>$receiver_newBalance,'update_at'=>date('Y-m-d H:i:s')));//update receiver balance					
-							if($transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'cr','amount'=>$amount,'description'=>'internal transfer','transaction_status'=>'Success','reciver_balance'=>$receiver_newBalance,'sender_balance'=>$sender_newBalance,'transaction_at'=>date('Y-m-d H:i:s'))))              //store transaction record
+							$sender_balance = $sender_wallet->balance;
+							$receiver_balance = $receiver_wallet->balance;
+							if($sender_balance>$amount)
 							{
-								$response  = array("error"=>0,"success"=>1,"message"=>"CityPay ".$amount. " MMK has been transfer to ".$receiver_login,'transaction_id'=>$transaction_id);
-								echo json_encode($response);
-							} 
-							else{  //when transaction failed
-								$this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'','amount'=>$amount,'description'=>'Transaction is unsuccessful due to technical issue','transaction_status'=>'Failure','reciver_balance'=>$receiver_balance,'sender_balance'=>$sender_balance,'transaction_at'=>date('Y-m-d H:i:s')));
+								$sender_newBalance = $sender_balance-$amount;
+								$receiver_newBalance = $receiver_balance+$amount;
+								$this->AuthModel->updateRecord(array('user_id'=>$sender_id),'wallet_balance',array('balance'=>$sender_newBalance,'update_at'=>date('Y-m-d H:i:s'))); //update sender balance
+								$this->AuthModel->updateRecord(array('user_id'=>$receiver_id),'wallet_balance',array('balance'=>$receiver_newBalance,'update_at'=>date('Y-m-d H:i:s')));//update receiver balance					
+								if($transaction_id = $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'cr','amount'=>$amount,'description'=>'internal transfer','transaction_status'=>'Success','reciver_balance'=>$receiver_newBalance,'sender_balance'=>$sender_newBalance,'transaction_at'=>date('Y-m-d H:i:s'))))              //store transaction record
+								{
+									$response  = array("error"=>0,"success"=>1,"message"=>"CityPay ".$amount. " MMK has been transfer to ".$receiver_login,'transaction_id'=>$transaction_id);
+									echo json_encode($response);
+								} 
+								else{  //when transaction failed
+									$this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'','amount'=>$amount,'description'=>'Transaction is unsuccessful due to technical issue','transaction_status'=>'Failure','reciver_balance'=>$receiver_balance,'sender_balance'=>$sender_balance,'transaction_at'=>date('Y-m-d H:i:s')));
 
-								$this->AuthModel->updateRecord(array('user_id'=>$sender_id),'wallet_balance',array('balance'=>$sender_balance,'update_at'=>date('Y-m-d H:i:s'))); //Re-update sender balance
+									$this->AuthModel->updateRecord(array('user_id'=>$sender_id),'wallet_balance',array('balance'=>$sender_balance,'update_at'=>date('Y-m-d H:i:s'))); //Re-update sender balance
 
-								$this->AuthModel->updateRecord(array('user_id'=>$receiver_id),'wallet_balance',array('balance'=>$receiver_balance,'update_at'=>date('Y-m-d H:i:s')));//Re-update receiver balance	
+									$this->AuthModel->updateRecord(array('user_id'=>$receiver_id),'wallet_balance',array('balance'=>$receiver_balance,'update_at'=>date('Y-m-d H:i:s')));//Re-update receiver balance	
 
-								$response  = array("error"=>0,"success"=>1,"message"=>"Sorry! Transaction is unsuccessful. Please try again after few minutes");
+									$response  = array("error"=>0,"success"=>1,"message"=>"Sorry! Transaction is unsuccessful. Please try again after few minutes");
+									echo json_encode($response);
+								}
+							}
+							else
+							{
+								$this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'','amount'=>$amount,'description'=>'Insufficient balance','transaction_status'=>'Failure','reciver_balance'=>$receiver_balance,'sender_balance'=>$sender_balance,'transaction_at'=>date('Y-m-d H:i:s')));
+								$response  = array("error"=>1,"success"=>0,"message"=>"Transaction error. Check your wallet balance and try again");
 								echo json_encode($response);
 							}
 						}
-						else
-						{
-							$this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$receiver_id,'sender_id'=>$sender_id,'type'=>'','amount'=>$amount,'description'=>'Insufficient balance','transaction_status'=>'Failure','reciver_balance'=>$receiver_balance,'sender_balance'=>$sender_balance,'transaction_at'=>date('Y-m-d H:i:s')));
-							$response  = array("error"=>1,"success"=>0,"message"=>"Transaction error. Check your wallet balance and try again");
+						else{
+							$response  = array("error"=>1,"success"=>0,"message"=>"Oops! Something went wrong");
 							echo json_encode($response);
 						}
-					}
-					else{
-						$response  = array("error"=>1,"success"=>0,"message"=>"Oops! Something went wrong");
-						echo json_encode($response);
 					}
 				}
 				else

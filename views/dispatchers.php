@@ -1,4 +1,4 @@
-<?php $data['page']='fleet'; $data['title']='Fleet List'; $this->load->view('layout/header',$data);?>
+<?php $data['page']='fleet'; $data['title']='Dispatcher List'; $this->load->view('layout/header',$data);?>
           
             <!-- PAGE CONTENT WRAPPER -->
 
@@ -11,10 +11,10 @@
                             <div class="panel panel-default">
 
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Fleet List</strong></h3>
+                                    <h3 class="panel-title"><strong>Dispatcher List</strong></h3>
                                     <div class="btn-group pull-right">
-                                        <a href="<?php echo site_url('Fleet/add_fleet');?>">
-                                         <button type="button" class="btn btn-submit">Add Fleet</button>   
+                                        <a href="<?php echo site_url('Fleet/add_dispatcher');?>">
+                                         <button type="button" class="btn btn-submit">Add Dispatcher</button>   
                                         </a>
                                     </div>
                                     <?php if(isset($success)==1){ ?>
@@ -35,17 +35,15 @@
                                      <table id="example" class="table display">
                                         <thead>
                                             <tr>
-                                                <th style="min-width:50px;">#</th>
-                                                <th style="min-width:80px;">Fleet ID</th>
+                                                <th style="min-width:50px;">#</th>                                                
                                                 <th>Name</th>
                                                 <th>Phone</th>
-                                                <th>Email</th>
-                                                <th>Company name</th>
+                                                <th>Email</th>                                               
                                                 <th>Address</th>
                                                 <th>Country</th>
                                                 <th>City</th>
                                                 <th style="min-width:90px;">Image</th>  
-                                                <th>Creat At</th>                                          
+                                                <th>Register At</th>                                          
                                                 <th style="min-width:50px; text-align:center">Edit</th>
                                                 <th style="min-width:50px; text-align:center">Delete</th>
                                             </tr>
@@ -53,39 +51,35 @@
                                         <tbody>
                                         <?php
                                           $i=1;  
-                                        foreach($fleetlist as $list) {?>
+                                        foreach($dispatch as $list) {?>
                                             <tr>
                                                 <td style="text-align:center"><?php echo $i++;?></td>
-                                                <td><?php echo $list->fleet_id;?> </td>
-                                                <td><?php echo $list->fleet_name; ?>    </td> 
-                                                <td><?php echo $list->fleet_phone;?>   </td>      
-                                                <td><?php echo $list->fleet_email; ?>   </td>
-                                                <td><?php echo $list->fleet_company; ?>   </td>
-                                                <td><?php echo $list->fleet_address; ?>   </td>
-                                                <td><?php echo $list->country; ?>   </td>
-                                                <td><?php echo $list->city; ?>   </td>
+                                                <td><?php echo $list->name; ?></td> 
+                                                <td><?php echo $list->phone;?></td>      
+                                                <td><?php echo $list->email; ?></td>
+                                                <td><?php echo $list->address;?></td>                                                
+                                                <td><?php echo $list->country;?></td>
+                                                <td><?php echo $list->city; ?></td>
                                                 <td>
                                                     <?php echo "<img src=".base_url()."fleetImage/".$list->image." width='60px' height='60px' style='border-radius:33px'>";
                                                     ?>  
                                                 </td>                                                
-                                                <td><?php $t=$list->create_at;   $s=explode(" ",$t);  $e=implode(" / ",$s);
+                                                <td><?php $t=$list->register_at;   $s=explode(" ",$t);  $e=implode(" / ",$s);
                                                          echo $e; ?>
-                                                </td>                                                
-                                                  
+                                                </td>
                                                 <td>
-                                                    <a href="<?php echo site_url('Fleet/update_fleet/'.$list->fleet_id);?>">
+                                                    <a href="<?php echo site_url('Fleet/update_dispatcher/'.$list->dispatcher_id);?>">
                                                     <i class="fa fa-pencil fa-fw">
                                                     <strong>Edit</strong>
                                                     </i></a>
                                                 </td>
                                                 <td>
-                                                 <a href="<?php echo site_url('Home/delete_customer/'.$list->fleet_id);?>">
+                                                 <a href="<?php echo site_url('Home/delete_dispatcher/'.$list->dispatcher_id);?>">
                                                   <i class="fa fa-trash-o fa-fw">
                                                   <strong>Delete</strong></i>
                                                  </a>
                                                 </td>
-                                            </tr>
-                                            
+                                            </tr>                                            
                                         <?php } ?>
                                         </tbody>
                                     </table> 

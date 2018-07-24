@@ -737,12 +737,45 @@ class CustomerApi extends CI_Controller {
 
     public function my_points()   //Bonus&Gallery my_point tab
     {
-        if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+        if(isset($_POST['user_id']) && $_POST['user_id']!='' && isset($_POST['status']) && $_POST['status']!=''){
             extract($_POST);
-            $total_booking = $this->AuthModel->checkRows('booking',array('customer_id'=>$user_id));
+            $todaynd     = strtotime(date('d-m-Y').' 11:59 PM');
+            if($status==1){
+                $where = array('customer_id'=>$user_id,'booking_status'=>4,'customer_trip_score!='=>0);                
+            }
+            elseif($status==2){      //2=last 30 days 
+                $last30 = strtotime(date('d-m-Y',strtotime("-30 days")).' 00:00');                 
+                $where = array('booking_at_string>='=>$last30,'booking_at_string<='=>$todaynd,'customer_id'=>$user_id,'booking_status'=>4,'customer_trip_score!='=>0);
+            }
+            elseif($status==3){      //3=last 60 days  
+                $last60 = strtotime(date('d-m-Y',strtotime("-60 days")).' 00:00'); 
+                $where = array('booking_at_string>='=>$last60,'booking_at_string<='=>$todaynd,'customer_id'=>$user_id,'booking_status'=>4,'customer_trip_score!='=>0);
+            }
+            elseif($status==4){      //4=last 90 days  
+                $last90 = strtotime(date('d-m-Y',strtotime("-90 days")).' 00:00'); 
+                $where = array('booking_at_string>='=>$last90,'booking_at_string<='=>$todaynd,'customer_id'=>$user_id,'booking_status'=>4,'customer_trip_score!='=>0);
+            }
+            elseif($status==5){      //5=custom  
+                $data_val = array('user_id','status','from_date','to_date');
+                $validation = $this->AbhiModel->param_validation($data_val,$_POST);
+                if(isset($validation['status']) && $validation['status']=='0'){
+                    $response = array('success'=>0,'error'=>1,'message'=>$validation['message']);
+                    echo json_encode($response);die();                    
+                }
+                else{
+                    $from =  strtotime($from_date.' 00:00');
+                    $to   =  strtotime($to_date.' 11:59 PM');                                       
+                    $where = array('booking_at_string>='=>$from,'booking_at_string<='=>$to,'customer_id'=>$user_id,'booking_status'=>4,'customer_trip_score!='=>0);
+                }                
+            }
+            else{
+                $response = array('success'=>0,'error'=>1,'message'=>'invalid request');
+                echo json_encode($response);die();
+            }
+            $total_booking = $this->AuthModel->checkRows('booking',$where);
             $total_point=0;
             if($total_booking>0){
-                $bookings = $this->AuthModel->getMultipleRecord('booking',array('customer_id'=>$user_id),"");
+                $bookings = $this->AuthModel->getMultipleRecord('booking',$where,"");
                 foreach ($bookings as $key => $value) {
                     $total_point = $total_point+$value->customer_trip_score;
                     $booking_id  = $value->booking_id;
@@ -762,7 +795,7 @@ class CustomerApi extends CI_Controller {
                 echo json_encode($response);die();
             }
             else{
-                $response  = array("error"=>0,"success"=>2,"message"=>"No booking found");
+                $response  = array("error"=>0,"success"=>2,"message"=>"You have not gained points.");
                 echo json_encode($response);die();
             }
         }

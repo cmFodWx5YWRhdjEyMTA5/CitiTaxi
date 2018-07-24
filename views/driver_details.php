@@ -4,44 +4,36 @@
         table tbody th,td{
             border-left: 1px solid black;
         }
+        .sp-pre-con {
+          position: fixed;
+          left: 0px;
+          top: 0px;
+          width: 100%;
+          height: 100%;
+          z-index: 9999;        
+          background: url(<?php echo base_url('assest/images/myloading.gif'); ?>) center no-repeat #00000070;
+        } 
     </style>
             <!-- PAGE CONTENT WRAPPER -->
-
                 <div class="page-content-wrap">
-
                   <div class="row">
-
                         <div class="col-md-12">
-
                             <div class="panel panel-default">
-
+                            <div class="sp-pre-con" style="display: none;"></div>
                                 <div class="panel-heading">
-
                                     <h3 class="panel-title"><strong>Driver List</strong></h3>
                                     <?php if(isset($sucess)==1){ ?>
-
                                     <div class="alert alert-success">
-
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-
                                     <?php echo $message;?>
-
                                     </div>        
-
                                     <?php } else if(isset($error)==1) { ?>
-
                                     <div class="alert alert-danger">
-
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-
                                     <?php echo $message;?>
-
                                     </div>
-
                                     <?php }?>     
-
                                 </div>                                
-
                                 <div class="panel-body">
                                     <div class="table-responsive">
                                      <div id='list_table' style="overflow:scroll;">
@@ -127,12 +119,13 @@
                                                         }
                                                     }  ?>                                                    
                                                 </td>
-                                                <td></td>
-
+                                                <td>
+                                                    <a  href="#" id="link1" data-toggle="modal" data-target="#servicemodel">
+                                                    <button class="btn btn-submit" onclick="changeIt(<?php echo $list->id;?>)">Update Services</button></a>
+                                                </td>
                                                 <td><a  href="#" id="link1" data-toggle="modal" data-target="#exampleModal">
                                                     <button class="btn btn-reset" onclick="changeIt(<?php echo $list->id;?>)">Reset Password</button></a>
                                                 </td>
-
                                                 <td><a href="<?php echo site_url('Driver/other_details/'.$list->id);?>"><button class="btn btn-submit">Other Details</button></a>
                                                 </td>
                                                 <td style="text-align:center"><a href="<?php echo site_url('Home/get_feedback/'.$list->id.'/driver'); ?>">View</a></td>
@@ -153,7 +146,6 @@
                                                         </select>                                                       
                                                     </div>
                                                 </td>                                               
-
                                                 <td>
                                                     <a href="<?php echo site_url('Driver/update/'.$list->id);?>">
                                                     <i class="fa fa-pencil fa-fw">
@@ -202,14 +194,12 @@
                                     </div>                                   
                                     </div>
                                 </div>
-
                             </div>
                             <!-- END DATATABLE EXPORT -->
                         </div>
                     </div>
                 </div>         
-
-<!-- Modal to upload image -->
+<!-- Modal to update password -->
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">     
@@ -232,10 +222,44 @@
   </div>
 </div>
 
+<!-- Modal to update driver services -->
+<div class="modal fade" id="servicemodel" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">     
+      <div class="modal-body" style="height:100px;">                  
+        <div class="panel-body form-group-separated">             
+            <div class="form-group">         
+                <label class="col-md-3 control-label">Service Type Vehicle</label>
+                <div class="col-md-9 col-xs-12">              
+                    <select name='service_type[]' id="myDropdown" multiple class="form-control select" required>
+                    <?php foreach(servicetypes() as $t) { ?>
+                      <option value="<?php print $t->typeid; ?>">
+                        <?php echo $t->servicename; ?>
+                      </option>
+                    <?php } ?>                                                                           
+                    </select>   
+                </div>
+                    <span style="color:red">*If you want to update, Please Reselect which services will provided by driver </span> 
+                    <input type="hidden" id="user_id"/>
+            </div>
+        </div>      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-reset" data-dismiss="modal">Close</button>
+        <button type="submit" onclick="updateServices()" class="btn btn-submit">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
 
                 <!-- END PAGE CONTENT WRAPPER -->
-
 <?php $this->load->view('layout/second_footer');?> 
+<script type="text/javascript" src="<?php echo base_url();?>assest/js/plugins/bootstrap/bootstrap-select.js"></script>
 <script>
     function updatePassword()
     {
@@ -252,22 +276,51 @@
                     alert(res);
                     location.reload(true);
                 }
-
             });
         }
         else
         {
             return false;
         }
-
     }
     function changeIt(id)
     {
-        //alert(id);
+        //alert(id);        
         document.getElementById("userid").value=id;
+        document.getElementById("user_id").value=id;
         document.getElementById("password").value = random();
     }
 
+    function updateServices(){
+        var service = $('#myDropdown').val(); 
+        console.log(service);
+        var id  = $('#user_id').val(); 
+        if(service!=null && id!=''){
+            $(".sp-pre-con").css("display", "block"); 
+            $.ajax({
+                type:'POST',
+                dataType:'json',
+                data:{'user_id':id,'services':service},
+                url:site_url+'/Driver/updateService',
+                success:function(res){
+                    $(".sp-pre-con").css("display", "none"); 
+                    console.log(res);
+                    if(res.error==0){
+                        alert(res.message);
+                        location.reload(true);
+                    }
+                    else{
+                        alert(res.message);
+                        location.reload(true);
+                    }
+                }
+            });
+        }
+        else{
+            alert('Please select services');
+        }
+    }
+    
     function random()
     {
         var chars = "0123456789";

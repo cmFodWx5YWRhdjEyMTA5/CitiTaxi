@@ -15,12 +15,99 @@ class Home extends CI_Controller {
 
     public function index()        //customer details
     {
-        $this->load->view('Dashboard');
+        $this->load->view('dashboard');
     }
 
     public function analytics()
     {
         $this->load->view('analytics');
+    }
+
+    public function notifications(){
+        $message = $this->AuthModel->getMultipleRecord('support',array(),'');
+        //print_r($message);die();
+        if(!empty($message)){
+            $this->AuthModel->updateRecord(array('seen_status'=>0),'support',array('seen_status'=>1));
+            $data['messagelist'] = $message;
+            $this->load->view('support_notifications',$data);
+        }
+        else{            
+            $data['error'] = 1;
+            $data['message'] = 'No support message found';
+            $data['messagelist'] = $message;
+            $this->load->view('support_notifications',$data);
+        }
+    }
+
+    public function remove_supportmsg()
+    {
+        if(isset($_POST['submit']))
+        {            
+            extract($_POST); 
+            if($this->AuthModel->delete_record('support',array('support_id'=>$support_id)))
+            { 
+                $response = array("success"=>1,"error"=>0,"message"=>"Record has been successfully removed");               
+                echo json_encode($response);
+            }
+            else
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"Record is not removed, Please try again");               
+                echo json_encode($response);                
+            }
+        }
+        else{
+            $response = array("success"=>0,"error"=>1,"message"=>"access denied");               
+            echo json_encode($response);
+        }        
+    }
+
+    public function remove_Allsupportmsg()
+    {
+        if(isset($_POST['submit']))
+        {
+            extract($_POST); 
+            if($this->db->truncate('support'))
+            { 
+                $response = array("success"=>1,"error"=>0,"message"=>"All Record has been successfully removed");               
+                echo json_encode($response);
+            }
+            else
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"Record is not removed, Please try again");               
+                echo json_encode($response);                
+            }
+        }
+        else{
+            $response = array("success"=>0,"error"=>1,"message"=>"access denied");               
+            echo json_encode($response);
+        }        
+    }
+
+    public function remove_selected_msg(){       
+        if(isset($_POST['submit'])){
+            extract($_POST);
+            //print_r($_POST);
+            $dlt=0;
+            $data =''; 
+            foreach ($users as $v) {
+                if($this->AuthModel->delete_record('support',array('support_id'=>$v))){
+                    $dlt++;
+                }                
+            } 
+            if($dlt>0 or $dlt<=count($users)){
+                $response = array("success"=>1,"error"=>0,"message"=>"Record has been successfully removed");               
+                echo json_encode($response);   
+            }                            
+            else
+            {
+                $response = array("success"=>0,"error"=>1,"message"=>"Record is not removed, Please try again");               
+                echo json_encode($response);                
+            }
+        }
+        else{
+            $response = array("success"=>0,"error"=>1,"message"=>"access denied");               
+            echo json_encode($response);
+        }        
     }
 
     public function add_customer()
@@ -518,8 +605,7 @@ class Home extends CI_Controller {
                     $folder_name = 'serviceimage';
                     $unselectimage   = $this->AuthModel->imageUpload($_FILES['unselectimage'],$folder_name);
                 }
-                $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage);
-            
+                $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage,'description'=>$description);            
                 if($this->AuthModel->singleInsert('servicetype',$data))
                 {
                     $response = array("pagetype"=>'Add',"success"=>1,"message"=>'Service Type has been successfully saved');
@@ -535,9 +621,9 @@ class Home extends CI_Controller {
         else{
             $response=array("pagetype"=>'Add');
             $this->load->view('add_serviceType',$response);   
-        }
+        } 
     }
-
+    
     public function updateServiceType($service_id)
     {
         if($service_id=='')
@@ -573,7 +659,7 @@ class Home extends CI_Controller {
                             $folder_name = 'serviceimage';
                             $unselectimage   = $this->AuthModel->imageUpload($_FILES['unselectimg'],$folder_name);
                         }
-                        $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage);
+                        $data = array('servicename'=>$service_name,'selected_image'=>$selectimage,'unselected_image'=>$unselectimage,'description'=>$description);
                         if($this->AuthModel->updateRecord(array('typeid'=>$service_id),'servicetype',$data))
                         {
                             $service = $this->AuthModel->getSingleRecord('servicetype',array("typeid"=>$service_id));
@@ -833,12 +919,13 @@ class Home extends CI_Controller {
     {
         $this->AuthModel->updateRecord(array('seen_status'=>0),'booking',array('seen_status'=>1));        
         $orderby    = "`booking_id` DESC";
-        $where      = "((booking_status!=4 or booking_status!=3 or booking_status!=7) and booking_type='later')";
-        $customers = $this->AuthModel->getMultipleRecord('booking',$where,$orderby);
+        $where      = array('booking_status'=>'8','booking_status'=>'9');
+        //$where      = "((booking_status!=4 or booking_status!=3 or booking_status!=7) and booking_type='later')";
+        $customers  = $this->AuthModel->getMultipleRecord('booking',$where,$orderby);
         //print_r($customers);die();
         if(!empty($customers))
         {
-            $data['userlist']=$customers;            
+            $data['userlist'] = $customers;            
             $this->load->view('pending_details',$data);
         }
         else
@@ -1335,9 +1422,9 @@ class Home extends CI_Controller {
                         "rate"          =>$rate,
                         "max_amount"    =>$max_amount,
                         "min_trip_amount"=>$min_trip_amount,
-                        "start_date"    =>date('d-m-Y',strtotime($stdate)),
+                        "start_date"    =>$stdate,
                         "start_string"  =>strtotime($stdate),
-                        "end_date"      =>date('d-m-Y',strtotime($endate)),
+                        "end_date"      =>$endate,
                         "end_string"    =>strtotime($endate),
                         "promo_image"   =>$imagename,
                         "user_limit"    =>$user_limit,
@@ -1345,6 +1432,10 @@ class Home extends CI_Controller {
                         "attention"     =>$attention,
                         "promo_type"    =>$promo_type,
                     );
+                    if($endate>date('m/d/Y')){
+                        $data['status']='Active';
+                    }
+                    
                     if($this->AuthModel->updateRecord(array('promo_id'=>$id),'promocode',$data)){
                         if($attention=='All' && $code->attention!=$attention){
                             $users = $this->AuthModel->getMultipleRecord('users',array('user_type'=>0,'nationality'=>$country),'');
@@ -1541,6 +1632,15 @@ class Home extends CI_Controller {
                 echo json_encode($response);
         }        
     }
+
+    public function add_redeem_post(){
+        $this->load->view('add_redeem_post');
+
+    }
+
+
+
+
 
 
 

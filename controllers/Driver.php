@@ -82,7 +82,39 @@ class Driver extends CI_Controller {
         {
             echo json_encode(true);
         }
-    }  
+    } 
+
+    public function updateService(){
+        if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+            extract($_POST);
+            foreach($services as $k =>$v)
+            {
+                $c["driver_id"]         = $user_id;                
+                $c["service_type_id"]   = $v;                
+                $service_types[]=$c;
+            }            
+            if(!empty($service_types)){                            
+                if($this->AuthModel->delete_record('vehicle_servicetype',array('driver_id'=>$user_id))){
+                    if($this->AuthModel->batchInsert('vehicle_servicetype',$service_types)){
+                        $response = array('error'=>0,'message'=>'Record has been successfully updated');
+                        echo json_encode($response);
+                    }
+                    else{
+                        $response = array('error'=>1,'message'=>'Oops! Record has not update. Please try again');
+                        echo json_encode($response);
+                    }                    
+                }
+                else{
+                        $response = array('error'=>1,'message'=>'Oops! Record has not update. Please try again');
+                        echo json_encode($response);
+                }   
+            }
+        }
+        else{
+            $response = array('error'=>1,'message'=>'access denied');
+            echo json_encode($response);
+        }        
+    } 
 
 
     public function addDriver()
@@ -163,8 +195,7 @@ class Driver extends CI_Controller {
                     {
                         foreach($service_type as $k =>$v)
                         {
-                            $c["driver_id"]         = $uid;
-                            $c["vehicle_id"]        = $vid;
+                            $c["driver_id"]         = $uid;                            
                             $c["service_type_id"]   = $v;                
                             $service_types[]=$c;
                         }
@@ -619,25 +650,37 @@ class Driver extends CI_Controller {
         if(isset($_POST['submit']))
         {
             extract($_POST);
-            $data = array(
-                'weeklyTargetTrip'=>$weeklyTargetTrip,
-                'reward_unit'=>$reward_unit,
-                'reward_rate'=>$rewardRate,
-                'reward_status'=>'on'
-                );
-            if($this->AuthModel->singleInsert('driverweeklyreward',$data))
-            {
-                $res['success'] = 1;
-                $res['message'] = "Driver weekly target trip reward has been successfully saved";
-                $this->load->view('add_driverReward',$res);
-            }
-            else
-            {
-                $res['error'] = 1;
-                $res['message'] = "Oops! something went wrong, please try again";
-                $this->load->view('add_driverReward',$res);
-            }
 
+            $checkexist = $this->AuthModel->checkRows('driverweeklyreward',array('reward_type'=>$reward_type,'country'=>$country,'city'=>$city));
+            if($checkexist>0)
+            {
+                $response = array('error'=>1,'message'=>'Target trip already exist for this county');
+                $this->load->view('add_driverReward',$response);               
+            }
+            else{
+                $data = array(
+                    'reward_type'   =>$reward_type,
+                    'country'       =>$country,
+                    'city'          =>$city,
+                    'currency'      =>$currency,
+                    'weeklyTargetTrip'=>$weeklyTargetTrip,
+                    'reward_unit'   =>$reward_unit,
+                    'reward_rate'   =>$rewardRate,
+                    'reward_status' =>'on'
+                    );
+                if($this->AuthModel->singleInsert('driverweeklyreward',$data))
+                {
+                    $res['success'] = 1;
+                    $res['message'] = "Driver weekly target trip reward has been successfully saved";
+                    $this->load->view('add_driverReward',$res);
+                }
+                else
+                {
+                    $res['error'] = 1;
+                    $res['message'] = "Oops! something went wrong, please try again";
+                    $this->load->view('add_driverReward',$res);
+                }
+            }
         }
         else
         {            

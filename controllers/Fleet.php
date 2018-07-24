@@ -47,12 +47,12 @@ class Fleet extends CI_Controller {
             {
                 $respose["error"]=1;
                 $respose["message"]="Email already Exist";
-                $this->load->view('add_driver',$respose);
+                $this->load->view('add_fleet',$respose);
             }           
             elseif($mobileExist>0)
             {   
                 $respose= array("error"=>1,"message"=>"Mobile number has already registered");
-                $this->load->view('add_driver',$respose);
+                $this->load->view('add_fleet',$respose);
             }
             else
             {
@@ -202,7 +202,7 @@ class Fleet extends CI_Controller {
                 $name = ''; $id='';
                 if(!empty($driver_data)){$name=$driver_data->name; $id=$driver_data->id;}
                 $address = $ress->address;
-                $location[] =array($ress->address,$ress->latitude,$ress->longitude,$name,$id); 
+                $location[] =array($ress->address,$ress->latitude,$ress->longitude,$name,$id,$email,$mobile); 
                 //$locations = array($location);              
                 echo json_encode($location);                
             }            
@@ -255,9 +255,9 @@ class Fleet extends CI_Controller {
                         foreach ($ress as $k => $l) {
                             $driverid = $l->user_id;
                             $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
-                            $name = '';  $id='';
-                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
-                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id);                            
+                            $name = '';  $id='';$email='';$mobile='';
+                            if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;$email=$driver_data->email;$mobile=$driver_data->mobile;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id,$email,$mobile);                           
                         }                                
                         echo json_encode($location);                
                     }
@@ -285,9 +285,9 @@ class Fleet extends CI_Controller {
                         foreach ($ress as $k => $l) {
                             $driverid = $l->user_id;
                             $driver_data = $this->AuthModel->getSingleRecord('users',array('id'=>$driverid,'user_type'=>1));
-                            $name = ''; $id='';
-                           if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;}
-                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id);  
+                            $name = ''; $id='';$email='';$mobile='';
+                           if(!empty($driver_data)){$name=$driver_data->name;$id=$driver_data->id;$email=$driver_data->email;$mobile=$driver_data->mobile;}
+                            $location[] =array($l->address,$l->latitude,$l->longitude,$name,$id,$email,$mobile);  
                         }                                
                         echo json_encode($location);                
                     }
@@ -297,24 +297,169 @@ class Fleet extends CI_Controller {
         }        
     }
 
-    public function last_hour_booking(){       
-        //$current  =  date('d-m-Y h:i A');
-        //$current  =  date('d-m-Y h:i A',strtotime('02-06-2018 11:50 AM'));
-        //$start    =  date('d-m-Y h:i A',strtotime('-3 hour',strtotime($current)));
-        $current  =  strtotime('14-06-2018 05:50 PM');
-        $start    =  strtotime('-3 hour',strtotime($current));
-        //echo $start;die();
-        $booking  =  $this->AuthModel->getMultipleRecord('booking',array('booking_at_string>='=>$start,'booking_at_string<='=>$current),'booking_id DESC');
-        if(!empty($booking)){  
-            foreach ($booking as $key => $l) {
-                $latlng[] = array('lat'=>$l->pickupLat,'lng'=>$l->pickupLong);              
-            }          
-            $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$latlng);            
+    public function last_hour_booking(){ 
+        if(isset($_POST['country']) && $_POST['city']){
+            extract($_POST);
+            //$current  =  date('d-m-Y h:i A');
+            //$current  =  date('d-m-Y h:i A',strtotime('02-06-2018 11:50 AM'));
+            //$start    =  date('d-m-Y h:i A',strtotime('-3 hour',strtotime($current)));
+            $current  =  strtotime('14-06-2018 05:50 PM');
+            $start    =  strtotime('-3 hour',strtotime($current));
+            //echo $start;die();
+            $booking  =  $this->AuthModel->getMultipleRecord('booking',array('booking_at_string>='=>$start,'booking_at_string<='=>$current,'country'=>$country,'city'=>$city),'booking_id DESC');
+            if(!empty($booking)){  
+                foreach ($booking as $key => $l) {
+                    $latlng[] = array('lat'=>$l->pickupLat,'lng'=>$l->pickupLong);              
+                }          
+                $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$latlng);            
+                echo json_encode($response);
+            }else{
+                $response = array('success'=>0,'error'=>1,'message'=>'No booking found in this city since last 3 hours','data'=>$booking);
+                echo json_encode($response);
+           }
+        }   
+        else{
+            $response = array('success'=>0,'error'=>1,'message'=>'You have missed country and city');
             echo json_encode($response);
-        }else{
-            $response = array('success'=>0,'error'=>1,'message'=>'Booking is not found','data'=>$booking);
-            echo json_encode($response);
-       }        
+        }   
+                
+    }
+
+
+    public function dispatchers()
+    {
+        $table_name = 'dispatch';
+        $orderby    = "";
+        $where      = array();
+        $dispatchers    = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);
+        //print_r($fleets);die();
+        if(!empty($dispatchers))
+        {
+            $data['dispatch']=$dispatchers;            
+            $this->load->view('dispatchers',$data);
+        }
+        else
+        {
+            $data["error"] =1;
+            $data["message"] = 'Dispatchers is not found';
+            $data["dispatch"]= $dispatchers; 
+            $this->load->view('dispatchers',$data);
+        }
+
+    }
+    
+    public function add_dispatcher()
+    {
+        if(isset($_POST['submit']))
+        {
+            extract($_POST);
+            //print_r($_POST);die();
+            $table_name  = "dispatch";
+            $checkmail   = array("email"=>$dispatch_email);
+            $checkEmail  = $this->AuthModel->checkRows($table_name,$checkmail);                   
+            if($checkEmail>0)
+            {
+                $respose["error"]=1;
+                $respose["message"]="Email already Exist";
+                $this->load->view('add_dispatcher',$respose);
+            }                       
+            else
+            {
+                $imagename ='default.jpg';
+                if(isset($_FILES['image']))
+                {
+                    $folder_name = 'fleetimage';
+                    $imagename   = $this->AuthModel->imageUpload($_FILES['image'],$folder_name);
+                }
+                $data= array(               
+                    "name"      =>$name,
+                    "phone"     =>$dismobile,
+                    "email"     =>$dispatch_email,
+                    "password"  =>md5($password),
+                    "pass"      =>$password,
+                    "address"   =>$address,                    
+                    'country'   =>$country,                    
+                    "city"      =>$city,
+                    "image"     =>$imagename,                                                             
+                    );
+                if($uid = $this->AuthModel->singleInsert($table_name,$data))
+                {
+                    $respose["success"] = 1;
+                    $respose["message"] = "Dispatcher record has been successfully saved";
+                    $this->load->view('add_dispatcher',$respose);
+                }              
+                else
+                {
+                    $respose["error"] = 1;
+                    $respose["message"] = "Error occur! Please try again";
+                    $this->load->view('add_dispatcher',$respose);
+                }
+            }
+        }
+        else
+        {
+            $this->load->view('add_dispatcher');
+        }
+    }
+
+    public function update_dispatcher($dispatcher_id)
+    {
+        if($dispatcher_id!='')
+        {            
+            $dispdata = $this->AuthModel->getSingleRecord('dispatch',array('dispatcher_id'=>$dispatcher_id));
+            if(isset($_POST['submit']))
+            {
+                extract($_POST);                
+                $checkmail = $this->AuthModel->checkRows('dispatch',array('email'=>$dispatch_email));
+                if($checkmail>0 && $dispatch_email != $dispdata->email)
+                {
+                    $respose  = array("error"=>1,"message"=>"This email-id has already registered","details"=>$dispdata);
+                    $this->load->view('update_dispatcher',$respose);
+                }
+                else
+                {
+                    $imagename        = $dispdata->image;                   
+                    if(isset($_FILES['image']) && $_FILES['image']['name']!='')
+                    {
+                        $folder_name = 'fleetimage';
+                        $imagename   = $this->AuthModel->imageUpload($_FILES['image'],$folder_name);
+                    }
+                    $updata= array(               
+                        "name"      =>$name,
+                        "phone"     =>$dismobile,
+                        "email"     =>$dispatch_email,                        
+                        "address"   =>$address,                                            
+                        "image"     =>$imagename,                                                             
+                    );                    
+                    $UpdateData = $this->AuthModel->updateRecord(array('dispatcher_id'=>$dispatcher_id),'dispatch',$updata);
+                    if($UpdateData)
+                    {
+                        $fleetdata = $this->AuthModel->getSingleRecord('dispatch',array('dispatcher_id'=>$dispatcher_id));
+                        $response["success"]          = 1;
+                        $response["message"]          = "Record has been successfully updated";
+                        $response["details"]           = $fleetdata;
+                        $this->load->view('update_dispatcher',$response);
+                    }
+                    else
+                    {
+                        $response["error"]              = 1;    
+                        $response["message"]            = "Oops! Error occur. Please Try again";
+                        $response["details"]           = $fleetdata;
+                        $this->load->view('update_dispatcher',$response);
+                    }
+                }                 
+            }   
+            else
+            {
+                // print_r($dispdata);die();
+                $data['details'] = $dispdata; 
+                $this->load->view('update_dispatcher',$data);    
+            }
+        }
+        else
+        {
+            redirect(site_url('/Fleet'));
+        }
     }
 
         

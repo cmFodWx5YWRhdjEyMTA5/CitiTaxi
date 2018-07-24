@@ -97,12 +97,34 @@ if ( ! function_exists('getMultipleDetail')){
    }
 }
 
+if(! function_exists('updateRecord')){
+    function updateRecord($tablename,$where,$updata){
+      $ci =& get_instance();       
+      $ci->load->database();
+      $ci->db->where($where);
+      $query = $ci->db->update($tablename,$where)->result();
+      return $query;
+    }
+}
+
 if ( ! function_exists('getCount')){
    function getCount($tablename,$where){
        //get main CodeIgniter object
       //return $fleetid;die();
       $ci =& get_instance();       
       $ci->load->database();
+      $query = $ci->db->get_where($tablename,$where)->num_rows();
+      return $query;
+   }
+}
+
+if ( ! function_exists('getCountGroup_by')){
+   function getCountGroup_by($tablename,$col,$where){
+       //get main CodeIgniter object
+      //return $fleetid;die();
+      $ci =& get_instance();       
+      $ci->load->database();
+      $ci->db->group_by($col);
       $query = $ci->db->get_where($tablename,$where)->num_rows();
       return $query;
    }

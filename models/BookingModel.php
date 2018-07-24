@@ -231,6 +231,27 @@ class BookingModel extends CI_Model {
         return $this->db->get('orders');
     }
 
+    public function rightMultiple($num,$multipile_of){
+        if(is_float($num/$multipile_of)){
+           $x = floor($num/$multipile_of);              
+           $new = ($x+1)*$multipile_of;
+           //echo $new;
+        }
+        else{
+            $new = $num;
+        }
+        return $new;
+    }
+
+
+
+
+
+
+
+
+
+
     /*public function searchToAddress($rideId,$toAddLat,$toAddLng)
     {
         $this->db->select("ride.*,users.*,( 3959 * acos( cos( radians($toAddLat) ) * cos( radians(`toLat`) ) * cos( radians( `toLng` ) - radians($toAddLng) ) + sin( radians($toAddLat) ) * sin( radians( `toLat` ) ) ) ) AS distance");

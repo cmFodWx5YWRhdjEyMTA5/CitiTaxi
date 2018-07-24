@@ -16,7 +16,8 @@ class Auth extends CI_Controller {
 	}
 
 	public function signup()             //signup
-	{
+	{	
+
 		$respose = array("success"=>0,"error"=>0,"message"=>'');
 		$table_name = 'users';
 		if(isset($_POST['email']) && $_POST['email']!='' && isset($_POST['mobile']) && $_POST['mobile']!='')
@@ -34,11 +35,20 @@ class Auth extends CI_Controller {
 			}			
 			elseif($mobileExist>0)
 			{	
-				$respose= array("error"=>1,"message"=>"Mobile number has already registered");
+				$respose= array("success"=>0,"error"=>1,"message"=>"Mobile number has already registered");
 				echo json_encode($respose);
 			}
 			else
 			{
+				if(isset($_POST['referral_code']) && $_POST['referral_code']!=''){
+					$referral_code = $_POST['referral_code'];
+					$checkreferral = $this->AuthModel->checkRows($table_name,array('ref_code'=>$referral_code,'user_type'=>0));
+					if($checkreferral==0){
+						$respose= array("success"=>0,"error"=>1,"message"=>"Invalid Referral Code!");
+						echo json_encode($respose);die();
+					}						
+				}
+					
 				$imagename ='default.jpg';
 				if(isset($_FILES['image']))
 				{
@@ -73,7 +83,12 @@ class Auth extends CI_Controller {
 					);
 				
 				if($uid = $this->AuthModel->singleInsert($table_name,$data))
-				{					
+				{			
+				 	//Save referral setting	
+					if(isset($_POST['referral_code']) && $_POST['referral_code']!=''){
+						$referral_code = $_POST['referral_code'];
+						$this->AuthModel->saveReferralDiscount($uid,$name,$referral_code,$user_type);								
+					}	
 					$this->AuthModel->user_score($uid,0); //save for score
 					$where 			= array("id"=>$uid);
 					$record 		= $this->AuthModel->getSingleRecord($table_name,$where);
@@ -341,8 +356,8 @@ class Auth extends CI_Controller {
 				$UpdateData       = $this->AuthModel->keychange($ProfileData);
 				$rating           =get_rating($userid);
 				$UpdateData->rating = $rating;
+				$UpdateData->point= getSum('booking','customer_trip_score',array('customer_id'=>$userid));
 				$UpdateData->wallet_balance=$this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$userid))->balance;
-
 				$response["error"]				= 0;	
 				$response["success"]			= 1;
 				$response["message"]			= "Success";
@@ -703,6 +718,56 @@ class Auth extends CI_Controller {
 			        echo json_encode($response);
     			}
             }
+    	}
+    }
+
+    public function get_heatmap_Data(){   
+    	if(isset($_POST['country']) && $_POST['country']!='' && isset($_POST['city']) && $_POST['city']!=''){   
+    		extract($_POST);
+	        //$current  =  strtotime(date('d-m-Y h:i A'));
+	        //$current  =  date('d-m-Y h:i A',strtotime('02-06-2018 11:50 AM'));
+	        //$start    =  date('d-m-Y h:i A',strtotime('-3 hour',strtotime($current)));
+	        //$current  =  strtotime('14-06-2018 05:50 PM');
+	        $current  =  strtotime('14-06-2018 05:50 PM');
+	        $start    =  strtotime('-3 hour',$current);
+	        //echo $start;die();
+	        $booking  =  $this->AuthModel->getMultipleRecord('booking',array('booking_at_string>='=>$start,'booking_at_string<='=>$current,'country'=>$country,'city'=>$city),'booking_id DESC');
+	        if(!empty($booking)){ 
+	            foreach ($booking as $key => $l) {
+	                $latlng[] = array('lat'=>$l->pickupLat,'lng'=>$l->pickupLong);              
+	            }          
+	            $response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$latlng);
+	            echo json_encode($response);
+	        }else{
+	            $response = array('success'=>0,'error'=>1,'message'=>'Booking is not found','data'=>$booking);
+	            echo json_encode($response);
+	        }
+	   	}
+	   	else{
+            $response = array('success'=>0,'error'=>1,'message'=>'You have missed country and city');
+            echo json_encode($response);
+        }        
+    }
+
+    public function get_pagedata(){
+    	if(isset($_POST['page_name']) && $_POST['page_name']!=''){
+    		extract($_POST);
+    		$res = $this->AuthModel->getSingleRecord('wp_posts',array('post_title'=>$page_name,'post_status'=>'publish'));
+    		//print_r($this->db->last_query());
+    		if(!empty($res)){
+    			$res->post_content = str_replace("h4","h3",$res->post_content);
+    			$res->post_content = str_replace("h5","h3",$res->post_content);
+    			$res->post_content = str_replace("h1","h3",$res->post_content);
+    			$res->post_content = str_replace("h2","h3",$res->post_content);
+    			$data = array('post_date_gmt'=>$res->post_date_gmt,'post_title'=>$res->post_title,'post_content'=>$res->post_content);
+    			//print_r($res->post_content);die();
+    			$response = array('success'=>1,'error'=>0,'message'=>'success','data'=>$data);
+            	echo json_encode($response);
+    		}
+    		else{
+    			$response = array('success'=>0,'error'=>1,'message'=>'Page is not found','data'=>$res);
+            	echo json_encode($response);
+    		}
     	}
     }
 

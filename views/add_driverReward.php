@@ -1,4 +1,3 @@
-
 <?php if(isset($rewardData)){ $title = 'Update reward';} else { $title='Add Reward';}
 $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header',$data);?>
 <!-- PAGE CONTENT WRAPPER -->
@@ -8,10 +7,9 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Driver Rewards Commission Return</strong></h3>                            
+                                    <h3 class="panel-title"><strong>Driver Rewards Commission Return</strong></h3>
                                 </div>
-                        <div class="container">  
-                                    
+                        <div class="container">                                      
                             <?php if(isset($error)&& $error==1) { ?>
                             <div class="alert alert-danger">
                             <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -24,11 +22,17 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                             </div>
                             <?php } if(isset($rewardData)){ ?>
                             <form method="POST" action="<?php echo site_url('Driver/updateDriver_reward/'.$rewardData->reward_id);?>" class="form-horizontal"  id="apptimeline" name="frm">
-                                <div class="panel-body form-group-separated">                                    
+                                <div class="panel-body form-group-separated">
                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Hit Minimum traget trips  per week</label>
+                                        <label class="col-md-3 col-xs-12 control-label">Reward Type</label>
                                         <div class="col-md-6 col-xs-12">  
-                                            <input type="text" name="weeklyTargetTrip" id="targetTrip" class="form-control" data-toggle="tooltip" data-placement="top" title="Eg. 50 Trips  per week" value="<?php echo $rewardData->weeklyTargetTrip; ?>"  />
+                                            <span style="color:red"><?php echo $rewardData->reward_type.' ('.$rewardData->city.', '.$rewardData->country.')'; ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Hit traget trips  per week</label>
+                                        <div class="col-md-6 col-xs-12">  
+                                            <input type="text" name="weeklyTargetTrip" class="form-control" data-toggle="tooltip" data-placement="top" title="Eg. 50 Trips  per week" value="<?php echo $rewardData->weeklyTargetTrip; ?>"  />
                                         </div>
                                     </div>
                                     <div class="form-group">                                       
@@ -36,7 +40,7 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                                         <div class="col-md-6">              
                                             <select name='reward_unit' class="form-control" onChange="checkTargetTrip()" required>
                                                 <option value="<?php echo $rewardData->reward_unit;?>"><?php echo $rewardData->reward_unit;?></option>
-                                                <option value="Per">Percentage</option>
+                                                <option value="Percentage">Percentage</option>
                                                 <option value="Flat">Flat rate</option>
                                             </select>                                              
                                         </div>
@@ -48,21 +52,65 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                                             <span style="color:gray">(Eg. 5%  , It means 5 % return  back from his comission. if Flat rate, 10 MMK will be giving back to driver as reward for 50 trips(10MMK x 50 trips = 500 MMK ))</span>
                                         </div>
                                     </div>
-                                    
-                                    <div class="panel-footer">                                      
-                                      <input type="reset" value="Reset" class="btn btn-reset">  
-                                      <input type="submit" name="update" value="Update Reward" class="btn btn-submit pull-right">
+
+                                    <div class="panel-footer"> 
+                                        <div class="col-md-3">
+                                            <a href="<?php echo site_url('Driver/weeklyRewards'); ?>">
+                                            <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                            </a>
+                                        </div> 
+                                        <div class="col-md-3">
+                                            <input type="reset" class="btn btn-reset" value="Reset" style="margin:5px 0; width:100%;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="submit" name="update" value="Update Reward" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
+                                        </div>                                                                          
                                    </div>
                                 </div>
                             </form> 
                             <?php } else { ?>
 
                             <form method="POST" action="<?php echo site_url('Driver/addDriver_reward');?>" class="form-horizontal"  id="apptimeline" name="frm">
-                                <div class="panel-body form-group-separated">                                    
+                                <div class="form-group">
+                                        <label class="col-md-3 control-label">Country</label>
+                                        <div class="col-md-6">
+                                            <select name='country_id' class="form-control select" data-live-search="true" onChange="cities(this)" required>
+                                                <option value="">Select Country</option>
+                                                <?php foreach(countryies() as $country) { ?>
+                                                <option value="<?php print $country->id; ?>">
+                                                    <?php echo $country->name; ?>
+                                                </option>
+                                                <?php } ?> 
+                                            </select>
+                                            <input type="hidden" name="country" id="country_name">
+                                        </div>
+                                    </div>
                                     <div class="form-group">
-                                        <label class="col-md-3 col-xs-12 control-label">Hit Minimum traget trips  per week</label>
+                                        <label class="col-md-3 control-label">City</label>
+                                        <div class="col-md-6">
+                                            <select name='city_id' id="city" class="form-control city" required onChange="citiname(this)">
+                                                <option value="">Select City</option>
+                                            </select>
+                                            <span id='cityError' style="color:red;"></span>
+                                            <input type="hidden" name="city" id="city_name">
+                                            <input type="hidden" name="currency" id="currency">
+                                        </div>
+                                    </div>                                    
+                                    <div class="form-group">                                       
+                                        <label class="col-md-3 control-label">Reward Type</label>
+                                        <div class="col-md-6">              
+                                            <select name='reward_type' id='reward_type' class="form-control" onChange="checkTargetTrip()" required>
+                                                <option value="">Select</option>
+                                                <option value="Minimum">Minimum</option>
+                                                <option value="Maximum">Maximum</option>
+                                            </select>                                              
+                                        </div>
+                                    </div> 
+                                                                       
+                                    <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Hit traget trips  per week</label>
                                         <div class="col-md-6 col-xs-12">  
-                                            <input type="text" name="weeklyTargetTrip" id="targetTrip" class="form-control" data-toggle="tooltip" data-placement="top" title="Eg. 50 Trips  per week"  />
+                                            <input type="text" name="weeklyTargetTrip" class="form-control" data-toggle="tooltip" data-placement="top" title="Eg. 50 Trips  per week"  />
                                         </div>
                                     </div>
                                     <div class="form-group">                                       
@@ -70,7 +118,7 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                                         <div class="col-md-6">              
                                             <select name='reward_unit' class="form-control" onChange="checkTargetTrip()" required>
                                                 <option value="">Select</option>
-                                                <option value="Per">Percentage</option>
+                                                <option value="Percentage">Percentage</option>
                                                 <option value="Flat">Flat rate</option>
                                             </select>                                              
                                         </div>
@@ -83,9 +131,18 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
                                         </div>
                                     </div>
                                     
-                                    <div class="panel-footer">                                      
-                                      <input type="reset" value="Reset" class="btn btn-reset">  
-                                      <input type="submit" name="submit" value="Add Reward" class="btn btn-submit pull-right">
+                                    <div class="panel-footer"> 
+                                        <div class="col-md-3">
+                                            <a href="<?php echo site_url('Driver/weeklyRewards'); ?>">
+                                            <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                            </a>
+                                        </div> 
+                                        <div class="col-md-3">
+                                            <input type="reset" class="btn btn-reset" value="Reset" style="margin:5px 0; width:100%;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="submit" name="submit" value="Submit" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
+                                        </div>                                                                          
                                    </div>
                                 </div>
                             </form> 
@@ -103,24 +160,67 @@ $data['page']='vehicle'; $data['title']=$title; $this->load->view('layout/header
 <script type="text/javascript">
     function checkTargetTrip()
     {  
-        var targetTrip = $('#targetTrip').val();
-        //alert(targetTrip);
+        var reward_type = $('#reward_type').val();
+        var country = $('#country_name').val();        
+        var city = $('#city_name').val();        
+        //console.log(reward_type+' '+country);
         $.ajax({
         type: "post",
-        data:{'targetTrip':targetTrip},
+        data:{'reward_type':reward_type,'country':country,'city':city},
+        dataType:'json',
         url: "<?php echo site_url('Vehicle/checkTargetTrip');?>",         
-        success: 
-        function(data){
-            alert(data);
-            location.reload(true);
+        success:function(data){
+            if(data.error==1){
+                $('#reward_type').prop('selectedIndex',0);                
+                alert(data.message);return false;
+            }            
+            //location.reload(true);
             //console.log(data);       
+        },
+        error:function(data){
+            console.log(data);
         }
         });
-    
+    }    
+    function cities(sel)
+    {   //alert(sel.value);
+        $(".city option:gt(0)").remove(); 
+        var countryid=sel.value;
+        var countryname = sel.options[sel.selectedIndex].text;            
+        $('.city').find("option:eq(0)").html("Please wait....");
+            $.ajax({
+            type: "get",
+            url: "<?php echo site_url('Vehicle/cities/');?>"+countryid, 
+            dataType: "json",  
+            success:function(data){
+            //console.log(data);
+            if(data!=null)
+            {
+                $('#country_name').val(countryname);
+                $('.city').find("option:eq(0)").html("Please Select city");
+                $('#city').append(data.data);//alert(data);
+                //$('#currency').val('');
+                $('#currency').val(data.currency);
+                $('#cityError').text('');
+                //console.log(data);  
+            }
+            else
+            {
+                $('#cityError').text('City is not found. Please select another country');
+            }
+            }
+        });        
     }
+    function citiname(city)
+    {
+        var cityid   = city.value;
+        var cityname = city.options[city.selectedIndex].text;             
+        $('#city_name').val(cityname);
+    }
+    </script>
 
         
-</script>
+
 
 
 

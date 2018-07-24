@@ -52,7 +52,13 @@
                                             <div>(This image will show when icon is un-selected)</div>
                                         </div>
                                     </div>
-                                </div>  
+                                </div> 
+                                <div class="form-group">
+                                    <label class="col-md-3 col-xs-12 control-label">Description</label>
+                                    <div class="col-md-6 col-xs-12">   
+                                        <textarea class="form-control" rows="3" name="description"><?php echo  $service->description; ?></textarea>
+                                    </div>
+                                </div> 
                                     
                                 <div class="panel-footer" style="margin-top:20px;">
                                     <div class="col-md-1"></div>
@@ -120,6 +126,12 @@
                                             <div>(This image will show when icon is un-selected)</div>
                                         </div>
                                     </div>
+                                   <div class="form-group">
+                                        <label class="col-md-3 col-xs-12 control-label">Description</label>
+                                        <div class="col-md-6 col-xs-12">   
+                                            <textarea class="form-control" rows="3" name="description"></textarea>
+                                        </div>
+                                    </div>
                                 </div>  
                                     
                                 <div class="panel-footer" style="margin-top:20px;">
@@ -142,8 +154,6 @@
                         </form>                         
                     </div>
                     <?php } ?> 
-                    
-
                 </div>
             </div>                    
         </div>

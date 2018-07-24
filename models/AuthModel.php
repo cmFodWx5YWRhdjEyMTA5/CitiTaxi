@@ -592,6 +592,31 @@ class AuthModel extends CI_Model {
         }
     }
 
+    public function saveReferralDiscount($uid,$referral_code,$user_type){
+        $userdata = $this->db->get_where('users',array('ref_code'=>$referral_code,'user_type'=>$user_type))->row();        
+        if(!empty($userdata)){
+            $country = $userdata->nationality;
+            $setting = $this->db->get_where('referral_setting',array('country'=>$country,'user_type'=>$user_type))->row();
+            if(!empty($setting)){
+                $last_date = date('d-m-Y',strtotime(date('d-m-Y').'+'.$setting->within_days.' days'));                
+                $data = array(
+                    'user_id'=>$uid,
+                    'referral_user_id'=>$userdata->id,
+                    'referral_setting_id'=>$setting->referral_setting_id,
+                    'user_bonus'=>$setting->amount_to_frnd,
+                    'referral_bonus'=>$setting->bonus_to_referral,
+                    'min_ride'=>$setting->min_ride,
+                    'last_date'=>$last_date,
+                    'last_date_string'=>strtotime($last_date)
+                    );
+                $this->db->insert('user_referral_bonus',$data);               
+            }
+        }
+    }
+
+
+
+
     public function tableConfig()
     {
         $config['full_tag_open'] = "<ul class='pagination'>";

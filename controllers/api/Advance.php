@@ -274,7 +274,7 @@ class Advance extends CI_Controller {
 	public function suspendToactive_users()
 	{
 		$today = date('d-m-Y');
-		echo $today;
+		//echo $today;
 		$list = $this->AuthModel->getMultipleRecord('useraction',array('to'=>$today),'');
 		if(!empty($list)){
 			foreach ($list as $k => $l) {
@@ -297,4 +297,13 @@ class Advance extends CI_Controller {
 			}
 		}
 	}
+
+	public function activeToExpired_Promo()
+    {       
+        $today = date('d-m-Y');
+        $this->db->where(array('end_date<'=>strtotime($today),'status!='=>'Expired','end_date<'=>$today));
+        $this->db->update('promocode',array('status'=>'Expired'));
+        //print_r($this->db->last_query());
+    }
+
 }

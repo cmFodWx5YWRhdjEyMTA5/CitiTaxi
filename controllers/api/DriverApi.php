@@ -140,6 +140,14 @@ class DriverApi extends CI_Controller {
             }
             else
             {
+                if(isset($_POST['referral_code']) && $_POST['referral_code']!=''){
+                    $referral_code = $_POST['referral_code'];
+                    $checkreferral = $this->AuthModel->checkRows($table_name,array('ref_code'=>$referral_code,'user_type'=>1));
+                    if($checkreferral==0){
+                        $respose= array("success"=>0,"error"=>1,"message"=>"Invalid Referral Code!");
+                        echo json_encode($respose);die();
+                    }                       
+                }
                 $data = array(
                         "google_id"=>$google_id,
                         "ref_code"=>$this->AuthModel->radomno(6),
@@ -154,7 +162,11 @@ class DriverApi extends CI_Controller {
 
                     );                
                 if($uid = $this->AuthModel->singleInsert('users',$data))
-                {                    
+                {    
+                    if(isset($_POST['referral_code']) && $_POST['referral_code']!=''){
+                        $referral_code = $_POST['referral_code'];
+                        $this->AuthModel->saveReferralDiscount($uid,$name,$referral_code,$user_type);                               
+                    }                
                     if(isset($_FILES['licenseimage']) && $_FILES['licenseimage']['name']!='')
                     {
                         $folder_name  = 'licenseImage';
@@ -755,9 +767,16 @@ class DriverApi extends CI_Controller {
                         if($finalFair['promo_status']=='Yes'){
                             $this->updatePromoHistory($booking_id,$customer_id,$finalFair["total_fair"]);
                         }
+                        //Check for referral bonus if promocode not apply
+                        if($finalFair['promo_status']=='No'){
+                            $this->checkReferralBonus($booking_id,$customer_id,$finalFair['currency']);   
+                        }
+                        //Check driver weekly complete trip reward
+                        $this->driver_weeklyReward($driver_id,$country,$city);
 
                         //update driver online_Status
-                        $this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
+                        //$this->AuthModel->updateRecord(array("id"=>$driver_id),'users',array('online_status'=>'online'));
+                        //check user referral bonus
 
                         $respose = array("success"=>1, "error"=>0,"message"=>"Thanks for using CitiTaxi. Trip has been successfully completed","total_fair"=>$finalFair["total_fair"].' '.$finalFair['currency']);
                         echo json_encode($respose);    
@@ -781,6 +800,52 @@ class DriverApi extends CI_Controller {
             $this->index();
         }
     }
+
+
+
+    //For Referral bonus
+    function checkReferralBonus($booking_id,$customer_id,$currency){
+        $today = strtotime(date('d-m-Y'));        
+        $bonus = $this->AuthModel->getSingleRecord('user_referral_bonus',array('user_id'=>$customer_id,'last_date_string>='=>$today,'status'=>0));
+        //print_r($this->db->last_query());
+        if(!empty($bonus)){
+            $bonus_id = $bonus->referral_bonus_id;
+            $min_ride = $bonus->min_ride;
+            $countBooking = $this->AuthModel->checkRows('user_referral_history',array('user_referral_bonus_id'=>$bonus_id));
+            if($countBooking<$min_ride){
+                $data = array(
+                    'user_referral_bonus_id'=>$bonus_id,
+                    'booking_id'=>$booking_id,
+                    'user_id'=>$customer_id
+                    );
+                if($this->AuthModel->singleInsert('user_referral_history',$data))
+                {
+                    $newCount = $countBooking+1;
+                    if($newCount==$min_ride){
+                        $user_bonus = $bonus->user_bonus;
+                        $referral_id = $bonus->referral_user_id;
+                        $referral_bonus = $bonus->referral_bonus;
+                        $userWallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$customer_id));
+                        $referralWallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$referral_id));
+                        if(!empty($userWallet)){
+                            $preBalance = $userWallet->balance;
+                            $newBalance = $preBalance+$user_bonus;
+                            $this->AuthModel->updateRecord(array('user_id'=>$customer_id),'wallet_balance',array('balance'=>$newBalance));
+                            //send notification to customer get bonus in wallet
+                        }
+                        if(!empty($referralWallet)){
+                            $preBalance = $referralWallet->balance;
+                            $newBalance = $preBalance+$referral_bonus;
+                            $this->AuthModel->updateRecord(array('user_id'=>$referral_id),'wallet_balance',array('balance'=>$newBalance));
+                            //send notification to referral get bonus in wallet
+                        }
+                        $this->AuthModel->updateRecord(array('referral_bonus_id'=>$bonus_id),'user_referral_bonus',array('status'=>1));
+                    }
+                }
+            }
+        }        
+    }
+
 
     //update promo history after complete booking
     public function updatePromoHistory($booking_id,$customer_id,$total_fare){ 
@@ -850,6 +915,163 @@ class DriverApi extends CI_Controller {
         }
     }
 
+    //Check driver weekly Minimum and Maximum rewards
+    public function driver_weeklyReward($driver_id,$country,$city){
+        extract($_POST);
+        $driver_bonus =0;
+        $start    = date('d-m-Y',strtotime('this week monday'));
+        $end      = date('d-m-Y',strtotime('this week sunday'));
+        //echo $end;
+        //echo $start;die();
+        $earningDatest    = strtotime($start.' 00:00');            
+        $earningDatend    = strtotime($end.' 11:59 PM');
+        $completeTrip  = $this->AuthModel->checkRows('booking',array('booking_at_string>='=>$earningDatest,'booking_at_string<='=>$earningDatend,'driver_id'=>$driver_id,'booking_status'=>4)); // this week total trip
+        //print_r($this->db->last_query());
+        //echo $completeTrip;die();
+        if($completeTrip>0){
+            $minReward = $this->AuthModel->getSingleRecord('driverweeklyreward',array('reward_type'=>'min','country'=>$country,'city'=>$city));
+            $maxReward = $this->AuthModel->getSingleRecord('driverweeklyreward',array('reward_type'=>'max','country'=>$country,'city'=>$city));
+            $driver_wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$driver_id));
+            if(!empty($minReward)){                
+                $checkPreMinReward = $this->AuthModel->checkRows('driverweeklyreward_history',array('start_string'=>strtotime($start),'end_string'=>strtotime($end),'driver_id'=>$driver_id,'reward_type'=>'min'));
+                $checkPreMaxReward = $this->AuthModel->checkRows('driverweeklyreward_history',array('start_string'=>strtotime($start),'end_string'=>strtotime($end),'driver_id'=>$driver_id,'reward_type'=>'min'));
+                $targetMinTrip = $minReward->weeklyTargetTrip;
+                $targetMaxTrip = $maxReward->weeklyTargetTrip;   
+                //if driver not rewarded before
+                if(empty($checkPreMinReward)){
+                    if($completeTrip>$targetMinTrip && $minReward->reward_status=='on'){
+                    //echo 'yes';die();             
+                        if($minReward->reward_unit=='Per'){
+                            $total_commission = getSum('booking_earning','total_commission',array('driver_id'=>$driver_id));
+                            $bonus = ($total_commission*$minReward->reward_rate)/100;
+                            $driver_bonus = round($bonus,2);
+                        }
+                        else{
+                            $driver_bonus = $minReward->reward_rate;
+                        }
+                        //echo $driver_bonus;die();
+                        if($driver_bonus>0){
+                            $preBalance = $driver_wallet->balance;
+                            $newBalance = $preBalance+$driver_bonus;
+
+                            if($this->AuthModel->singleInsert('driverweeklyreward_history',array('driver_id'=>$driver_id,'reward_type'=>'min','reward_unit'=>$minReward->reward_unit,'reward_rate'=>$minReward->reward_rate,'commission_return'=>$driver_bonus,'weekdate_start'=>$start,'start_string'=>strtotime($start),'weekdate_end'=>$end,'end_string'=>strtotime($end))))
+                            {
+                                if($this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$newBalance,'update_at'=>date('Y-m-d H:i:s'))))//update sender balance
+                                {   
+                                    //store transaction record
+                                    if($this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'cr','amount'=>$driver_bonus,'description'=>'Weekly trip complete reward','transaction_status'=>'Success','reciver_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')))) 
+                                    {
+                                        $message = 'Congratulation! You have win weekly mininum trip complete reward '.$driver_bonus.' '.$minReward->currency;                          
+                                        $this->AuthModel->singleInsert('notifications', array('user_id'=>$driver_id,'subject'=>'Weekly minimum trip reward','message'=>$message,'type'=>0,'notification_at'=>date('Y-m-d H:i:s')));
+                                        //$this->Communication_model->sendToDriver($driver_id,$message);                                    
+                                    } 
+                                    else{
+                                        $this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$preBalance,'update_at'=>date('Y-m-d H:i:s')));
+                                        $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'','amount'=>$driver_bonus,'description'=>'Weekly trip complete reward fail','transaction_status'=>'Failure','reciver_balance'=>$preBalance,'transaction_at'=>date('Y-m-d H:i:s')));
+                                        $message = 'Congratulation! You have win weekly mininum complete trip reward '.$driver_bonus.' '.$minReward->currency.' . Due to technical issue transaction has fail. Please contact with support.';
+                                        //$this->Communication_model->sendToDriver($driver_id,$message);
+                                    }
+                                }
+                                else{
+                                    $message = 'Congratulation! You have win weekly mininum complete trip reward '.$driver_bonus.' '.$minReward->currency.'. Due to technical issue transaction has fail. Please contact with support.';
+                                    //$this->Communication_model->sendToDriver($driver_id,$message);
+                                }
+                            }                            
+                        }
+                    }
+                } 
+                elseif(empty($checkPreMaxReward)){
+                    if($completeTrip>$targetMaxTrip && $maxReward->reward_status=='on'){
+                        if($maxReward->reward_unit=='Per'){
+                            $total_commission = getSum('booking_earning','total_commission',array('driver_id'=>$driver_id));
+                            $bonus = ($total_commission*$maxReward->reward_rate)/100;
+                            $driver_bonus = round($bonus,2);
+                        }
+                        else{
+                            $driver_bonus = $maxReward->reward_rate;
+                        }
+                        if($driver_bonus>0){
+                            $preBalance = $driver_wallet->balance;
+                            $newBalance = $preBalance+$driver_bonus;
+
+                            if($this->AuthModel->singleInsert('driverweeklyreward_history',array('driver_id'=>$driver_id,'reward_type'=>'max','reward_unit'=>$maxReward->reward_unit,'reward_rate'=>$maxReward->reward_rate,'commission_return'=>$driver_bonus,'weekdate_start'=>$start,'start_string'=>strtotime($start),'weekdate_end'=>$end,'end_string'=>strtotime($end))))
+                            {
+                                if($this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$newBalance,'update_at'=>date('Y-m-d H:i:s'))))//update sender balance
+                                {   
+                                    //store transaction record
+                                    if($this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'cr','amount'=>$driver_bonus,'description'=>'Weekly trip complete reward','transaction_status'=>'Success','reciver_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')))) 
+                                    {
+                                        $message = 'Congratulation! You have win weekly maximum trip complete reward '.$driver_bonus.' '.$maxReward->currency;
+                                        $this->AuthModel->singleInsert('notifications', array('user_id'=>$driver_id,'subject'=>'Weekly maximum trip reward','message'=>$message,'type'=>0,'notification_at'=>date('Y-m-d H:i:s')));
+                                        //$this->Communication_model->sendToDriver($driver_id,$message);                                    
+                                    } 
+                                    else{
+                                        $this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$preBalance,'update_at'=>date('Y-m-d H:i:s')));
+                                        $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'','amount'=>$driver_bonus,'description'=>'Weekly trip complete reward fail','transaction_status'=>'Failure','reciver_balance'=>$preBalance,'transaction_at'=>date('Y-m-d H:i:s')));
+                                        $message = 'Congratulation! You have win weekly maximum complete trip reward '.$driver_bonus.' '.$maxReward->currency.'. Due to technical issue transaction has fail. Please contact with support.';
+                                        //$this->Communication_model->sendToDriver($driver_id,$message);
+                                    }
+                                }
+                                else{
+                                    $message = 'Congratulation! You have win weekly maximum complete trip reward '.$driver_bonus.' '.$maxReward->currency.'. Due to technical issue transaction has fail. Please contact with support.';
+                                    //$this->Communication_model->sendToDriver($driver_id,$message);
+                                }
+                            }
+                        }
+                    }
+                }
+                /*else{
+                    echo 'insufficient trip';
+                } */               
+            }
+            elseif(!empty($maxReward)){
+                $checkPreMaxReward = $this->AuthModel->checkRows('driverweeklyreward_history',array('start_string'=>$earningDatest,'end_string'=>$earningDatend,'driver_id'=>$driver_id,'reward_type'=>'min'));
+                if(empty($checkPreMaxReward)){
+                    $targetMaxTrip = $maxReward->weeklyTargetTrip;
+                    if($completeTrip>$targetMaxTrip && $maxReward->reward_status=='on'){
+                        if($maxReward->reward_unit=='Per'){
+                            $total_commission = getSum('booking_earning','total_commission',array('driver_id'=>$driver_id));
+                            $bonus = ($total_commission*$maxReward->reward_rate)/100;
+                            $driver_bonus = round($bonus,2);
+                        }
+                        else{
+                            $driver_bonus = $maxReward->reward_rate;
+                        }
+                        if($driver_bonus>0){
+                            $preBalance = $driver_wallet->balance;
+                            $newBalance = $preBalance+$driver_bonus;
+                            if($this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$newBalance,'update_at'=>date('Y-m-d H:i:s'))))//update sender balance
+                            {   
+                                //store transaction record
+                                if($this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'cr','amount'=>$driver_bonus,'description'=>'Weekly maximum trip complete reward','transaction_status'=>'Success','reciver_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')))) 
+                                {
+                                    $message = 'Congratulation! You have win weekly maximum trip complete reward '.$driver_bonus.' '.$maxReward->currency;
+                                    $this->AuthModel->singleInsert('notifications', array('user_id'=>$driver_id,'subject'=>'Weekly maximum trip reward','message'=>$message,'type'=>0,'notification_at'=>date('Y-m-d H:i:s')));
+                                    $this->Communication_model->sendToDriver($driver_id,$message);                                    
+                                } 
+                                else{
+                                    $this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$preBalance,'update_at'=>date('Y-m-d H:i:s')));
+                                    $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>$driver_id,'type'=>'','amount'=>$driver_bonus,'description'=>'Weekly maximum trip complete reward fail','transaction_status'=>'Failure','reciver_balance'=>$preBalance,'transaction_at'=>date('Y-m-d H:i:s')));
+                                    $message = 'Congratulation! You have win weekly maximum complete trip reward '.$driver_bonus.' '.$maxReward->currency'. Due to technical issue transaction has fail. Please contact with support.';
+                                    $this->Communication_model->sendToDriver($driver_id,$message);
+                                }
+                            }
+                            else{
+                                $message = 'Congratulation! You have win weekly maximum complete trip reward '.$driver_bonus.' '.$maxReward->currency'. Due to technical issue transaction has fail. Please contact with support.';
+                                $this->Communication_model->sendToDriver($driver_id,$message);
+                            }
+                        }
+                    }                    
+                } 
+            }
+        }
+    }
+
+
+
+
+
+
     public function oldupdatePromoHistory($booking_id,$customer_id,$total_fare){ //update promo history after complete booking
         $promo = $this->AuthModel->getSingleRecord('promocode_history',array('booking_id'=>$booking_id,'user_id'=>$customer_id));
         if(!empty($promo)){
@@ -897,47 +1119,48 @@ class DriverApi extends CI_Controller {
             $total_regularCharge    = 0;
             if($Extra_waitingMinute>0)
             {
-                $total_waitingCharge = $Extra_waitingMinute*($fair_detail->every_waiting_minute_charge/$fair_detail->paid_every_waiting_minute);
+                $rightExtraWiting = $this->BookingModel->rightMultiple($Extra_waitingMinute,$fair_detail->paid_every_waiting_minute);
+                $total_waitingCharge = ($rightExtraWiting/$fair_detail->paid_every_waiting_minute)*$fair_detail->every_waiting_minute_charge;                
+                // $total_waitingCharge = $Extra_waitingMinute*($fair_detail->every_waiting_minute_charge/$fair_detail->paid_every_waiting_minute);
             }   
-            if($total_distance>$fair_detail->mini_distance)  //To calculate regularchage, Total distance must be grater then minimum distance other wise total regular charge will equal to minimum base fare
+            if($total_distance>$fair_detail->mini_distance)  //To calculate regularcharge, Total distance must be grater then minimum distance other wise total regular charge will equal to minimum base fare
             {
-                $total_regularCharge = ($total_distance-$fair_detail->mini_distance)*$fair_detail->regular_distance_charge/$fair_detail->regular_charge_distance;      
-            }         
-            
-            if($fair_detail->per_minute!=0 or $fair_detail->per_minute!='')
-            {
-                $total_perMinute_charge = $total_rideMinute*$fair_detail->per_minute_charge/$fair_detail->per_minute;    
+                $extra_distance = $total_distance-$fair_detail->mini_distance;
+                $rightExtra = $this->BookingModel->rightMultiple($extra_distance,$fair_detail->regular_charge_distance);
+                $total_regularCharge = ($rightExtra/$fair_detail->regular_charge_distance)*$fair_detail->regular_distance_charge;
+
+                //$total_regularCharge = ($total_distance-$fair_detail->mini_distance/$fair_detail->regular_distance_charge)*$fair_detail->regular_charge_distance;    
+                //regularcharge = (total_distance-mini_distance)*distance_charge/everydistanceforcharge;  
+            }
+            if($fair_detail->per_minute!=0 or $fair_detail->per_minute!=''){  
+                $minuteForCharge = $this->BookingModel->rightMultiple($total_rideMinute,$fair_detail->per_minute);
+                $total_perMinute_charge = ($minuteForCharge/$fair_detail->per_minute)*$fair_detail->per_minute_charge;
+
+                // $total_perMinute_charge = ($total_rideMinute/$fair_detail->per_minute)*$fair_detail->per_minute_charge;    
             }
             $total_fair = $fair_detail->base_fair+$fair_detail->multi_address_charge+$fair_detail->mini_distance_fair+$total_waitingCharge+ $total_regularCharge+$total_perMinute_charge;
             $total_surcharge = 0;
-            if($fair_detail->morning_surcharge_unit!='')
-            {
-                if($fair_detail->morning_surcharge_unit=='Per')
-                {
+            if($fair_detail->morning_surcharge_unit!=''){
+                if($fair_detail->morning_surcharge_unit=='Per'){
                     $total_surcharge = ($total_fair*$fair_detail->morning_surcharge)/100;
                     $total_fair = $total_fair+$total_surcharge;
                 }
-                else
-                {
+                else{
                     $total_surcharge = $fair_detail->morning_surcharge;
                     $total_fair = $total_fair+$fair_detail->morning_surcharge;
                 }
             }
-            elseif($fair_detail->evening_surcharge_unit!='')
-            {
-                if($fair_detail->evening_surcharge_unit=='Per')
-                {
+            elseif($fair_detail->evening_surcharge_unit!=''){
+                if($fair_detail->evening_surcharge_unit=='Per'){
                     $total_surcharge = ($total_fair*$fair_detail->evening_surcharge)/100;
                     $total_fair = $total_fair+$total_surcharge;
                 }
-                else
-                {
+                else{
                     $total_surcharge =$fair_detail->evening_surcharge;
                     $total_fair = $total_fair+$fair_detail->evening_surcharge;
                 }
             }
-            elseif($fair_detail->midnight_surcharge_unit!='')
-            {
+            elseif($fair_detail->midnight_surcharge_unit!=''){
                 if($fair_detail->midnight_surcharge_unit=='Per')
                 {
                     $total_surcharge = ($total_fair*$fair_detail->midnight_surcharge)/100;
@@ -953,10 +1176,10 @@ class DriverApi extends CI_Controller {
             $data['total_per_minute_charge']= $total_perMinute_charge;
             $data['total_waiting_charge']=$total_waitingCharge;
             $data['total_surcharge']= $total_surcharge;
-            $data['total_fair'] =  $total_fair;
-            $data['currency']   =  $booking_detail->currency;
-            $data['country']    =  $booking_detail->country;
-            $data['city']       =  $booking_detail->city;
+            $data['total_fair'] = $total_fair;
+            $data['currency']= $booking_detail->currency;
+            $data['country']=  $booking_detail->country;
+            $data['city']=  $booking_detail->city;
             $data['promo_status'] = $booking_detail->promo_status;
             return $data;
         }
@@ -1237,7 +1460,7 @@ class DriverApi extends CI_Controller {
         //param => booking_id,driver_id,customer_id,cancel_reason
         $response=array();
         $responsedata=array();
-        $driver_cancelCharge=0;    
+        $driver_cancelCharge=0;       
         $current_time=date('Y-m-d H:i:s',time());
         $data_val = array('booking_id','driver_id','customer_id','cancel_reason');
         $validation = $this->AbhiModel->param_validation($data_val,$_REQUEST);
@@ -1254,19 +1477,21 @@ class DriverApi extends CI_Controller {
             $date=strtotime(date("Y-m-d h:i:s"));
         
             $where=array('booking_id'=>$booking_id,'driver_id'=>$driver_id);
-            $response1=$this->AbhiModel->select_query('booking',$where);
-            //print_r($response1[0]);die();
+            $response1=$this->AbhiModel->select_query('booking',$where);                
             if(!empty($response1))
-            {        
+            {      
+                //get fare details to get cancel chrage
                 $typeid = $response1[0]->service_typeid;  $country = $response1[0]->country;
                 $city   = $response1[0]->city;  
-                $limit  = $this->AuthModel->getSingleRecord('fare',array('serviceType_id'=>$typeid,'country'=>$country,'city'=>$city));             
-                $booking_status = $response1[0]->booking_status;
-                $where          = array('user_id'=>$driver_id);
-                $response11     = $this->AbhiModel->select_query('users_score',$where);
-                $trip_score_check = $response11[0]->total_score;
-                $banned_count   = $response11[0]->banned_count;
-                $trip_score     = $trip_score_check-0.1;
+                $limit  = $this->AuthModel->getSingleRecord('fare',array('serviceType_id'=>$typeid,'country'=>$country,'city'=>$city)); 
+                //============================================                
+                $booking_status=$response1[0]->booking_status;
+                //echo $booking_status;die();
+                $where=array('user_id'=>$driver_id);
+                $response11=$this->AbhiModel->select_query('users_score',$where);
+                $trip_score_check=$response11[0]->total_score;
+                $banned_count=$response11[0]->banned_count;
+                $trip_score=$trip_score_check-0.1;
 
                 if ($booking_status=='0') //cancel before accept
                 {
@@ -1290,10 +1515,12 @@ class DriverApi extends CI_Controller {
                         $driver_cancelCharge = ($response1[0]->total_fare*$driver_cancelCharge)/100;
                     }                                            
                 }
-                //============================Update in Booking table===================================//
+                //echo $driver_cancelCharge;die();
+                 //============================Update in Booking table===================================//
 
-                $cancellbooking=array('booking_status'=>2,'cancel_reason'=>$cancel_reason,'cancel_charge'=>$driver_cancelCharge,'cancel_at'=>date('d-m-Y h:i A'));
+                $cancellbooking=array('booking_status'=>'2','cancel_reason'=>$cancel_reason,'cancel_charge'=>$driver_cancelCharge,'cancel_at'=>date('d-m-Y h:i A'));
                 $wh=array('booking_id'=>$booking_id,'driver_id'=>$driver_id);
+
                 $bookingCanelled=$this->AbhiModel->update_query('booking',$cancellbooking,$wh);
                 if($bookingCanelled)
                 {
@@ -1302,14 +1529,16 @@ class DriverApi extends CI_Controller {
                         $wallet = $this->AuthModel->getSingleRecord('wallet_balance',array('user_id'=>$driver_id));
                         if(!empty($wallet)){       
                             $preBalance = $wallet->balance;
-                            $newBalance = $preBalance-$driver_cancelCharge;  
+                            $newBalance = $preBalance-$driver_cancelCharge; 
+                            $currency   = $limit->currency; 
                             $this->AuthModel->updateRecord(array('user_id'=>$driver_id),'wallet_balance',array('balance'=>$newBalance,'update_at'=>date('Y-m-d H:i:s')));//update customer balance                   
-                            $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>0,'sender_id'=>$driver_id,'type'=>'dr','amount'=>$driver_cancelCharge,'description'=>'Cancel charge of booking id '.$booking_id,'transaction_status'=>'Success','reciver_balance'=>0,'sender_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')));   //store transaction record
+                            $dcg= $this->AuthModel->singleInsert('wallet_transaction',array('receiver_id'=>0,'sender_id'=>$driver_id,'type'=>'dr','amount'=>$driver_cancelCharge,'description'=>'Cancel charge of booking id '.$booking_id,'transaction_status'=>'Success','reciver_balance'=>0,'sender_balance'=>$newBalance,'transaction_at'=>date('Y-m-d H:i:s')));   //store transaction record                            
+                            $message = $driver_cancelCharge.' '.$currency.' has been Debited from your CitiPay wallet due to cancel booking';
+                            //$this->Communication_model->sendToDriver($driver_id,$message);
                         }
                     }
-
-                    $customer_msg = "Sorry! Your Booking has been cancelled by driver";
-                    //$this->Communication_model->sendToPassenger($customer_id,$customer_msg);
+                    /*=========================================================*/
+                   
                     if($trip_score == '8.9')
                     {
                         $updatestatus=array('activeStatus'=>'Suspend','suspend_type'=>'7 Day');          
@@ -1352,10 +1581,21 @@ class DriverApi extends CI_Controller {
                         echo json_encode(array('response'=>'true','Data'=>'Booking has been cancelled. Your account is black listed due to exceeded weekly cancellation limit many times'));die;                
                     }
                     else{
-                        //=================Notification======================//
-                        $drivermessage = "Your booking has been successfully cancelled";   
-                        //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
-                        echo json_encode(array('response'=>'true','Data'=>'Your booking has been successfully cancelled'));
+                        if ($booking_status=='0') //booking neglect
+                        {
+                            //$customer_msg = "Sorry! Driver is not responding. Please try again.";
+                            $this->Communication_model->sendToPassenger($customer_id,$customer_msg);                            
+                            echo json_encode(array('response'=>'true','Data'=>'Your booking has been neglected'));
+                            die();
+                        }
+                        else{
+                            //=================Notification======================//
+                            $customer_msg = "Sorry! Your Booking has been cancelled by driver";
+                            //$this->Communication_model->sendToPassenger($customer_id,$customer_msg);
+                            $drivermessage = "Your booking has been successfully cancelled";   
+                            //$this->Communication_model->sendToDriver($driver_id,$drivermessage);
+                            echo json_encode(array('response'=>'true','Data'=>'Your booking has been successfully cancelled'));
+                        }
                     }
                 }
                 else{
@@ -1367,7 +1607,7 @@ class DriverApi extends CI_Controller {
             echo json_encode(array('response'=>'false','message'=>'Please enter valid booking id!'));die;
             }     
         }
-    }
+    }    
 
    public function getDailyEarning(){  //for daily earning and month tab click
 

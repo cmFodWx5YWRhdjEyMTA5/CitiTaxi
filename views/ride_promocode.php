@@ -1,13 +1,12 @@
 <?php $data['page']='coupon'; $data['title']='Ride Promocode'; $this->load->view('layout/header',$data);?>
           
             <!-- PAGE CONTENT WRAPPER -->
-
                 <div class="page-content-wrap">
                   <div class="row">
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Ride Promocodes</strong></h3>
+                                    <h3 class="panel-title"><strong>Ride Promo Codes</strong></h3>
                                     <div class="btn-group pull-right">
                                       <a href="<?php echo site_url('Home/add_ride_promocode');?>">
                                          <button type="button" class="btn btn-submit">Add Promocode</button>   
@@ -41,14 +40,14 @@
                                                 <th>Min Trip Amount</th>                                               
                                                 <th>Start Date</th>                                               
                                                 <th>End Date</th>                                               
-                                                <th>User Limit</th>                                               
-                                                <th>Number of times</th>
+                                                <th>Users Limit</th>                                               
+                                                <th>Number of Times</th>
                                                 <th>Promo Type</th>                                               
                                                 <th>Image</th>
                                                 <th>Attention</th>                                               
                                                 <th>Action</th>
                                                 <th>Status</th>
-                                                <th>Creat At</th>                                          
+                                                <th>Created At</th>                                          
                                                 <th style="min-width:50px; text-align:center">Edit</th>
                                                 <th style="min-width:50px; text-align:center">Delete</th>
                                             </tr>
@@ -76,6 +75,7 @@
                                                     
                                                     <?php if($list->status=='Active'){ $status ='Active';} else{$status='Deactive';}?> 
                                                     <td>
+                                                        <?php if($list->status!='Expired'){?>
                                                         <div class="form-group">                                         
                                                             <select class="form-control" id="<?php echo $list->promo_id;?>">
                                                                 <option>--Select Action--</option>
@@ -88,6 +88,7 @@
                                                                 <?php } ?>
                                                             </select>                                                       
                                                         </div>
+                                                        <?php  } ?>
                                                     </td>
                                                     <script>
                                                     $(document).ready(function(){                                               
@@ -107,8 +108,11 @@
                                                         });
                                                     });
                                                     </script>
-
-                                                    <td style="color:blue;font-size:16px;font-weight:600;"><?php echo $list->status; ?></td>                                                   
+                                                    <?php if($list->status=='Expired'){?>
+                                                    <td style="color:red;font-size:16px;font-weight:600;"><?php echo $list->status; ?></td>     
+                                                    <?php  } else{ ?> 
+                                                <td style="color:blue;font-size:16px;font-weight:600;"><?php echo $list->status; ?></td>     
+                                                    <?php } ?>                                              
                                                     <td><?php $t=$list->promo_at;   $s=explode(" ",$t);  $e=implode(" / ",$s);
                                                         echo $e; ?>
                                                     </td>      
@@ -131,19 +135,13 @@
                                     </div>                                   
                                     </div>
                                 </div>
-
                             </div>
                             <!-- END DATATABLE EXPORT -->
                         </div>
                     </div>
                 </div>         
-
-
-
                 <!-- END PAGE CONTENT WRAPPER -->
-
 <?php $this->load->view('layout/second_footer');?> 
-
 <script>
    function changeStatus(id,status)
     {

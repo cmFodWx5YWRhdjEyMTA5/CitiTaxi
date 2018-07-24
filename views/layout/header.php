@@ -88,11 +88,15 @@
 
                     <li class="xn-envlop <?php if(isset($page) && $page=='one'){ echo 'active';}?>">
 
-                        <a href="<?php echo site_url('Home/Dashboard');?>"><span class="fa fa-dashboard"></span><span class="xn-text">Dashboard</span></a>
+                        <a href="<?php echo site_url('Home');?>"><span class="fa fa-dashboard"></span><span class="xn-text">Dashboard</span></a>
                     </li> 
 
                     <li class="xn-envlop <?php if(isset($page) && $page=='analytic'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Home/analytics');?>"><span class="fa fa-paw"></span><span class="xn-text">Analytics</span></a>
+                    </li>
+
+                    <li class="xn-envlop <?php if(isset($page) && $page=='notification'){ echo 'active';}?>">
+                        <a href="<?php echo site_url('Home/notifications');?>"><span class="fa fa-bell"></span><span class="xn-text">Notifications</span></a>
                     </li>
 
 
@@ -115,15 +119,16 @@
                     </li> 
 
                     <li class="xn-openable <?php if(isset($page) && $page=='fleet'){ echo 'active';}?>">
-                        <a href="<?php echo site_url('Fleet');?>"><span class="fa fa-table"></span> <span class="xn-text">Manage Fleet</span></a>
-                        <ul>
-                           <li><a href="<?php echo site_url('Fleet/add_fleet');?>"><span class="fa fa-pencil"></span>Add fleet</a></li>
-                           <li><a href="<?php echo site_url('Fleet');?>"><span class="fa fa-sort-alpha-desc"></span>Fleet List</a></li>
+                        <a href="<?php echo site_url('Fleet');?>"><span class="fa fa-table"></span> <span class="xn-text">Fleet/Dispatch</span></a>
+                        <ul>                            
+                            <li><a href="<?php echo site_url('Fleet');?>"><span class="fa fa-sort-alpha-desc"></span>Fleet List</a></li>
+                            <li><a href="<?php echo site_url('Fleet/dispatchers');?>"><span class="fa fa-sort-alpha-desc"></span>Dispatchers</a></li>
                             <li>
                                 <a href="<?php echo site_url('Fleet/fleet_tracking');?>"><span class="fa fa-taxi"></span><span class="xn-text">Fleet Tracking</span></a>
                             </li>
                         </ul>
                     </li> 
+
 
                     <li class="xn-openable <?php if(isset($page) && $page=='vehicle'){ echo 'active';}?>">
                         <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-taxi"></span> <span class="xn-text"> Vehicle & Fares</span></a>
@@ -218,6 +223,10 @@
                     <li class="xn-icon-button">
                         <a href="#" class="x-navigation-minimize"><span class="fa fa-dedent"></span></a>
                     </li>
+                    <li class="xn-icon-button">
+                        <a href="<?php echo site_url('Home/notifications');?>"><span class="fa fa-bell"></span></a>
+                        <div class="informer informer-danger" id='message'></div>
+                    </li>
 
                     <!-- END TOGGLE NAVIGATION -->                 
 
@@ -249,7 +258,8 @@
 <script>
     setInterval(function() {
         checkpendingBooking();// Do something every 5 seconds
-        checkuser();        
+        checkuser();  
+        checkNewMessage();      
     }, 4000);
 
 
@@ -268,6 +278,20 @@ function checkpendingBooking()
         }
     });
 };
+
+function checkNewMessage(){
+    $.ajax({
+        url: "<?php echo site_url('Welcome/checkNewMessage');?>",
+        success: function (data) {
+            //console.log(data);
+            if(data!=0)
+            {          
+
+                $("#message").html(data);
+            }
+        }
+    });
+}
 
 function checkuser() {
     $.ajax({
