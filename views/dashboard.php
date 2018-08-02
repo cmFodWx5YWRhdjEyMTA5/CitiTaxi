@@ -160,6 +160,21 @@
                             </div>
                           </div>
                           <div class="col-md-3">
+                            <div class="widget widget-default widget-item-icon" style="background-color:rgb(105, 193, 226) !important;">
+                                <div class="widget-item-left">
+                                <span class="fa fa-paypal"></span>
+                                <!-- <span><img src="<?php echo base_url('assest/images/faicon/driver.png'); ?>" width='50%'></span> -->
+                                    
+                                </div>                             
+                                <div class="widget-data">
+                                    <div class="widget-title">Total paypal Payment</div>                                   
+                                    <div class="widget-int num-count">
+                                    <?php $paypal_payment = getSum('booking','total_fare',array('payment_type'=>'paypal','booking_status'=>4));
+                                          $paypal_payment = round($paypal_payment); echo $paypal_payment; ?></div>
+                                </div>                                
+                            </div>
+                          </div>
+                          <div class="col-md-3">
                           <div class="widget widget-default widget-item-icon" style="background-color:rgb(192,67,14) !important;">
                               <div class="widget-item-left">
                                 <span class="fa fa-google-wallet"></span>

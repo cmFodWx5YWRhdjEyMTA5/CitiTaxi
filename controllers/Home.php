@@ -1634,18 +1634,175 @@ class Home extends CI_Controller {
     }
 
     public function add_redeem_post(){
-        $this->load->view('add_redeem_post');
+        if(isset($_POST['submit'])){ 
+            extract($_POST);
+            //echo '<pre>';
+            //print_r($_POST);die();
+            $timeline = 'default.png';
+            $preview  = 'default.png';
+            if(isset($_FILES['timeline_photo']) && $_FILES['timeline_photo']['name']!=''){
+                $folder_name = 'promo_images';
+                $timeline    = $this->AuthModel->imageUpload($_FILES['timeline_photo'],$folder_name);
+            }
+            if(isset($_FILES['preview_photo']) && $_FILES['preview_photo']['name']!=''){
+                $folder_name = 'promo_images';
+                $preview     = $this->AuthModel->imageUpload($_FILES['preview_photo'],$folder_name);
+            }
+            $data  = array(
+                'country' =>$country,
+                'currency'=>$currency,
+                'heading'=>$heading,
+                'date_display'=>$date_display,
+                'promocode'=>$promo_code,
+                'rate_type'=>$rate_type,
+                'rate' =>$promo_rate,
+                'max_amount' =>$max_amount,
+                'start_date'=>$promo_start,
+                'start_string'=>strtotime($promo_start),
+                'end_date'=>$promo_end,
+                'end_string'=>strtotime($promo_end),
+                'description'=>$description,
+                'buttons'=>$buttons,
+                'points'=>$points,
+                'publish_type'=>$publish_type,
+                'later_date'=>$later_date,
+                'later_date_string'=>strtotime($later_date),
+                'timeline_image'=>$timeline,
+                'preview_image'=>$preview,
+                'QR_scan'=>'Off',
+                );
+                if($publish_type!='Now'){
+                    $data['status']='Deactive';                
+                }
+                else{
+                    $data['publish_date'] = date('Y-m-d');
+                }
+            if($this->AuthModel->singleInsert('redeem_post',$data)){
+                $this->save_post_notification($country,$heading);
+                $response = array('success'=>1,'message'=>'Record has been saved successfully');
+                $this->load->view('add_redeem_post',$response);
+            }
+            else{                
+                $response = array('error'=>1,'message'=>'Oops! Error occured. Please try again');
+                $this->load->view('add_redeem_post',$response);
+            }
+        }
+        else{
+            $this->load->view('add_redeem_post');   
+        }
+    }
 
+    public function save_post_notification($country,$heading){
+        $users = $this->AuthModel->getMultipleRecord('users',array('nationality'=>$country,'user_type'=>0),'');                       
+        foreach ($users as $v) {            
+            $data = array('user_id'=>$v->id,'subject'=>'Promotion Offer','message'=>$heading,'notification_at'=>date('d-m-Y h:i:s'));
+            $this->AuthModel->singleInsert('notifications',$data);                    
+        }
+    }
+
+    public function update_redeem_post($redeem_post_id){
+        if(isset($redeem_post_id) && $redeem_post_id!=''){
+            $post = $this->AuthModel->getSingleRecord('redeem_post',array('redeem_post_id'=>$redeem_post_id));
+            if(isset($_POST['submit'])){
+                extract($_POST);
+                $timeline = $post->timeline_image;
+                $preview  = $post->preview_image;
+                if(isset($_FILES['timeline_photo']) && $_FILES['timeline_photo']['name']!=''){
+                    $folder_name = 'promo_images';
+                    $timeline    = $this->AuthModel->imageUpload($_FILES['timeline_photo'],$folder_name);
+                }
+                if(isset($_FILES['preview_photo']) && $_FILES['preview_photo']['name']!=''){
+                    $folder_name = 'promo_images';
+                    $preview     = $this->AuthModel->imageUpload($_FILES['preview_photo'],$folder_name);
+                }
+                $data  = array(                   
+                    'heading'=>$heading,
+                    'date_display'=>$date_display,
+                    'promocode'=>$promo_code,
+                    'rate_type'=>$rate_type,
+                    'rate' =>$promo_rate,
+                    'max_amount' =>$max_amount,
+                    'start_date'=>$promo_start,
+                    'start_string'=>strtotime($promo_start),
+                    'end_date'=>$promo_end,
+                    'end_string'=>strtotime($promo_end),
+                    'description'=>$description,
+                    'buttons'=>$buttons,
+                    'points'=>$points,
+                    'publish_type'=>$publish_type,
+                    'later_date'=>$later_date,
+                    'later_date_string'=>strtotime($later_date),
+                    'timeline_image'=>$timeline,
+                    'preview_image'=>$preview,                    
+                    );
+                    if($publish_type=='Now' && $post->publish_date=='0000-00-00'){                        
+                        $data['publish_date'] = date('Y-m-d'); 
+                        $this->save_post_notification($post->country,$heading);                         
+                    }
+                    if($publish_type!='Now'){
+                        $data['status']='Deactive';                                                
+                    }
+                    else{
+                        $data['status']='Active';                                                   
+                    }
+                    //echo '<pre>';
+                    //print_r($data);die();                   
+                if($this->AuthModel->updateRecord(array('redeem_post_id'=>$redeem_post_id),'redeem_post',$data)){
+                    $post = $this->AuthModel->getSingleRecord('redeem_post',array('redeem_post_id'=>$redeem_post_id));
+                    $response = array('success'=>1,'message'=>'Record has been udpated successfully','list'=>$post);
+                    $this->load->view('update_redeem_post',$response);
+                }
+                else{
+                    $response = array('success'=>1,'message'=>'Record is not udpate. Please try again','list'=>$post);
+                    $this->load->view('update_redeem_post',$response);
+                }                    
+            }           
+            else{
+                $response = array('list'=>$post);
+                $this->load->view('update_redeem_post',$response);
+            }
+        }
+        else{            
+            redirect(base_url());
+        }
+    }
+
+    public function redeem_posts(){
+        $redeem_post = $this->AuthModel->getMultipleRecord('redeem_post',array(),'redeem_post_id DESC');
+        if(!empty($redeem_post)){             
+            $response['code'] = $redeem_post;
+            $this->load->view('redeem_posts',$response);
+        }
+        else{
+            $response = array('error'=>1,'message'=>'No post found','code'=>$redeem_post);
+            $this->load->view('redeem_posts',$response);
+        }
     }
 
 
+    public function ride_redeem_history(){                  
+        $history = $this->AuthModel->getMultipleRecord('promocode_history',array(),'history_id DESC');
+        if(!empty($history)){                
+            $response = array('history'=>$history);
+            $this->load->view('ride_redeem_history',$response);
+        }
+        else{
+            $response = array('error'=>1,'message'=>'No history found','history'=>$history);
+            $this->load->view('ride_redeem_history',$response);
+        }        
+    }
 
-
-
-
-
-
-
+    public function point_redeem_history(){
+        $history = $this->AuthModel->getMultipleRecord('redeem_history',array(),'history_id DESC');
+        if(!empty($history)){                
+            $response = array('history'=>$history);
+            $this->load->view('point_redeem_history',$response);
+        }
+        else{
+            $response = array('error'=>1,'message'=>'No history found','history'=>$history);
+            $this->load->view('point_redeem_history',$response);
+        } 
+    }
 
     public function range_setting()
     {

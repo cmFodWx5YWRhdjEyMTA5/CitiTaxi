@@ -134,8 +134,8 @@
                         <a href="<?php echo site_url('Vehicle');?>"><span class="fa fa-taxi"></span> <span class="xn-text"> Vehicle & Fares</span></a>
                         <ul>
                             <li><a href="<?php echo site_url('Home/servie_type');?>"><span class="fa fa-taxi"></span><span class="xn-text">Service Type</span></a></li>  
-                            <li><a href="<?php echo site_url('Vehicle/add_fare');?>"><span class="fa fa-dollar"></span><span class="xn-text">Add Vehicle Fares</span></a></li>
-                            <li><a href="<?php echo site_url('Vehicle/fares');?>"><span class="fa fa-dollar"></span><span class="xn-text">Fare List</span></a></li>
+                            <!--li><a href="<?php echo site_url('Vehicle/add_fare');?>"><span class="fa fa-dollar"></span><span class="xn-text">Add Vehicle Fares</span></a></li-->
+                            <li><a href="<?php echo site_url('Vehicle/fares');?>"><span class="fa fa-dollar"></span><span class="xn-text">Fare List</span></a></li>                            
                             <li><a href="<?php echo site_url('Vehicle/fix_location');?>"><span class="fa fa-map-marker"></span>Fixed Locations</a></li>
                             <li><a href="<?php echo site_url('Driver/weeklyRewards');?>"><span class="fa fa-gift"></span>Weekly Reward</a></li>
                         </ul>
@@ -152,8 +152,9 @@
                         <a href="<?php echo site_url('Home/points');?>"><span class="fa fa-gift"></span> <span class="xn-text">Manage Coupon</span></a>
                         <ul>
                             <li><a href="<?php echo site_url('Home/ride_promocode');?>"><span class="fa fa-pencil"></span>Ride Promo Code</a></li>
-                            <li><a href="<?php echo site_url('Home/getpoints');?>"><span class="fa fa-sort-alpha-desc"></span>Redeem Post</a></li>
-                            <li><a href="<?php echo site_url('Home/point_history');?>"><span class="fa fa-sort-alpha-desc"></span>Redeem History</a></li>
+                            <li><a href="<?php echo site_url('Home/ride_redeem_history');?>"><span class="fa fa-sort-alpha-desc"></span>Ride Redeem History</a></li>
+                            <li><a href="<?php echo site_url('Home/redeem_posts');?>"><span class="fa fa-sort-alpha-desc"></span>Redeem Post</a></li>
+                            <li><a href="<?php echo site_url('Home/point_redeem_history');?>"><span class="fa fa-sort-alpha-desc"></span>Point Redeem History</a></li>
                         </ul>
                     </li> 
 
@@ -198,7 +199,7 @@
                         <a href="<?php echo site_url('Admin/admin_profile');?>"><span class="fa fa-cog"></span> <span class="xn-text">Setting</span></a>
                         <ul>
                             <li><a href="<?php echo site_url('Home/referral_setting');?>"><span class="fa fa-gift"></span><span class="xn-text">Referral Setting</span></a></li> 
-                        
+                            <li><a href="<?php echo site_url('Vehicle/city_setting');?>"><span class="fa fa-cog"></span><span class="xn-text">City Setting</span></a></li>                        
                              <li><a href="<?php echo site_url('Home/range_setting');?>"><span class="fa fa-image"></span><span class="xn-text">Range Setting</span></a></li>                        	
                             <li><a href="<?php echo site_url('Home/apptemplate');?>"><span class="fa fa-image"></span><span class="xn-text">App Template Setting</span></a></li>
                            <li><a href="<?php echo site_url('Home/profile');?>"><span class="fa fa-user"></span><span class="xn-text">Admin Profile</span></a></li>

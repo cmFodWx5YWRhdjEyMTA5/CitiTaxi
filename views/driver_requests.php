@@ -6,42 +6,24 @@
         }
     </style>
             <!-- PAGE CONTENT WRAPPER -->
-
                 <div class="page-content-wrap">
-
                   <div class="row">
-
                         <div class="col-md-12">
-
                             <div class="panel panel-default">
-
                                 <div class="panel-heading">
-
                                     <h3 class="panel-title"><strong>Driver Request</strong></h3>
                                     <?php if(isset($sucess)==1){ ?>
-
                                     <div class="alert alert-success">
-
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-
                                     <?php echo $message;?>
-
                                     </div>        
-
                                     <?php } else if(isset($error)==1) { ?>
-
                                     <div class="alert alert-danger">
-
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-
                                     <?php echo $message;?>
-
                                     </div>
-
                                     <?php }?>     
-
                                 </div>                                
-
                                 <div class="panel-body">
                                     <div class="table-responsive">
                                      <div style="overflow:scroll; ,max-height:600px;">
@@ -72,7 +54,7 @@
                                                 <td><?php echo $list->mobile;?></td>                                                
                                                 <?php $license = getSingleDetail('driver_license',array('user_id'=>$list->id)); ?>
                                                 <td><?php if(!empty($license)){ ?>
-                                                    <img src="<?php echo base_url('licenseImage/'.$license->licenseImage); ?>" width="80" height="80">
+                                                    <a target="blank" href="<?php echo base_url('licenseImage/'.$license->licenseImage); ?>" download><img src="<?php echo base_url('licenseImage/'.$license->licenseImage); ?>" width="80" height="80"></a>
                                                 <?php } ?></td>
                                                 <td>
                                                     <a href="#" data-toggle="modal" data-target="#exampleModal">
@@ -80,7 +62,6 @@
                                                 </td>
                                                 <?php $otherdoc = getSingleDetail('driver_otherdocument',array('user_id'=>$list->id)); ?>
                                                 <td>  
-
                                                     <?php if(!empty($otherdoc)){ 
                                                         $type = substr($otherdoc->document_type,0,3);
                                                         if($type=='app')
@@ -130,19 +111,13 @@
                                     </div>                                   
                                     </div>
                                 </div>
-
                             </div>
                             <!-- END DATATABLE EXPORT -->
                         </div>
                     </div>
                 </div>         
-
-
-
                 <!-- END PAGE CONTENT WRAPPER -->
-
 <?php $this->load->view('layout/second_footer');?> 
-
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
     <!-- Modal content-->
@@ -156,8 +131,6 @@
         </div>    
     </div>
 </div>
-
-
 <script>    
     function completeRequest(id)
     {
@@ -196,7 +169,6 @@
             }
         });
     }
-
     function vehicleImages(user_id)
     {    
         var images = '';

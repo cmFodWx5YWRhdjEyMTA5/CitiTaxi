@@ -183,7 +183,7 @@ class Auth extends CI_Controller {
 		if(isset($_POST['user_id']) && $_POST['user_id']!=''){
 			extract($_POST);
 			$upData     = array("device_token"=>'','online_status'=>'offline');
-			if($this->AuthModel->updateRecord(array('id'=>$user_id),'booking',$upData)){
+			if($this->AuthModel->updateRecord(array('id'=>$user_id),'users',$upData)){
 				$response  = array("success"=>1,"error" => 0,"message"=>"Logout successfull !");
 				echo json_encode($response);
 			}

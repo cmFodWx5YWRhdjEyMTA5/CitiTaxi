@@ -276,6 +276,48 @@ class Welcome extends CI_Controller {
 		redirect('Welcome/dispatch_login');	
 	}
 
-	
-	
+	public function sub_admin_login()        //customer details
+    {       
+        if(isset($_POST['login']))
+        {
+            extract($_POST);
+            $table_name ="fleets";
+            $where=array('fleet_email'=>$loginemail,'password'=>$loginpassword);
+            $check=$this->AuthModel->checkRows($table_name,$where);
+            if($check>0)
+            {
+                $res  = $this->AuthModel->getSingleRecord($table_name,$where);
+                //print_r($res);die();
+                $user_data = array('fleet_id'=>$res->fleet_id, "fleet_email" =>$res->fleet_email,"fleet_name" =>$res->fleet_name, 'fleet_image'=>$res->image,'status'=>$res->status);
+                $this->session->set_userdata($user_data);
+                
+                redirect('Sub_admin/drivers');
+            }
+            else
+            {
+                $data['error']='1';
+                $data['message']='Please enter correct Email and Password';
+                $this->load->view('Sub_admin/login',$data);
+            }
+        }   
+        else
+        {
+            if($this->session->userdata('fleet_email') != '')
+            {
+                redirect('Sub_admin');
+            }
+            else
+            {
+                $this->load->view('Sub_admin/login');
+            }
+        }
+    }
+
+    public function sub_admin_logout()
+	{		
+		$keys = array('fleet_id','fleet_email','fleet_name','fleet_image','status');
+		$this->session->unset_userdata($keys);		
+        $this->session->set_flashdata('logged_out','You have been Logged Out');        
+		redirect('Welcome/sub_admin_login');	
+	}
 }

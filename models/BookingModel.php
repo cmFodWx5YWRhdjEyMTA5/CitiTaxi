@@ -241,8 +241,7 @@ class BookingModel extends CI_Model {
             $new = $num;
         }
         return $new;
-    }
-
+    }    
 
 
 

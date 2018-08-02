@@ -66,6 +66,7 @@ class Vehicle extends CI_Controller {
             //print_r($data);die();
             if($uid = $this->AuthModel->singleInsert('fare',$data))
             {
+                $this->checkCitySetting($country,$city,$timezone,$offset);
                 $respose["success"] = 1;
                 $respose["message"] = "Vehicle Fare has been successfully saved";
                 $this->load->view('addVehicle_fair',$respose);
@@ -81,6 +82,13 @@ class Vehicle extends CI_Controller {
         {
             $this->load->view('addVehicle_fair');
         }
+    }
+
+    public function checkCitySetting($country,$city,$timezone,$offset){
+        $date  = date('m/d/Y h:i:s A');                
+        $data  = array('country'=>$country,'city'=>$city,'time_zone'=>$timezone,'UTC_offset'=>$offset,'update_at'=>$date);
+        $where = array('country'=>$country,'city'=>$city);
+        $this->AuthModel->checkThenInsertorUpdate('fare_city_setting',$data,$where);
     }
 
     public function update_fare($fare_id)
@@ -216,7 +224,7 @@ class Vehicle extends CI_Controller {
     {
         $table_name = 'cities';
         $where = array('country_id'=>$countryid); $orderby = "`name`,'ASC'";
-        $currency = $this->AuthModel->getSingleRecord('countries',array('id'=>$countryid))->currency_symbol;
+        $country_data = $this->AuthModel->getSingleRecord('countries',array('id'=>$countryid));
         $cities = $this->AuthModel->getMultipleRecord($table_name,$where,$orderby);
         if(!empty($cities)){
             foreach($cities as $key =>$v)
@@ -224,7 +232,9 @@ class Vehicle extends CI_Controller {
                 $data[]='<option value="'.$v->id.'">'.$v->name.'</option>';                
             }
             $d['data']=$data;
-            $d['currency'] = $currency;
+            $d['currency'] = $country_data->currency_symbol;
+            $d['timezone'] = $country_data->time_zone;
+            $d['offset']   = $country_data->offset;
             echo json_encode($d);
         }
         else
@@ -320,6 +330,20 @@ class Vehicle extends CI_Controller {
             $data["message"] = 'No vehicle fare list found';
             $data["fairlist"]=$fairlist;
             $this->load->view('vehicle_fairs',$data);
+        }
+    }
+    public function update_laterBooking_status(){
+        if(isset($_POST['fare_id']) && $_POST['fare_id']!=''){
+            extract($_POST);
+            if($this->AuthModel->updateRecord(array('fair_id'=>$fare_id),'fare',array('ride_later_status'=>$status))){
+                echo 'Status has been successfully changed';
+            }
+            else{
+                echo 'Oops! Error occured. Please try again.';
+            }
+        }
+        else{
+            echo 'Access denied';
         }
     }
     public function fare_full_details($fairid)
@@ -495,5 +519,34 @@ class Vehicle extends CI_Controller {
         else{                         
             $this->load->view('monthly_earning'); 
         }        
+    }
+
+    public function city_setting(){
+        $setting = $this->AuthModel->getMultipleRecord('fare_city_setting',array(),'');
+        if(!empty($setting)){
+            $response = array('setting'=>$setting);
+            $this->load->view('fare_city_setting',$response);
+        }
+        else{
+            $response = array('error'=>1,'message'=>'No setting found','setting'=>$setting);
+            $this->load->view('fare_city_setting',$response);   
+        }
+    }
+
+    public function update_city_setting(){
+        if(isset($_POST['city_setting_id']) && $_POST['city_setting_id']!=''){
+            extract($_POST);
+            //print_r($_POST);
+            if($this->AuthModel->updateRecord(array('city_setting_id'=>$city_setting_id),'fare_city_setting',array("".$field_name.""=>$status,'update_at'=>$update_at)))
+            {
+                echo $field_name.' status has been successfully changed';
+            }
+            else{
+                echo 'Opps! Something went wrong. Please try again';
+            }
+        }
+        else{
+            echo 'Something went wrong';
+        }
     }
 }

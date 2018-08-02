@@ -112,7 +112,7 @@
                   </div>
                   <div class="col-md-12" style="padding-top:3% !important;">
                      <label class="col-md-3 col-xs-12 control-label">Drop Off</label>
-                     <div class="col-md-8 col-xs-12">
+                     <div class="col-md-9 col-xs-12">
                         <input type="text" name="name" id="destination" class="form-control" required>                  
                         <div id="mapdist" style=" background: yellow; color: red;"></div>
                         <input type="hidden" id="dest_lat"> 
@@ -123,7 +123,6 @@
                         <input type="hidden" id="est_fareUnit">
                      </div>
                   </div>
-
                   <div class="col-md-12" style="padding-top:3% !important;">
                      <label class="col-md-3 col-xs-12 control-label">Driver Note</label>
                      <div class="col-md-9 col-xs-12">

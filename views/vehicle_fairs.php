@@ -4,6 +4,15 @@
         table tbody th,td{
             border-left: 1px solid black;
         }
+        .sp-pre-con {
+          position: fixed;
+          left: 0px;
+          top: 0px;
+          width: 100%;
+          height: 100%;
+          z-index: 9999;        
+          background: url(<?php echo base_url('assest/images/myloading.gif'); ?>) center no-repeat #00000070;
+        } 
     </style>
             <!-- PAGE CONTENT WRAPPER -->
 
@@ -14,11 +23,15 @@
                         <div class="col-md-12">
 
                             <div class="panel panel-default">
-
+                                <div class="sp-pre-con" style="display: none;"></div>
                                 <div class="panel-heading">
 
                                     <h3 class="panel-title"><strong>Vehicle Fair Details</strong></h3>
-                                    <center><span style="color:red; font-weight:600">**Per= Percentage</span></center>
+                                    <div class="btn-group pull-right">
+                                      <a href="<?php echo site_url('Vehicle/add_fare');?>">
+                                         <button type="button" class="btn btn-submit">Add Fare</button>   
+                                      </a>
+                                    </div>                                    
                                     <?php if(isset($sucess)==1){ ?>
 
                                     <div class="alert alert-success">
@@ -46,9 +59,8 @@
 
                                 <div class="panel-body">
                                     <div class="table-responsive">
-                                     <div style="overflow:scroll; ,max-height:600px;">
-                                     <table id="example" class="table display">
-                                        
+                                     <div id="list_table" style="overflow:scroll;">
+                                     <table id="example" class="table display">                                        
                                         <thead>
                                             <tr>
                                             <th>Sr.No</th>                                           
@@ -65,6 +77,7 @@
                                             <th style="min-width:100px;">Stnd Cancel charge(Driver)</th>
                                             <th style="min-width:100px;">Stnderd Cancel charge(Customer)</th>
                                             <th style="min-width:100px;">Peak Max Cancel booking(customer)</th>
+                                            <th style="min-width:100px;">Ride Later Status</th>
                                             <th style="min-width:80px;"> Full Details</th>
                                             <th style="min-width:80px;">Edit Fare</th>
                                             <th style="min-width:80px;">Edit Surcharge</th>
@@ -90,6 +103,17 @@
                                                 <td><?php echo $list->stndCancelChargeDriver.' '.$list->cancelChargeUnitDriver;?></td>
                                                 <td><?php echo $list->stndCancelChargePassenger.' '.$list->cancelChargeUnitPassenger;?></td>
                                                 <td><?php echo $list->WeeklyCancellationLimit.' Rides';?></td>
+                                                <td>                                                    
+                                                    <label class="switch">
+                                                    <?php $pre_later = $list->ride_later_status;
+                                                    if($pre_later=='On'){ ?>
+                                                        <input type="checkbox" value="Off" checked  onchange="update(<?php echo $list->fair_id;?>,'Off')" />
+                                                    <?php  } else{?>
+                                                        <input type="checkbox" value="On" onchange="update(<?php echo $list->fair_id;?>,'On')" />
+                                                    <?php }?>                                                    
+                                                    <span></span>
+                                                    </label>
+                                                </td>
                                                 <td><a href="<?php echo site_url('Vehicle/fare_full_details/'.$list->fair_id);?>">Full Details</a></td>
                                                 <td><a href="<?php echo site_url('Vehicle/update_fare/'.$list->fair_id);?>">Edit</a>
                                                 </td>
@@ -114,36 +138,29 @@
 
 <?php $this->load->view('layout/second_footer');?> 
 
-<script>
-    function Trip(id)
-    {
-        alert('Called function Trip');
-    }
-    function Banned(id,Status)
-    {
-        //alert(Status);
-        $.ajax({
-            method:'POST',
-            url:'<?php echo site_url('Driver/updateStatus'); ?>',
-            data:{'id':id,'activeStatus':Status},
-            success:function(data)
-            {
-                alert(data);
-                location.reload();
-            }
-        });
-    }
-    function Suspend(id,type)
-    {
-        $.ajax({
-            method:'POST',
-            url:'<?php echo site_url('Driver/Suspend'); ?>',
-            data:{'id':id,'type':type},
-            success:function(data)
-            {
-                alert(data);
-                location.reload();
-            }
-        });
-    }
+<script>   
+   function update(fare_id,status){
+        var r = confirm('Are you realy want to perform this action');
+        if(r==true){ 
+            $(".sp-pre-con").css("display", "block");           
+            $.ajax({
+                type:'post',                
+                url:'<?php echo site_url("Vehicle/update_laterBooking_status");?>',
+                data:{'fare_id':fare_id,'status':status},
+                success:function(res){
+                    $(".sp-pre-con").css("display", "none");
+                    //console.log(res);
+                    alert(res);
+                    location.reload(true);
+                },
+                error:function(res){
+                    $(".sp-pre-con").css("display", "none");
+                    console.log(res);
+                }
+            });
+        }
+        else{
+            alert('heyy');
+        }
+   }
 </script>

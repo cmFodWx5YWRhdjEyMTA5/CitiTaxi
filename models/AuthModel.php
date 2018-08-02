@@ -277,7 +277,19 @@ class AuthModel extends CI_Model {
         $this->db->where(array('user_type'=>1));
         $this->db->order_by('users.id','DESC');
         return $this->db->get()->result();
+    }
+
+    public function driverDetailsfleet($where)
+    {
+        $this->db->select('users.*,vechile_details.*,driver_license.*');
+        $this->db->from('users');
+        $this->db->join('vechile_details','vechile_details.driver_id=users.id');
+        $this->db->join('driver_license','driver_license.user_id=users.id');
+        $this->db->where($where);
+        $this->db->order_by('users.id','DESC');
+        return $this->db->get()->result();
     }  
+
 
     public function keychange($user_detail)
     {

@@ -20,10 +20,10 @@
                                                 <thead>
                                                     <tr>
                                                         <th width="50">#</th>
-                                                        <th>Trip Type</th>
-                                                        <th>Target Trip</th>
+                                                        <th>Trip Type</th>                                                        
                                                         <th>Country</th>
                                                         <th>City</th>
+                                                        <th>Target Trip</th>
                                                         <th>Reward Unit</th>
                                                         <th>Reward rate</th>
                                                         <th>Status</th>

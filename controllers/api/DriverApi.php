@@ -574,6 +574,7 @@ class DriverApi extends CI_Controller {
                 $tripdata = $this->AuthModel->keychange($tripRequest);
                 $tripData = array(
                     "booking_id"=>$tripdata->booking_id,
+                    "booking_id_show"=>$tripdata->booking_id_show,                    
                     "customer_id"=>$tripdata->customer_id,
                     "driver_id"=>$tripdata->driver_id,
                     "booking_address_type"=>$tripdata->booking_address_type,
@@ -715,7 +716,7 @@ class DriverApi extends CI_Controller {
             $finalFair = $this->calculateFair($booking_id,$total_distance,$total_ride_time);   //calculate final fair
             if(!empty($finalFair)){
                 $checkWhere = array("booking_id"=>$booking_id);
-                $bookingUpdata = array("ride_complete_at"=>$action_at,"total_ride_time"=>$total_ride_time,"total_distance"=>$total_distance,"total_fare"=>$finalFair["total_fair"],"booking_status"=>4);
+                $bookingUpdata = array("ride_complete_at"=>$action_at,"total_ride_time"=>$total_ride_time,"total_distance"=>$total_distance,"total_fare"=>$finalFair["total_fair"],"promo_earn"=>$finalFair['bonus'],"booking_status"=>4);
                 $fairUpdata = array("total_regular_charge"=>$finalFair['total_regular_charge'],"total_per_minute_charge"=>$finalFair['total_per_minute_charge'],"total_waiting_charge"=>$finalFair['total_waiting_charge'],"total_surcharge"=>$finalFair['total_surcharge']);
                 //print_r($fairUpdata);die();
                 $companyComm = $this->AuthModel->getSingleRecord('booking_earning',array("booking_id"=>$booking_id));
@@ -748,7 +749,8 @@ class DriverApi extends CI_Controller {
                     if($finalFair["total_fair"]>=$minamount){
                         $point = (round($finalFair['total_fair']/$minamount,2))%100;
                         $gainpoint = $point*$pointdata->get_point;
-                        $bookingUpdata['customer_trip_score'] = $gainpoint;                          
+                        $bookingUpdata['customer_trip_score'] = $gainpoint;  
+                        $this->update_passenger_points($customer_id,$gainpoint); //Update points in user table                        
                     }
                 }
                 //print_r($bookingUpdata);die();
@@ -764,9 +766,10 @@ class DriverApi extends CI_Controller {
 
                         $this->AuthModel->checkThenInsertorUpdate('booking_earning',$commission_data,array("booking_id"=>$booking_id));
                         //Update promo history status if promocode has applied
-                        if($finalFair['promo_status']=='Yes'){
-                            $this->updatePromoHistory($booking_id,$customer_id,$finalFair["total_fair"]);
+                        if($finalFair['promo_status']=='Yes' && $finalFair['promo_type']=='ride'){
+                            $this->updatePromoHistory($booking_id,$customer_id,$finalFair["total_fair"]);                            
                         }
+
                         //Check for referral bonus if promocode not apply
                         if($finalFair['promo_status']=='No'){
                             $this->checkReferralBonus($booking_id,$customer_id,$finalFair['currency']);   
@@ -801,6 +804,15 @@ class DriverApi extends CI_Controller {
         }
     }
 
+
+    public function update_passenger_points($passenger_id,$gainpoint){
+        $user_record = $this->AuthModel->getSingleRecord('users',array('id'=>$passenger_id));
+        if(!empty($user_record)){
+            $pre_point = $user_record->points;
+            $new_points = $pre_point+$new_points;
+            $this->AuthModel->updateRecord(array('id'=>$passenger_id),'users',array('points'=>$new_points));
+        }
+    }
 
 
     //For Referral bonus
@@ -847,7 +859,7 @@ class DriverApi extends CI_Controller {
     }
 
 
-    //update promo history after complete booking
+    //update ride promo history after complete booking
     public function updatePromoHistory($booking_id,$customer_id,$total_fare){ 
         $promo = $this->AuthModel->getSingleRecord('promocode_history',array('booking_id'=>$booking_id,'user_id'=>$customer_id));
         if(!empty($promo)){            
@@ -1117,6 +1129,7 @@ class DriverApi extends CI_Controller {
             $total_waitingCharge  = 0;
             $total_perMinute_charge = 0;
             $total_regularCharge    = 0;
+            $bonus =0;
             if($Extra_waitingMinute>0)
             {
                 $rightExtraWiting = $this->BookingModel->rightMultiple($Extra_waitingMinute,$fair_detail->paid_every_waiting_minute);
@@ -1172,15 +1185,42 @@ class DriverApi extends CI_Controller {
                     $total_fair = $total_fair+$fair_detail->midnight_surcharge;
                 }
             }
+
+            if($booking_detail->promo_type=='point' && $booking_detail->promo_id!=0){  //point type promo calculation
+                $promo = $this->AuthModel->getSingleRecord('redeem_history',array('redeem_post_id'=>$booking_detail->promo_id,'user_id'=>$booking_detail->customer_id,'status'=>'No'));
+                if(!empty($promo)){
+                    $rate_type  = $promo->rate_type;
+                    $rate       = $promo->rate;
+                    $max_amount = $promo->max_amount;
+                    if($rate_type=='Percentage'){
+                        $bonus = ($total_fair*$rate)*100;
+                        if($bonus>$max_amount){
+                            $bonus = $max_amount;                            
+                            $total_fair = $total_fair-$max_amount;
+                        }else{
+                            $total_fair = $total_fair-$bonus;
+                        }
+                    }
+                    elseif($rate_type=='Flat'){
+                        $bonus = $rate;
+                        $total_fair = $total_fair-$bonus;
+                    }
+                    $this->AuthModel->updateRecord(array('history_id'=>$promo->history_id),'redeem_history',array('booking_id'=>$booking_id,'bonus_amount'=>$bonus,'status'=>'Yes','redeem_at'=>date('d-m-Y h:i A')));
+                    //$this->Communication_model->sendToPassenger($customer_id,$message);
+                    //$this->AuthModel->singleInsert('notifications', array('user_id'=>$booking_detail->customer_id,'subject'=>'Exchange point redeem','message'=>$message,'type'=>0,'notification_at'=>date('Y-m-d H:i:s')));
+                }
+            }
             $data['total_regular_charge']=$total_regularCharge;
             $data['total_per_minute_charge']= $total_perMinute_charge;
             $data['total_waiting_charge']=$total_waitingCharge;
             $data['total_surcharge']= $total_surcharge;
             $data['total_fair'] = $total_fair;
+            $data['bonus'] = $bonus;
             $data['currency']= $booking_detail->currency;
             $data['country']=  $booking_detail->country;
             $data['city']=  $booking_detail->city;
             $data['promo_status'] = $booking_detail->promo_status;
+            $data['promo_type']   = $booking_detail->promo_type; //ride or point
             return $data;
         }
     }
@@ -1411,6 +1451,7 @@ class DriverApi extends CI_Controller {
                     }
 
                     $response['booking_id']=$deliver->booking_id;                
+                    $response['booking_id_show']=$deliver->booking_id_show;                
                     $response['favourite_status']= $deliver->favourite_status;
                     $response['booking_status']= $deliver->booking_status;
                     $response['booking_type']= $deliver->booking_type;
@@ -1646,6 +1687,7 @@ class DriverApi extends CI_Controller {
                             //$trip_fare = $tripEarning->base_fair+$tripEarning->total_regular_charge+$tripEarning->total_per_minute_charge;
                             $promotion                    = 0;
                             $res['booking_id']            = $booking_id;
+                            $res['booking_id_show']       = $value->booking_id_show;
                             $res['booking_at']            = $tripEarning->booking_at;  
                             $res['booking_status']        = $tripEarning->booking_status;  
                             $res['customer_id']           = $tripEarning->customer_id;
@@ -1823,6 +1865,7 @@ class DriverApi extends CI_Controller {
                             }
                             $promotion                    = 0;
                             $res['booking_id']            = $booking_id;
+                            $res['booking_id_show']       = $value->booking_id_show;
                             $res['booking_at']            = $tripEarning->booking_at;  
                             $res['booking_status']        = $tripEarning->booking_status;  
                             $res['customer_id']           = $tripEarning->customer_id;
@@ -2377,6 +2420,7 @@ class DriverApi extends CI_Controller {
                 foreach($response1 as $deliver){
                     $service_type = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$deliver->service_typeid));
                     $response['booking_id']   =  $deliver->booking_id;
+                    $response['booking_id_show']   =  $deliver->booking_id_show;
                     $response['driver_id']    =  $deliver->driver_id;
                     $response['customer_id']  =  $deliver->customer_id;
                     $response['booking_status']= $deliver->booking_status;

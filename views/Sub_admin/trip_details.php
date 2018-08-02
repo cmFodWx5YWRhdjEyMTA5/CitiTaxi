@@ -1,13 +1,18 @@
-<?php $data['page']='booking'; $data['title']='Booking'; $this->load->view('layout/header',$data);?>
+<?php 
+if($drivercheck=="2"){
+$data['page']='two'; $data['title']='Trip Histroy'; 
+}else{
+  $data['page']='driver'; $data['title']='Driver list';
+}
+$this->load->view('Sub_admin/layout/header',$data);?>
           
             <!-- PAGE CONTENT WRAPPER -->
-
                 <div class="page-content-wrap">
                   <div class="row">
                         <div class="col-md-12">
                             <div class="panel panel-default">
                                 <div class="panel-heading">
-                                    <h3 class="panel-title"><strong>Booking</strong></h3>
+                                    <h3 class="panel-title"><strong>Trip Histroy</strong></h3>
                                     <?php if(isset($success)==1){ ?>
                                     <div class="alert alert-success">
                                     <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -22,7 +27,7 @@
                                 </div>                     
                                 <div class="panel-body">
                                     <div class="table-responsive">
-                                     <div id="list_table" style="overflow:scroll;">
+                                     <div style="overflow:scroll; height:600px;">
                                      <table id="example" class="table display">
                                         <thead>
                                             <tr>
@@ -49,6 +54,7 @@
                                         <tbody>
                                         <?php
                                           $i=1;  
+                                          if(!empty($userlist)){
                                         foreach($userlist as $list) {
                                         $dropof=array();
                                          //$status = $list->activeStatus; ?>
@@ -61,7 +67,7 @@
                                               <?php }elseif($list->booking_status=='2'){ ?>
                                               <td style="color:red">Reject by driver</td>
                                               <?php }elseif($list->booking_status=='3'){?>
-                                              <td style="color:red">Reject by Passenger after accept</td>
+                                              <td style="color:red">Reject by customer after accept</td>
                                               <?php }elseif($list->booking_status=='4'){ ?>
                                               <td style="color:green">Complete</td>
                                               <?php } elseif($list->booking_status=='5'){ ?>
@@ -69,15 +75,13 @@
                                               <?php }elseif($list->booking_status=='6'){ ?>
                                               <td style="color:blue">Trip start</td>                                            
                                               <?php } elseif($list->booking_status=='7'){ ?>
-                                              <td style="color:red">Reject by Passenger before accept</td>
+                                              <td style="color:red">Reject by custmer before accept</td>
                                               <?php } ?>
-
-
                                               <td><?php echo $list->booking_at; ?></td>
                                               <td><?php echo $list->ride_start_at;?></td>
                                               <td><?php echo $list->driver_arrived_at; ?></td>
                                               <td><?php echo 'Ride '.$list->booking_type;?></td>
-                                              <td><?php echo $list->booking_id_show;?></td>
+                                              <td><?php echo $list->booking_id;?></td>
                                               <td><?php echo getUserDetailsById($list->customer_id);?></td>
                                               <td><?php echo getFleetDetailsById($list->driver_id);?></td>
                                               <td><?php echo getUserDetailsById($list->driver_id);?></td>
@@ -91,22 +95,19 @@
                                               <td><?php echo $list->total_distance." ".$list->distance_unit;?></td>
                                               <td><?php echo $list->total_fare." ".$list->currency;?></td>
                                             </tr>
-                                        <?php } ?>
+                                        <?php } }?>
                                         </tbody>
                                     </table> 
                                     </div>                                   
                                     </div>
                                 </div>
-
                             </div>
                             <!-- END DATATABLE EXPORT -->
                         </div>
                     </div>
                 </div>         
                 <!-- END PAGE CONTENT WRAPPER -->
-        <?php $this->load->view('layout/second_footer');?> 
-
-
+        <?php $this->load->view('Sub_admin/layout/second_footer');?> 
 <div class="modal fade" id="dropoffs" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
   <div class="modal-dialog">
     <!-- Modal content-->
@@ -124,17 +125,15 @@
     </div>
   </div>
 </div>  
-
 <script>
   function dropoff(booking_id)
   {   
     $(".locations").html('');
     $.ajax({
       type:'post',
-      url:'<?php echo site_url("Home/get_dropoff_address"); ?>',
+      url:'<?php echo site_url("Dispatcher/get_dropoff_address"); ?>',
       data:{'booking_id':booking_id},
       dataType: "json",
-
       success:function(res)
       {
         console.log(res);                   
@@ -157,7 +156,3 @@
     });
   }
 </script>
-
-
-
-

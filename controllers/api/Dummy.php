@@ -11,11 +11,26 @@ class Dummy extends CI_Controller {
 
     public function index()
 	{
+        //echo __DIR__.'\upload';die();
 		$respose["success"] = 0;
 		$respose["error"]=400;
 		$respose["message"]="Access Denied";
 		echo json_encode($respose);
 	}
+
+    public function testupdate(){
+        $data = $this->AuthModel->getMultipleRecord('calendar|timezones',array(),'');
+        //echo json_encode($data);die();
+        foreach ($data as $key => $value) {
+            $code = $value->CountryCode; 
+            $timezone = $value->TimeZone;
+            $offset = $value->UTC_offset; 
+            //echo $timezone;die();
+            $this->AuthModel->updateRecord(array('sortname'=>$code),'countries',array('time_zone'=>$timezone,'offset'=>$offset));
+            //$booking_id_show = 'CT'.date('md',strtotime($value->booking_at)).$value->booking_id;
+            // echo $booking_id_pre.'<br>';
+        }
+    }
 
     public function calculateFair()
     {        

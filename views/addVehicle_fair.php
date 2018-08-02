@@ -66,6 +66,8 @@
                                     <?php } ?> 
                                 </select>
                                 <input type="hidden" name="country" id="country_name">
+                                <input type="hidden" name="timezone" id="timezone">
+                                <input type="hidden" name="offset" id="offset">
                             </div>
                         </div>
                         <div class="form-group">
@@ -521,10 +523,24 @@
                             </div>                            
                         </div>
                     </div>
-                    <div class="panel-footer">                                      
-                        <input type="reset" value="Reset" class="btn btn-reset">  
-                        <input type="submit" name="submit" value="Add fare" class="btn btn-submit pull-right">
-                    </div>                    
+                    <div class="panel-footer" style="margin-top:20px;">
+                        <div class="col-md-1"></div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <a href="<?php echo site_url('Vehicle/fares'); ?>">
+                                <input type="button" class="btn btn-back" value="Back" style="margin:5px 0; width:100%;">
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="reset" class="btn btn-reset" value="Reset" style="margin:5px 0; width:100%;">
+                            </div>
+                       
+                            <div class="col-md-3">
+                                <input type="submit" name="submit" value="Add fair" class="btn btn-submit pull-right" style="margin:5px 0; width:100%;">
+                            </div>                                    
+                        </div>
+                    
+                    </div>                   
                 </form>
             </div>
         
@@ -564,11 +580,13 @@
                 console.log(data);
                 if(data!=null)
                 {
-                    $('#country_name').val(countryname);
+                    $('#country_name').val(countryname);                   
                     $('.city').find("option:eq(0)").html("Please Select city");
                     $('#city').append(data.data);//alert(data);
                     //$('#currency').val('');
                     $('#currency').val(data.currency);
+                    $('#timezone').val(data.timezone);
+                    $('#offset').val(data.offset);
                     $('#cityError').text('');
                     //console.log(data);  
                 }

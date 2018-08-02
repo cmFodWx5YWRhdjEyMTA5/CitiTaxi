@@ -70,6 +70,50 @@ class CustomerApi extends CI_Controller {
         }
     }
 
+    public function checkCitySetting($country,$city,$payment_type,$promo_status,$promo_type){
+        $setting_where = array('country'=>$country,'city'=>$city);
+        $citySetting = $this->AuthModel->getSingleRecord('fare_city_setting',$setting_where);
+        //print_r($this->db->last_query());die();
+        if(!empty($citySetting)){
+            if($citySetting->business_status=='On'){
+                if($payment_type=='Cash' && $citySetting->cash_payment=='Off'){
+                   $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Cash payment mode is currently disabled.Please choose another payment methoed');
+                   echo json_encode($response);die();
+                }
+                elseif($payment_type=='Citipay' && $citySetting->wallet_payment=='Off'){
+                   $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Wallet payment mode is currently disabled.Please choose another payment method');
+                   echo json_encode($response);die();
+                }
+                elseif($payment_type=='Card' && $citySetting->card_payment=='Off'){
+                   $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Card payment mode is currently disabled.Please choose another payment method');
+                   echo json_encode($response);die();
+                }
+                elseif($payment_type=='Paypal' && $citySetting->paypal_payment=='Off'){
+                   $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Paypal payment mode is currently disabled.Please choose another payment method');
+                   echo json_encode($response);die();
+                }
+                if($promo_type=='ride'){
+                   if($payment_type=='Cash' && $citySetting->promo_on_cash=='Off'){
+                       $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Promocode is not applicable on Cash payment mode.Please choose another payment methoed');
+                       echo json_encode($response);die();
+                    }
+                    elseif($payment_type=='Citipay' && $citySetting->promo_on_wallet=='Off'){
+                       $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Promocode is not applicable on CitiPay payment mode.Please choose another payment methoed');
+                       echo json_encode($response);die();
+                    }
+                    elseif($payment_type=='Card' && $citySetting->promo_on_card=='Off'){
+                       $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Promocode is not applicable on Card payment mode.Please choose another payment methoed');
+                       echo json_encode($response);die();
+                    }                    
+                }
+            }
+            else{
+                $response = array('error'=>1,'success'=>0,'message'=>'Sorry! Citi Taxi has stopped working in your city for few days');
+                echo json_encode($response);die();
+            }
+        }        
+    }
+
     public function BookDriver()
     {
         $rawPostData    = file_get_contents('php://input');
@@ -99,14 +143,15 @@ class CustomerApi extends CI_Controller {
                 }
             }   
             if($jsonData['promocode_status']=='Yes'){
-                $paramarray = array('promo_id');
+                $paramarray = array('promo_id','promo_type');
                 $vResponse = $this->AuthModel->checkRequiredParam($paramarray,$jsonData);
                 if(isset($vResponse['status']) && $vResponse['status']==0)
                 {
                     $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
                     echo json_encode($response);die();
                 }
-            }                   
+            }
+
             $customer_id            = $jsonData['customer_id'];
             $country                = $jsonData['country'];
             $city_name              = $jsonData['city_name'];
@@ -126,18 +171,20 @@ class CustomerApi extends CI_Controller {
             $booking_type           = $jsonData['booking_type'];     //(now,later)
             $promo_status           = $jsonData['promocode_status'];  //(Yes, No)
             $promo_id               = $jsonData['promo_id'];
+            $promo_type             = $jsonData['promo_type'];  //ride or point
             $later_pickup_date      = $jsonData['later_pickup_date']; 
             $later_pickup_time      = $jsonData['later_pickup_time']; 
             $booking_note           = $jsonData['booking_note'];
             $passenger              = $jsonData['passenger'];
-            $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay           
-           
+            $payment_type           = $jsonData['payment_type'];    //cash,paypal,citipay                      
+
             //=================================================================================================//
             
             $fairDetails            = $this->AuthModel->getSingleRecord('fare',array("serviceType_id"=>$service_type_id,"country"=>$country,"city"=>$city_name));  
             //check service available in this city or not
             if(!empty($fairDetails))
             {
+                $this->checkCitySetting($country,$city_name,$payment_type,$promo_status,$promo_type); //check City settings
                 if($jsonData['booking_type']=='later'){
                     $nearbyDriver = true;
                     $driver_id    = 0;
@@ -188,7 +235,7 @@ class CustomerApi extends CI_Controller {
                     }
                 }
                 getfinaldriver:
-                //echo json_encode($nearbyDriver);die();
+                // echo json_encode($nearbyDriver);die();
                 if(!empty($nearbyDriver))
                 {                                         
                     $booking_at = $date.' '.$time;                   
@@ -216,12 +263,15 @@ class CustomerApi extends CI_Controller {
                             "currency"=>$fairDetails->currency,
                             "promo_status"=>$promo_status,
                             "promo_id"=>$promo_id,
+                            "promo_type"=>$promo_type,
                             "payment_type"=>$payment_type, 
                             "booking_status"=>$booking_status,                          
                         );                   
                     //print_r($bookingData);die();                    
                     if($booking_id = $this->AuthModel->singleInsert('booking',$bookingData))
                     {
+                        $booking_id_show = 'CT'.date('md',strtotime($booking_at)).$booking_id;
+                        $this->AuthModel->updateRecord(array('booking_id'=>$booking_id),'booking',array('booking_id_show'=>$booking_id_show));
                         $dropoffs=[];
                         foreach($dropoff as $k =>$v)
                         {
@@ -236,7 +286,7 @@ class CustomerApi extends CI_Controller {
                             $this->saveFairDetails($fairDetails,$booking_id,$date,$time,$booking_address_type,$total_regular_charge,$total_perminute_charge);   //save fair details
 
                             /*********************** Save promo details if apply ************************/
-                            if($promo_status=='Yes'){                                
+                            if($promo_status=='Yes' && $promo_type=='ride'){                                
                                 $this->savePromoHistory($customer_id,$booking_id,$promo_id); 
                             }
 
@@ -249,6 +299,7 @@ class CustomerApi extends CI_Controller {
                                 $resdata = $this->AuthModel->keychange($nearbyDriver);
                                 $tripData = array(  
                                                     "booking_id"=>$booking_id,
+                                                    "booking_id_show" =>$booking_id_show,
                                                     "driver_id"=>$driver_id,
                                                     "driver_image"=>$resdata->image,
                                                     "driver_name"=>$resdata->name,
@@ -316,7 +367,7 @@ class CustomerApi extends CI_Controller {
                 "promocode"=>$promo->promocode,
                 "rate_type"=>$promo->rate_type,
                 "rate"     =>$promo->rate,  
-                "promo_type"=>$promo->promo_type,              
+                "promo_type"=>$promo->promo_type,   //immediate or after           
                 );    
                 //echo json_encode($data);die();        
             $this->AuthModel->singleInsert('promocode_history',$data,array('user_id'=>$customer_id,'promocode'=>$promo->promocode));
@@ -820,6 +871,7 @@ class CustomerApi extends CI_Controller {
                 $tripdata = $this->AuthModel->keychange($tripRequest);
                 $tripData = array(
                     "booking_id"=>$tripdata->booking_id,
+                    "booking_id_show"=>$tripdata->booking_id_show,
                     "customer_id"=>$tripdata->customer_id,
                     "driver_id"=>$tripdata->driver_id,
                     "booking_address_type"=>$tripdata->booking_address_type,
@@ -896,6 +948,7 @@ class CustomerApi extends CI_Controller {
                 $service = $this->AuthModel->getSingleRecord('servicetype',array('typeid'=>$service_id,'status'=>'active'));               
                 $dropoff = $this->AuthModel->getMultipleRecord('booking_dropoffs',array('booking_id'=>$booking_id),'');
                 $res['booking_id']  = $value->booking_id;
+                $res['booking_id_show']  = $value->booking_id_show;
                 $res['customer_id'] = $value->customer_id;
                 $res['pickup']      = $value->pickup;
                 $res['pickupLat']   = $value->pickupLat;
@@ -928,7 +981,7 @@ class CustomerApi extends CI_Controller {
         }
     }
 
-    public function delete_favourite_booking()
+    public function remove_favourite_booking()
     {
         if(isset($_POST['booking_id']) && $_POST['booking_id']!='' && isset($_POST['customer_id']) && $_POST['customer_id']!='')
         {
@@ -1038,6 +1091,7 @@ class CustomerApi extends CI_Controller {
                     }
 
                     $response['booking_id']=$deliver->booking_id;                
+                    $response['booking_id_show']=$deliver->booking_id_show;                
                     $response['favourite_status']= $deliver->favourite_status;
                     $response['booking_status']= $deliver->booking_status;
                     $response['booking_type']= $deliver->booking_type;
@@ -1078,6 +1132,85 @@ class CustomerApi extends CI_Controller {
         }            
     }
 
+    public function get_gallery_post(){
+        if(isset($_POST['country']) && $_POST['country']!='' && isset($_POST['tag']) && $_POST['tag']=='gallery_post'){
+            extract($_POST);
+            $posts = $this->AuthModel->getMultipleRecord('redeem_post',array('country'=>$country,'status'=>'Active'),'');
+            if(!empty($posts)){                
+                foreach ($posts as $key => $value) {
+                    if(isset($value)=='preview_image'){
+                        $posts[$key]->preview_image = base_url('/promo_images/'.$value->preview_image);
+                    }
+                    if(isset($value)=='timeline_image'){
+                        $posts[$key]->timeline_image = base_url('/promo_images/'.$value->timeline_image);
+                    }                    
+                }
+                $response = array('error'=>0,'success'=>1,'message'=>'success','data'=>$posts);
+                echo json_encode($response);
+            }
+            else{
+                $response = array('error'=>1,'success'=>0,'message'=>'No post found','data'=>array());
+                echo json_encode($response);
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
+    public function exchange_point(){
+        if(isset($_POST['user_id']) && $_POST['user_id']!=''){
+            $paramarray = array('user_id','promo_code','country');
+            $vResponse  = $this->AuthModel->checkRequiredParam($paramarray,$_POST);
+            if(isset($vResponse['status']) && $vResponse['status']==0)
+            {
+                $response = array("error"=>1,'success'=>0,'message'=>$vResponse['message']);
+                echo json_encode($response);die();
+            }
+            else{
+                extract($_POST);
+                $today = date('m/d/Y');
+                $checkPost = $this->AuthModel->getSingleRecord('redeem_post',array('promocode'=>$promo_code,'country'=>$country,'end_date>='=>$today));
+                if(!empty($checkPost)){
+                    $required_points = $checkPost->points;
+                    $user_data = $this->AuthModel->getSingleRecord('users',array('id'=>$user_id));
+                    $user_points = $user_data->points;
+                    if($user_points>$required_points){
+                        $new_point_balance = $user_points-$required_points;
+                        $redeem_data = array(
+                            'redeem_post_id'=>$checkPost->redeem_post_id,
+                            'user_id'=>$user_id,
+                            'promo_code'=>$checkPost->promocode,
+                            'points'=>$checkPost->points,
+                            'rate_type'=>$checkPost->rate_type,
+                            'rate' =>$checkPost->rate,
+                            'max_amount'=>$checkPost->max_amount,
+                            );
+                        if($checkPost->rate_type=='Flat'){
+                            $redeem_data['bonus_amount'] = $checkPost->rate;
+                        }
+                        if($history_id = $this->AuthModel->singleInsert('redeem_history',$redeem_data)){
+                            $this->AuthModel->updateRecord(array('id'=>$user_id),'users',array('points'=>$new_point_balance));
+                            $response = array('error'=>0,'success'=>1,'message'=>'Conguralations! You have successfully exchange your point.');                            
+                            echo json_encode($response);
+                        }
+                    }
+                    else{
+                        $response = array('error'=>1,'success'=>0,'message'=>'You have not sufficient point to redeem it.');
+                        echo json_encode($response);
+                    }
+                }
+                else{
+                    $response = array('error'=>1,'success'=>0,'message'=>'Invalid promocode or this code is not applicable in your country');
+                    echo json_encode($response);
+                }
+            }
+        }
+        else{
+            $this->index();
+        }
+    }
+
     
 
     // =================================Develope by Abhishek=====================================================//
@@ -1104,6 +1237,7 @@ class CustomerApi extends CI_Controller {
             foreach($response1 as $deliver)
             {
                 $response['booking_id']=$deliver->booking_id;
+                $response['booking_id_show']=$deliver->booking_id_show;
                 $response['favourite_status']= $deliver->favourite_status;
                 $response['booking_status']=$deliver->booking_status;
                 $response['ride_complete_at']=$deliver->ride_complete_at;
@@ -1148,6 +1282,7 @@ class CustomerApi extends CI_Controller {
                 foreach($response1 as $deliver)
                 {
                     $response['booking_id']=$deliver->booking_id;
+                    $response['booking_id_show']=$deliver->booking_id_show;
                     $response['booking_status']=$deliver->booking_status;
                     $response['favourite_status']= $deliver->favourite_status;
                     $response['booking_at']=$deliver->booking_at;

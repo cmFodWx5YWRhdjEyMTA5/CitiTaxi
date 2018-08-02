@@ -74,7 +74,8 @@
                                                     <td><?php echo $list->contact;?></td>                    
                                                     <td><?php echo $list->subject;?></td>                    
                                                     <td><?php echo $list->feedback_details;?></td>
-                                                    <td><img src="<?php echo base_url('/supportImage/'.$list->issue_image); ?>" width="100" height="100"></td>
+                                                    <td><a traget="blank" href="<?php echo base_url('/supportImage/'.$list->issue_image);?>" download>   
+                                                    <img src="<?php echo base_url('/supportImage/'.$list->issue_image); ?>" width="100" height="100"></a></td>
                                                     <td><?php $t=$list->support_at;   $s=explode(" ",$t);  $e=implode(" / ",$s);
                                                          echo $e; ?></td>                    
                                                     <td>
